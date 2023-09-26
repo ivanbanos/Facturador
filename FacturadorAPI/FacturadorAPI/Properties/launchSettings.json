@@ -4,17 +4,17 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:38964",
-      "sslPort": 44367
+      "applicationUrl": "http://localhost:19190",
+      "sslPort": 44302
     }
   },
   "profiles": {
-    "FacturadorApi": {
+    "FacturadorAPI": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "swagger",
-      "applicationUrl": "https://localhost:7057;http://localhost:5083",
+      "applicationUrl": "https://localhost:7217;http://localhost:5068",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

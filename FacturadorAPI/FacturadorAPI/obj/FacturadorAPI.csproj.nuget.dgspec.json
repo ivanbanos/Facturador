@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\Facturador API\\FacturadorApi\\FacturadorApi.csproj": {}
+    "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\Facturador API\\FacturadorApi\\FacturadorApi.csproj": {
+    "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\Facturador API\\FacturadorApi\\FacturadorApi.csproj",
-        "projectName": "FacturadorApi",
-        "projectPath": "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\Facturador API\\FacturadorApi\\FacturadorApi.csproj",
+        "projectUniqueName": "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
+        "projectName": "FacturadorAPI",
+        "projectPath": "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
         "packagesPath": "C:\\Users\\ivana\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\Facturador API\\FacturadorApi\\obj\\",
+        "outputPath": "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\ivana\\AppData\\Roaming\\NuGet\\NuGet.Config",

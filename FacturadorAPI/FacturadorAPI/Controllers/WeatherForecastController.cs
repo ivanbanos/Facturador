@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace FacturadorApi.Controllers
+namespace FacturadorAPI.Controllers
 {
     [ApiController]
     [Route("[controller]")]

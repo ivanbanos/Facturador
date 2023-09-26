@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "5ahe+4oNavOIyNu9g/Ff4UKmfS8dxYG/9OHsbKZt15xYW6dNYnM/UmYWo/Sj1r/aoM10Xfyr4NSTQHLKCbGDNw==",
+  "dgSpecHash": "Hf4b2qeHurZ+3CG/LlWTerRIYmdlcSuCfMyL1GLqocHNaVZZpq2rR5JbmMVZKGEIEbNh9TQgsgt6qbA5CdVwRA==",
   "success": true,
-  "projectFilePath": "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\Facturador API\\FacturadorApi\\FacturadorApi.csproj",
+  "projectFilePath": "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\ivana\\.nuget\\packages\\microsoft.extensions.apidescription.server\\3.0.0\\microsoft.extensions.apidescription.server.3.0.0.nupkg.sha512",
     "C:\\Users\\ivana\\.nuget\\packages\\microsoft.openapi\\1.2.3\\microsoft.openapi.1.2.3.nupkg.sha512",
