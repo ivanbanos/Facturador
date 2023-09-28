@@ -1,0 +1,7 @@
+C:\Users\ivana\Repos\Facturador\FacturadorAPI\FacturadorAPI\obj\Debug\net6.0\FacturadorAPI.csproj.AssemblyReference.cache
+C:\Users\ivana\Repos\Facturador\FacturadorAPI\FacturadorAPI\obj\Debug\net6.0\FacturadorAPI.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ivana\Repos\Facturador\FacturadorAPI\FacturadorAPI\obj\Debug\net6.0\FacturadorAPI.AssemblyInfoInputs.cache
+C:\Users\ivana\Repos\Facturador\FacturadorAPI\FacturadorAPI\obj\Debug\net6.0\FacturadorAPI.AssemblyInfo.cs
+C:\Users\ivana\Repos\Facturador\FacturadorAPI\FacturadorAPI\obj\Debug\net6.0\FacturadorAPI.csproj.CoreCompileInputs.cache
+C:\Users\ivana\Repos\Facturador\FacturadorAPI\FacturadorAPI\obj\Debug\net6.0\FacturadorAPI.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\ivana\Repos\Facturador\FacturadorAPI\FacturadorAPI\obj\Debug\net6.0\FacturadorAPI.MvcApplicationPartsAssemblyInfo.cache

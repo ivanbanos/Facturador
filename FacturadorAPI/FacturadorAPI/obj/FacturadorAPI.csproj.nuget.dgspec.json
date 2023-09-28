@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj": {}
+    "C:\\Users\\ivana\\Repos\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj": {
+    "C:\\Users\\ivana\\Repos\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
+        "projectUniqueName": "C:\\Users\\ivana\\Repos\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
         "projectName": "FacturadorAPI",
-        "projectPath": "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
+        "projectPath": "C:\\Users\\ivana\\Repos\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
         "packagesPath": "C:\\Users\\ivana\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ivana\\OneDrive\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\obj\\",
+        "outputPath": "C:\\Users\\ivana\\Repos\\Facturador\\FacturadorAPI\\FacturadorAPI\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\ivana\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -41,9 +41,41 @@
         "net6.0": {
           "targetAlias": "net6.0",
           "dependencies": {
+            "BCrypt.Net-Next": {
+              "target": "Package",
+              "version": "[4.0.3, )"
+            },
+            "MediatR": {
+              "target": "Package",
+              "version": "[10.0.1, )"
+            },
+            "MediatR.Extensions.Microsoft.DependencyInjection": {
+              "target": "Package",
+              "version": "[10.0.1, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[6.0.8, )"
+            },
+            "Microsoft.IdentityModel.Tokens": {
+              "target": "Package",
+              "version": "[6.22.0, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
+            },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[6.2.3, )"
+            },
+            "System.Data.SqlClient": {
+              "target": "Package",
+              "version": "[4.8.1, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[6.22.0, )"
             }
           },
           "imports": [
