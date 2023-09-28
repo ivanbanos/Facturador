@@ -1,6 +1,7 @@
+using FacturadorAPI.Models;
+using FacturadorAPI.Repository.Repo;
 using MachineUtilizationApi;
 using MachineUtilizationApi.Application;
-using MachineUtilizationApi.Authtentication;
 using MachineUtilizationApi.Extensions;
 using MediatR;
 using Microsoft.Extensions.Options;
@@ -26,8 +27,10 @@ builder.Services.AddSwaggerGen(c =>
 
 });
 builder.Services.AddMediatR(typeof(IApplicationAnchor));
+builder.Services.Configure<InfoEstacion>(options => builder.Configuration.GetSection("InfoEstacion").Bind(options));
+
+builder.Services.AddScoped<IConexionEstacionRemota, ConexionEstacionRemota>();
 builder.Services.AddRepositories();
-builder.Services.AddSingleton<IConfigureOptions<SecretSettings>, ConfigureSecretSettings>();
 
 //builder.Services.AddSingleton<IAuthentication, JWTAuthentication>();
 builder.Services.AddMvc(opt =>

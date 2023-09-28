@@ -14,6 +14,7 @@ namespace MachineUtilizationApi.Repository
         Task<FacturaSiges> GetFacturaPorIdVenta(int idFactura);
         Task<IEnumerable<CaraSiges>> ListarCarasSigues(CancellationToken cancellationToken);
         Task<IEnumerable<FormaPagoSiges>> ListarFormasPagoSiges(CancellationToken cancellationToken);
+        Task<IEnumerable<SurtidorSiges>> ListarSurtidoresSigues(CancellationToken cancellationToken);
         Task<IEnumerable<TipoIdentificacion>> ListarTiposIdentificacion(CancellationToken cancellationToken);
         Task MandarImprimir(int idVenta);
         Task<IEnumerable<Tercero>> ObtenerTerceroPorIDentificacion(string identificacion, CancellationToken cancellationToken);

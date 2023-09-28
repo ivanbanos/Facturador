@@ -1,6 +1,4 @@
-﻿using FactoradorEstacionesModelo.Siges;
-using System;
-
+﻿
 namespace FacturadorAPI.Models.Externos
 {
     public class OrdenDeDespacho

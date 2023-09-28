@@ -269,5 +269,14 @@ namespace MachineUtilizationApi.Repository
                       });
             return dt.ConvertirTercero().FirstOrDefault();
         }
+
+        public async Task<IEnumerable<SurtidorSiges>> ListarSurtidoresSigues(CancellationToken cancellationToken)
+        {
+            var reqDict = new Dictionary<string, object>
+            {
+            };
+            DataTable dt = await LoadDataTableFromStoredProcAsync("ObtenerSurtidores", reqDict);
+            return dt.ConvertirSurtidoresSiges();
+        }
     }
 }

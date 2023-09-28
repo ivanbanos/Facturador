@@ -1,6 +1,4 @@
-﻿using FacturacionelectronicaCore.Negocio.Modelo;
-using System;
-using System.Collections.Generic;
+﻿
 
 namespace FacturadorAPI.Models.Externos
 {
