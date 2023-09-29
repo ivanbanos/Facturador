@@ -3434,3 +3434,33 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+drop procedure [dbo].GetTurnosPorFecha
+GO
+CREATE procedure [dbo].GetTurnosPorFecha
+(@fechaInicio datetime, @fechaFin datetime)
+as
+begin try
+    set nocount on;
+
+	select turno.Id, Empleado.Nombre, turno.FechaApertura, turno.FechaCierre, turno.IdEstado, Isla.Descripcion as Isla
+	from dbo.Turno 
+	inner join isla on  Turno.IdIsla = Isla.Id
+		inner join Empleado on IdEmpleado = EMpleado.Id
+	where Turno.FechaApertura between @fechaInicio and @fechaFin;
+    
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
