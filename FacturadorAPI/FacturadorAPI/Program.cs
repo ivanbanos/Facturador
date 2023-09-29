@@ -3,6 +3,7 @@ using FacturadorAPI.Repository.Repo;
 using MachineUtilizationApi;
 using MachineUtilizationApi.Application;
 using MachineUtilizationApi.Extensions;
+using MachineUtilizationApi.Repository;
 using MediatR;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
@@ -28,6 +29,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddMediatR(typeof(IApplicationAnchor));
 builder.Services.Configure<InfoEstacion>(options => builder.Configuration.GetSection("InfoEstacion").Bind(options));
+builder.Services.Configure<ConnectionStringSettings>(options => builder.Configuration.GetSection("ConnectionStringSettings").Bind(options));
 
 builder.Services.AddScoped<IConexionEstacionRemota, ConexionEstacionRemota>();
 builder.Services.AddRepositories();

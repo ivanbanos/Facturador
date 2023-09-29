@@ -8,7 +8,6 @@ namespace MachineUtilizationApi.Extensions
     {
         public static IServiceCollection AddRepositories(this IServiceCollection services)
         {
-            services.AddSingleton<IConfigureOptions<ConnectionStringSettings>, ConfigureConnectionStringSettings>();
             services.AddSingleton<IConfigureOptions<RepositoriesConfig>, ConfigureRepositoriesConfig>();
             services.AddScoped<IDataBaseHandler, MsSqlDataBaseHandler>();
             return services;
