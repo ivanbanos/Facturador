@@ -12,7 +12,6 @@ const Canastilla = () => {
               className="form-select d-inline w-80 h-50 select-white-blue"
               aria-label="Default select example"
             >
-              <option selected></option>
               <option value="1">Producto 1</option>
               <option value="2">Producto 2</option>
             </select>

@@ -1,7 +1,53 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "./styles/home.css";
+import GetIslas from "../services/getServices/GetIslas";
+import GetTurnoIsla from "../services/getServices/GetTurnoIsla";
+import GetCarasPorIsla from "../services/getServices/GetCarasPorIsla";
+import GetFormasDePago from "../services/getServices/GetFormasDePago";
+import GetTiposDeIdentificacion from "../services/getServices/GetTiposDeIdentificacion";
+import GetUltimaFacturaPorCara from "../services/getServices/GetUltimaFacturaporCara";
+import GetUltimaFacturaPorCaraTexto from "../services/getServices/GetUltimaFacturaPorCaraTexto";
 
 const Combustible = () => {
+  const [islas, setIslas] = useState([]);
+
+  const [turno, setTurno] = useState(null);
+  const [ultimaFactura, setUltimaFactura] = useState(null);
+  const [ultimaFacturaTexto, setUltimaFacturaTexto] = useState("");
+  const [caras, setCaras] = useState([]);
+  const [tiposDeIdentificacion, setTiposDeIdentificacion] = useState([]);
+  const [formasDePago, setformasDePago] = useState([]);
+  const [islaSelect, setIslaSelect] = useState(null);
+  const [caraSelect, setCaraSelect] = useState(null);
+
+  const fetcInicial = async () => {
+    let islas = await GetIslas();
+    // setIslas(islas);
+    console.log(islas);
+
+    // let tiposDeIdentificacion = await GetTiposDeIdentificacion();
+    // setTiposDeIdentificacion(tiposDeIdentificacion);
+    // let formasDePago = await GetFormasDePago();
+    // setformasDePago(formasDePago);
+  };
+
+  const fetcTurnoYCaras = async (idIsla) => {
+    let turno = await GetTurnoIsla(idIsla);
+    setTurno(turno);
+    let caras = await GetCarasPorIsla(idIsla);
+    setCaras(caras);
+  };
+
+  const fetchInformacionCliente = async (idCara) => {
+    let factura = await GetUltimaFacturaPorCara(idCara);
+    setUltimaFactura(factura);
+    let facturaTexto = await GetUltimaFacturaPorCaraTexto(idCara);
+    setUltimaFacturaTexto(facturaTexto);
+  };
+  useEffect(() => {
+    fetcInicial();
+  }, []);
+
   return (
     <>
       <div className="col-4 pt-4 pb-4 left-column columnas">
@@ -15,11 +61,17 @@ const Combustible = () => {
           <select
             className="form-select dark-blue-input d-inline w-50 h-50"
             aria-label="Default select example"
+            onChange={(event) => {
+              const selectIsla = event.target.value;
+              setIslaSelect(selectIsla);
+              fetcTurnoYCaras(selectIsla);
+            }}
           >
-            <option selected></option>
-            <option value="1">Isla 1</option>
-            <option value="2">Isla 2</option>
-            <option value="3">Isla 3</option>
+            {islas.map((isla) => {
+              <option key={isla.id} value={isla.id}>
+                {isla.isla}
+              </option>;
+            })}
           </select>
         </div>
         <div className="info-div ">
@@ -30,8 +82,8 @@ const Combustible = () => {
                 <p className="text-end">Empleado:</p>
               </div>
               <div className="col-7">
-                <p>09/25/2023 16:30:38 </p>
-                <p>Karen Vergara</p>
+                <p>{turno === null ? "N/A" : turno.fechaApertura} </p>
+                <p>{turno === null ? "N/A" : turno.empleado}</p>
               </div>
             </div>
             <div className="d-flex flex-row">
@@ -39,38 +91,81 @@ const Combustible = () => {
               <select
                 className="form-select d-inline w-50 h-50 select-white-blue"
                 aria-label="Default select example"
+                onChange={(event) => {
+                  const selectCara = event.target.value;
+                  setCaraSelect(selectCara);
+                  fetchInformacionCliente(selectCara.id);
+                }}
               >
-                <option selected>Selecciona la cara</option>
-                <option value="1">Cara 1</option>
-                <option value="2">Cara 2</option>
+                {caras.map((cara) => {
+                  <option key={cara.id} value={cara}>
+                    {cara.descripcion}
+                  </option>;
+                })}
               </select>
             </div>
           </div>
           <div className="info-cliente-div">
             <div className="d-flex my-3 titulos-circulo">
               <div className="circulo my-2 mx-3"></div>
-              <div className="fs-3 text-white">Información de la Venta</div>
+              <div className="fs-3 text-white">Información del Cliente</div>
             </div>
             <select
               className="form-select w-80 h-50 select-white-blue"
-              aria-label="Default select example"
+              aria-label="Default select example" //onchage pendiente
+              value={
+                ultimaFactura ? ultimaFactura.tercero.tipoIdentificacion : ""
+              }
             >
-              <option selected></option>
-              <option value="1">Ejemplo 1</option>
-              <option value="2">Ejemplo 2</option>
+              {tiposDeIdentificacion.map((tipo) => {
+                <option
+                  key={tipo.tipoIdentificacionId}
+                  value={tipo.tipoIdentificacionId}
+                >
+                  {tipo.descripcion}
+                </option>;
+              })}
             </select>
             <div className="mt-2 p-0">
               <div className="form-control dark-blue-input">
-                <p>222222222222</p>
+                <p>
+                  222222222222{" "}
+                  {ultimaFactura === null
+                    ? "N/A"
+                    : ultimaFactura.tercero.identificacion}
+                </p>
               </div>
             </div>
             <div className="mt-2">
               <div className="form-control dark-blue-input">
-                <p>Nombre: Consumidor Final</p>
-                <p>Teléfono: 2345678 </p>
-                <p>Correo: prueba@gmail.com</p>
-                <p>Dirección: C1 N1-5</p>
-                <p>Tipo de identificación: NIT</p>
+                <p>
+                  {ultimaFactura === null ? (
+                    <br></br>
+                  ) : (
+                    "Nombre:" + ultimaFactura.tercero.nombre
+                  )}
+                </p>
+                <p>
+                  {ultimaFactura === null ? (
+                    <br></br>
+                  ) : (
+                    "Teléfono: " + ultimaFactura.tercero.telefono
+                  )}
+                </p>
+                <p>
+                  {ultimaFactura === null ? (
+                    <br></br>
+                  ) : (
+                    "Correo: " + ultimaFactura.tercero.correo
+                  )}
+                </p>
+                <p>
+                  {ultimaFactura === null ? (
+                    <br></br>
+                  ) : (
+                    "Dirección: " + ultimaFactura.tercero.direccion
+                  )}
+                </p>
               </div>
             </div>
           </div>
@@ -84,24 +179,27 @@ const Combustible = () => {
               <select
                 className="form-select  w-75 h-50 select-white-blue"
                 aria-label="Default select example"
+                value={ultimaFactura ? ultimaFactura.codigoFormadePago : "1234"}
               >
-                <option selected>Efectivo</option>
-                <option value="1">Débito</option>
-                <option value="2">Cupón</option>
-                <option value="3">Isla 3</option>
+                {formasDePago.map((forma) => {
+                  <option key={forma.id} value={forma.id}>
+                    {forma.descripcion}
+                  </option>;
+                })}
+                <option value={"1234"}>12 3456</option>;
               </select>
-              <select
-                className="form-select  w-75 h-50 select-white-blue"
-                aria-label="Default select example"
-              >
-                <option selected>CBP248</option>
-              </select>
-              <select
-                className="form-select  w-50 h-50 select-white-blue"
-                aria-label="Default select example"
-              >
-                <option selected>Kilometraje</option>
-              </select>
+
+              <input
+                type="text"
+                className="form-control select-white-blue w-50 h-40"
+                placeholder="Placa"
+              ></input>
+
+              <input
+                type="text"
+                className="form-control select-white-blue w-50 h-40"
+                placeholder="Kilometraje"
+              ></input>
             </div>
           </div>
         </div>
