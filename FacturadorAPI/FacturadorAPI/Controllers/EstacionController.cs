@@ -30,6 +30,14 @@ namespace FacturadorAPI.Controllers
         }
 
         [HttpGet]
+        [Route("CarasPorIsla")]
+        [ProducesResponseType(typeof(IEnumerable<CaraSiges>), (int)HttpStatusCode.OK)]
+        public async Task<IEnumerable<CaraSiges>> ObtenerCarasPorIsla(int idIsla, CancellationToken cancellationToken)
+        {
+            return await _mediator.Send(new ObtenerCarasPorIslaQuery(idIsla), cancellationToken);
+        }
+
+        [HttpGet]
         [Route("TurnoPorIsla")]
         [ProducesResponseType(typeof(TurnoSiges), (int)HttpStatusCode.OK)]
         public async Task<TurnoSiges> ObtenerTurnoPorIsla(int idIsla, CancellationToken cancellationToken)

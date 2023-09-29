@@ -11,7 +11,7 @@ const Combustible = () => {
               <div className="rombo"></div>
             </div>
           </div>
-          <label className="mx-2 fs-3 d-inline text-white">ISLA</label>
+          <label className="mx-2 fs-3 d-inline text-white">ISLAS</label>
           <select
             className="form-select dark-blue-input d-inline w-50 h-50"
             aria-label="Default select example"
