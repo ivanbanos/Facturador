@@ -1747,8 +1747,8 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorConsecutivo')
-	DROP PROCEDURE [dbo].getFacturaPorConsecutivo
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorIdVenta')
+	DROP PROCEDURE [dbo].[getFacturaPorIdVenta]
 GO
 CREATE procedure [dbo].[getFacturaPorIdVenta]
 (
@@ -3040,8 +3040,7 @@ CREATE TYPE [dbo].[VehiculosType] AS TABLE(
 	[capacidad] [varchar](max) NULL,
 	[estado] [int] NULL,
 	[motivo] [varchar](max) NULL,
-	[motivoTexto] [varchar](max) NULL,
-	[motivoTexto] [int] NULL
+	[motivoTexto] [varchar](max) NULL
 )
 END
 GO
@@ -3447,6 +3446,105 @@ begin try
 	inner join isla on  Turno.IdIsla = Isla.Id
 		inner join Empleado on IdEmpleado = EMpleado.Id
 	where Turno.FechaApertura between @fechaInicio and @fechaFin;
+    
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+drop procedure [dbo].GetFacturasPorFechas
+GO
+CREATE procedure [dbo].GetFacturasPorFechas
+(@fechaInicio datetime, @fechaFin datetime)
+as
+begin try
+    set nocount on;
+
+	select 
+	Resoluciones.habilitada as habilitada,
+	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
+	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
+	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, FacturasPOS.[facturaPOSId]
+      ,FacturasPOS.[fecha]
+      ,FacturasPOS.[resolucionId]
+      ,FacturasPOS.[consecutivo]
+      ,FacturasPOS.[ventaId]
+      ,FacturasPOS.[estado]
+      ,FacturasPOS.[terceroId]
+      ,FacturasPOS.[Placa]
+      ,FacturasPOS.[Kilometraje]
+      ,FacturasPOS.[impresa]
+      ,FacturasPOS.[consolidadoId]
+      ,FacturasPOS.[enviada]
+      ,FacturasPOS.[codigoFormaPago]
+      ,FacturasPOS.[reporteEnviado]
+      ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
+	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
+	from dbo.FacturasPOS
+	
+	inner join venta on venta.Id = FacturasPOS.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
+	inner join Combustible on Combustible.Id = IdCombustible
+	inner join Manguera on Manguera.Id = IdManguera
+	inner join Cara on Cara.Id = Manguera.IdCara
+	inner join Surtidor on Surtidor.Id = Cara.IDSurtidor
+	left join dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
+	left join dbo.terceros on FacturasPOS.terceroId = terceros.terceroId
+    left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
+	
+	
+	
+	where FacturasPOS.Fecha between @fechaInicio and @fechaFin
+	
+    union
+	select 
+	Resoluciones.habilitada as habilitada,
+	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
+	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
+	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, OrdenesDeDespacho.[facturaPOSId]
+      ,OrdenesDeDespacho.[fecha]
+      ,OrdenesDeDespacho.[resolucionId]
+      ,OrdenesDeDespacho.[consecutivo]
+      ,OrdenesDeDespacho.[ventaId]
+      ,OrdenesDeDespacho.[estado]
+      ,OrdenesDeDespacho.[terceroId]
+      ,OrdenesDeDespacho.[Placa]
+      ,OrdenesDeDespacho.[Kilometraje]
+      ,OrdenesDeDespacho.[impresa]
+      ,OrdenesDeDespacho.[consolidadoId]
+      ,OrdenesDeDespacho.[enviada]
+      ,OrdenesDeDespacho.[codigoFormaPago]
+      ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
+	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
+	from dbo.OrdenesDeDespacho
+	
+	inner join venta on venta.Id = OrdenesDeDespacho.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
+	inner join Combustible on Combustible.Id = IdCombustible
+	inner join Manguera on Manguera.Id = IdManguera
+	inner join Cara on Cara.Id = Manguera.IdCara
+	inner join Surtidor on Surtidor.Id = Cara.IDSurtidor
+	left join dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
+	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
+    left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
+	
+    
+	where OrdenesDeDespacho.Fecha between @fechaInicio and @fechaFin;
     
     
 end try

@@ -278,5 +278,51 @@ namespace MachineUtilizationApi.Repository
             DataTable dt = await LoadDataTableFromStoredProcAsync("ObtenerSurtidores", reqDict);
             return dt.ConvertirSurtidoresSiges();
         }
+
+        public async Task<IEnumerable<TurnoSiges>> GetTurnosByFechas(DateTime fechaInicio, DateTime fechaFin)
+        {
+            DataTable dt = await LoadDataTableFromStoredProcAsync("GetTurnosPorFecha",
+                            new Dictionary<string, object>{
+
+                    {"@fechaInicio", fechaInicio },
+                    {"@fechaFin", fechaFin }
+                            });
+            return dt.ConvertirTurnoSiges();
+        }
+
+        public async Task<IEnumerable<TurnoSurtidor>> GetTurnoSurtidorInfo(int id)
+        {
+            DataTable dt = await LoadDataTableFromStoredProcAsync("GetTurnoSurtidorInfo",
+                            new Dictionary<string, object>{
+
+                    {"@Id", id }
+                            });
+            return dt.ConvertirTurnoSurtidoresSiges();
+        }
+
+        public async Task<IEnumerable<FacturaSiges>> GetFacturasPorFechas(DateTime fechaInicio, DateTime fechaFin)
+        {
+            DataTable dt = await LoadDataTableFromStoredProcAsync("GetFacturasPorFechas",
+                            new Dictionary<string, object>{
+
+                    {"@fechaInicio", fechaInicio },
+                    {"@fechaFin", fechaFin }
+                            });
+            return dt.ConvertirFacturasSiges();
+        }
+
+        public async Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje)
+        {
+            await LoadDataTableFromStoredProcAsync("MandarImprimir",
+                            new Dictionary<string, object>{
+
+                    {"@facturaPOSId", facturaPOSId },
+                    {"@Placa", placa },
+                    {"@Kilometraje", kilometraje },
+                    {"@codigoFormaPago", codigoFormaPago },
+                    {"@terceroId", terceroId },
+                    {"@ventaId", idVenta }
+                            });
+        }
     }
 }

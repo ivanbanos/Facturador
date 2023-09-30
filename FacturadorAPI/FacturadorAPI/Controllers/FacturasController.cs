@@ -78,9 +78,9 @@ namespace FacturadorAPI.Controllers
         [HttpGet]
         [Route("Imprimir/{idVenta}")]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
-        public async Task<IActionResult> MandarImprimir(int idVenta, CancellationToken cancellationToken)
+        public async Task<IActionResult> MandarImprimir(FacturaSiges factura, CancellationToken cancellationToken)
         {
-            await _mediator.Send(new MandarImprimirCommand(idVenta), cancellationToken);
+            await _mediator.Send(new MandarImprimirCommand(factura), cancellationToken);
             return Ok();
         }
         

@@ -1,14 +1,15 @@
-﻿using MediatR;
+﻿using FacturadorAPI.Models;
+using MediatR;
 
 namespace FacturadorAPI.Application.Commands
 {
     public class MandarImprimirCommand : IRequest
     {
-        public MandarImprimirCommand(int idVenta)
+        public MandarImprimirCommand(FacturaSiges factura)
         {
-            IdVenta = idVenta;
+            Factura = factura;
         }
 
-        public int IdVenta { get; }
+        public FacturaSiges Factura { get; }
     }
 }
