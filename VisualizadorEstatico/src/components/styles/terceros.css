@@ -1,0 +1,63 @@
+@font-face {
+    font-family: 'orkneyBold'; /* Nombre que asignarás a la fuente */
+    src: url('fonts/orkney-bold.otf') format('opentype');
+  }
+  @font-face {
+    font-family: 'orkneyLigth'; /* Nombre que asignarás a la fuente */
+    src: url('fonts/orkney-light.otf') format('opentype');
+  }
+  @font-face {
+    font-family: 'orkneyMedium'; /* Nombre que asignarás a la fuente */
+    src: url('fonts/orkney-medium.otf') format('opentype');
+  }
+  @font-face {
+    font-family: 'orkneyRegular'; /* Nombre que asignarás a la fuente */
+    src: url('fonts/orkney-regular.otf') format('opentype');
+  }
+.boder-div{
+    background-color: #7cc5fc;
+    
+}
+.add-tercero-div{
+    margin: 15px;
+    margin-top: 5px;
+    background-color: #002244;
+    
+}
+.terceros-box{
+    color: white;
+    height: 700px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.boder-div{
+    border-radius: 50px;
+    height: 70%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+.add-tercero-div{
+    border-radius: 100px 50px 50px 50px;
+    height: 95%;
+    width: 100%;
+    padding-left: 0px;
+    /* padding: 20px; */
+   
+}
+.tercero-input{
+    border-radius: 10px;
+    border: 2px solid #20a857;
+    background-color: #002244;
+    color: #20a857;
+}
+.formulario{
+    font-family: 'orkneyRegular';
+}
+.title-add{
+    font-family: 'orkneyBold';
+}

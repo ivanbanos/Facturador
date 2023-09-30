@@ -4,9 +4,9 @@
   "display": "standalone",
   "scope": "/",
   "start_url": "/",
-  "name": "FacturadorSiges",
-  "short_name": "Facturador",
-  "description": "facturador siges",
+  "name": "MonitorSiges",
+  "short_name": "Monitor",
+  "description": "Monitor siges",
   "icons": [
     {
         "src": "/maskable.png",

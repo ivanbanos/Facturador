@@ -1,0 +1,85 @@
+@font-face {
+    font-family: 'orkneyBold'; /* Nombre que asignarás a la fuente */
+    src: url('fonts/orkney-bold.otf') format('opentype');
+  }
+  @font-face {
+    font-family: 'orkneyLigth'; /* Nombre que asignarás a la fuente */
+    src: url('fonts/orkney-light.otf') format('opentype');
+  }
+  @font-face {
+    font-family: 'orkneyMedium'; /* Nombre que asignarás a la fuente */
+    src: url('fonts/orkney-medium.otf') format('opentype');
+  }
+  @font-face {
+    font-family: 'orkneyRegular'; /* Nombre que asignarás a la fuente */
+    src: url('fonts/orkney-regular.otf') format('opentype');
+  }
+
+.menu {
+    display: flex;
+    list-style-type: none;
+    margin-bottom: 0%;
+    padding: 0; /* Elimina el relleno predeterminado de la lista */
+    width: 60%;
+    height: 50px;
+    font-family: 'orkneyBold';
+    font-size: 140%;
+    position: fixed;
+    top: 25;
+    left: 25px;
+    background: #0C80EA;
+    border-bottom-right-radius: 20px;
+  }
+  
+  .menu-item {
+    flex: 1; 
+    text-align: center;    
+    cursor: pointer; 
+    border-bottom: 3px solid #7CC5FC;
+    height: 100%;
+  }
+  
+  .item-active {
+    color: white; 
+    height: 100%;
+    border-bottom-right-radius: 20px;
+    background-color: #002244;
+    /* border-bottom: 4px solid #7CC5FC;  */
+    border-right: 4px solid #7CC5FC;
+    align-items: center;
+  }
+  .item-no-active {
+    border-right: 3px solid #7CC5FC;
+    color: white;
+    height: 100%;
+    border-bottom-right-radius: 20px;
+    background-color: #0C80EA;
+    /* border-top: 3px solid #7CC5FC; */
+    /* border-bottom: 3px solid #7CC5FC; */
+  }
+ .icono-third {
+    border-bottom: 3px solid #7CC5FC;
+  }
+  .menu-item:last-child{
+    border-bottom: none;
+
+  }
+  .links{
+    text-decoration: none;
+}
+  .menu-item:nth-child(2){
+    /* background-color: #002244; */
+   
+    
+  }
+  .item-second{
+    /* border-top-left-radius: 20px; */
+  }
+
+  /* .item-no-active:first-child {
+    border-bottom: none;
+  }
+   */
+   /* .canastilla{
+    border-top-left-radius: 100px;
+   } */ 
