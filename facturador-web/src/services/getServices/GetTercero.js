@@ -10,6 +10,7 @@ const GetTercero = async (identificacion) => {
         method: "GET",
         mode: "cors",
         headers: {
+          "Access-Control-Allow-Origin": "*",
           Authorization: "Bearer ",
           "sec-fetch-mode": "cors",
           "Access-Control-Allow-Headers": "Content-Type",

@@ -17,30 +17,38 @@ const Combustible = () => {
   const [caras, setCaras] = useState([]);
   const [tiposDeIdentificacion, setTiposDeIdentificacion] = useState([]);
   const [formasDePago, setformasDePago] = useState([]);
-  const [islaSelect, setIslaSelect] = useState(null);
+  const [formaDePagoSelect, setformaDePagoSelect] = useState("");
+
+  const [islaSelect, setIslaSelect] = useState("");
   const [caraSelect, setCaraSelect] = useState(null);
+  const [placa, setPlaca] = useState(null);
+  const [kilometraje, setkilometraje] = useState(null);
 
   const fetcInicial = async () => {
     let islas = await GetIslas();
-    // setIslas(islas);
-    console.log(islas);
+    setIslas(islas);
 
-    // let tiposDeIdentificacion = await GetTiposDeIdentificacion();
-    // setTiposDeIdentificacion(tiposDeIdentificacion);
-    // let formasDePago = await GetFormasDePago();
-    // setformasDePago(formasDePago);
+    let tiposDeIdentificacion = await GetTiposDeIdentificacion();
+    setTiposDeIdentificacion(tiposDeIdentificacion);
+    console.log(tiposDeIdentificacion);
+
+    let formasPago = await GetFormasDePago();
+    setformasDePago(formasPago);
   };
 
   const fetcTurnoYCaras = async (idIsla) => {
     let turno = await GetTurnoIsla(idIsla);
     setTurno(turno);
+    console.log(turno);
     let caras = await GetCarasPorIsla(idIsla);
     setCaras(caras);
+    console.log(caras);
   };
 
   const fetchInformacionCliente = async (idCara) => {
     let factura = await GetUltimaFacturaPorCara(idCara);
     setUltimaFactura(factura);
+
     let facturaTexto = await GetUltimaFacturaPorCaraTexto(idCara);
     setUltimaFacturaTexto(facturaTexto);
   };
@@ -61,17 +69,22 @@ const Combustible = () => {
           <select
             className="form-select dark-blue-input d-inline w-50 h-50"
             aria-label="Default select example"
+            value={islaSelect}
             onChange={(event) => {
               const selectIsla = event.target.value;
               setIslaSelect(selectIsla);
               fetcTurnoYCaras(selectIsla);
             }}
           >
-            {islas.map((isla) => {
-              <option key={isla.id} value={isla.id}>
-                {isla.isla}
-              </option>;
-            })}
+            <option value="">Selecciona la isla</option>
+
+            {Array.isArray(islas) &&
+              islas.map((isla) => (
+                <option key={isla.id} value={isla.id}>
+                  {isla.isla}
+                </option>
+              ))}
+            <option value="1">opcion1 </option>
           </select>
         </div>
         <div className="info-div ">
@@ -94,14 +107,17 @@ const Combustible = () => {
                 onChange={(event) => {
                   const selectCara = event.target.value;
                   setCaraSelect(selectCara);
-                  fetchInformacionCliente(selectCara.id);
+                  fetchInformacionCliente(selectCara);
                 }}
               >
-                {caras.map((cara) => {
-                  <option key={cara.id} value={cara}>
-                    {cara.descripcion}
-                  </option>;
-                })}
+                <option value="">Selecciona la Cara</option>
+                {Array.isArray(caras) &&
+                  caras.map((cara) => (
+                    <option key={cara.id} value={cara.tipoIdentificacionId}>
+                      {cara.descripcion}
+                    </option>
+                  ))}
+                <option value="1">opcion1 </option>
               </select>
             </div>
           </div>
@@ -112,19 +128,17 @@ const Combustible = () => {
             </div>
             <select
               className="form-select w-80 h-50 select-white-blue"
-              aria-label="Default select example" //onchage pendiente
               value={
                 ultimaFactura ? ultimaFactura.tercero.tipoIdentificacion : ""
               }
             >
-              {tiposDeIdentificacion.map((tipo) => {
-                <option
-                  key={tipo.tipoIdentificacionId}
-                  value={tipo.tipoIdentificacionId}
-                >
-                  {tipo.descripcion}
-                </option>;
-              })}
+              <option value="">Selecciona un elemento</option>
+              {Array.isArray(tiposDeIdentificacion) &&
+                tiposDeIdentificacion.map((elemento, index) => (
+                  <option key={index} value={elemento.tipoIdentificacionId}>
+                    {elemento.descripcion}
+                  </option>
+                ))}
             </select>
             <div className="mt-2 p-0">
               <div className="form-control dark-blue-input">
@@ -179,26 +193,44 @@ const Combustible = () => {
               <select
                 className="form-select  w-75 h-50 select-white-blue"
                 aria-label="Default select example"
-                value={ultimaFactura ? ultimaFactura.codigoFormadePago : "1234"}
+                value={
+                  ultimaFactura
+                    ? ultimaFactura.codigoFormadePago
+                    : formaDePagoSelect
+                }
+                onChange={(event) => {
+                  const selectForma = event.target.value;
+                  setformaDePagoSelect(selectForma);
+                }}
               >
-                {formasDePago.map((forma) => {
-                  <option key={forma.id} value={forma.id}>
-                    {forma.descripcion}
-                  </option>;
-                })}
-                <option value={"1234"}>12 3456</option>;
+                <option value="">Forma de pago</option>
+                {Array.isArray(formasDePago) &&
+                  formasDePago.map((forma) => (
+                    <option key={forma.id} value={forma.id}>
+                      {forma.descripcion}
+                    </option>
+                  ))}
+                <option value={"1"}>OpcionFP1</option>
               </select>
 
               <input
                 type="text"
                 className="form-control select-white-blue w-50 h-40"
                 placeholder="Placa"
+                value={ultimaFactura ? ultimaFactura.placa : placa}
+                onChange={(event) => {
+                  setPlaca(event.target.value);
+                }}
               ></input>
 
               <input
                 type="text"
                 className="form-control select-white-blue w-50 h-40"
                 placeholder="Kilometraje"
+                value={ultimaFactura ? ultimaFactura.kilometraje : kilometraje}
+                onChange={(event) => {
+                  setkilometraje(event.target.value);
+                }}
               ></input>
             </div>
           </div>
@@ -206,8 +238,9 @@ const Combustible = () => {
       </div>
       <div className="col-5 center-column columnas">
         <div className="container container-factura my-4">
-          <div className=" factura px-2">
-            <p>Facr=tura de Venta P.O.s No. 111111</p>
+          <div className=" factura px-2 w-100 h-100">
+            <p>{ultimaFacturaTexto ? ultimaFacturaTexto : " "}</p>
+            {/* <p>Facr=tura de Venta P.O.s No. 111111</p>
             <p>Vendido a: consumidor final </p>
             <p>Nit/CC: 22222222222</p>
             <p>Placa: placa</p>
@@ -224,7 +257,7 @@ const Combustible = () => {
             <p>Descuento: 0,00</p>
             <p>Subtotal IVA: 0,00</p>
             <p>TOTAL: 46.640</p>
-            <p>Forma de pago: Efectivo</p>
+            <p>Forma de pago: Efectivo</p> */}
           </div>
         </div>
         <div className="d-flex justify-content-center">

@@ -2,30 +2,21 @@ import configData from "../../components/config.json";
 
 const GetUltimaFacturaPorCara = async (id_cara) => {
   try {
+    console.log(
+      configData.SERVER_URL + "/api/Facturas/UltimaFacturaPorCara/" + id_cara
+    );
     const response = await fetch(
-      configData.SERVER_URL + "/api/Facturas/UltimaFacturaPorCara/" + id_cara,
-      {
-        method: "GET",
-        mode: "cors",
-        headers: {
-          Authorization: "Bearer ",
-          "sec-fetch-mode": "cors",
-          "Access-Control-Allow-Headers": "Content-Type",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
-        },
-      }
+      configData.SERVER_URL + "/api/Facturas/UltimaFacturaPorCara/" + id_cara
     );
     if (response.status === 200) {
-      let ultimaFactura = await response.json();
-      return ultimaFactura;
+      return await response.json();
     }
     if (response.status === 403) {
-      return "fail";
+      return null;
     }
-    return "fail";
+    return null;
   } catch (error) {
-    return "fail";
+    return null;
   }
 };
 

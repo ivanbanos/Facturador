@@ -3,11 +3,13 @@ import configData from "../../components/config.json";
 const GetFormasDePago = async () => {
   try {
     const response = await fetch(
-      configData.SERVER_URL + "/api/Factura/FormasDePago",
+      configData.SERVER_URL + "/api/Facturas/FormasDePago",
       {
         method: "GET",
         mode: "cors",
         headers: {
+          "Access-Control-Allow-Origin": "*",
+          accept: "text/plain",
           Authorization: "Bearer ",
           "sec-fetch-mode": "cors",
           "Access-Control-Allow-Headers": "Content-Type",
@@ -17,8 +19,8 @@ const GetFormasDePago = async () => {
       }
     );
     if (response.status === 200) {
-      let formasPago = await response.json();
-      return formasPago;
+      let formasDePago = await response.json();
+      return formasDePago;
     }
     if (response.status === 403) {
       return "fail";
