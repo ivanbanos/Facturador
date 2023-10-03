@@ -15,7 +15,7 @@ namespace MachineUtilizationApi.Repository
 
         public void Configure(ConnectionStringSettings options)
         {
-            _configuration.Bind("ConnectionStringSettings", options);
+            _configuration.Bind("ConnectionStrings", options);
 
             if (string.IsNullOrEmpty(options.EstacionSiges))
             {
