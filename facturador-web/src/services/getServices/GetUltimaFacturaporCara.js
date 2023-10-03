@@ -8,6 +8,7 @@ const GetUltimaFacturaPorCara = async (id_cara) => {
     const response = await fetch(
       configData.SERVER_URL + "/api/Facturas/UltimaFacturaPorCara/" + id_cara
     );
+    console.log(response.status);
     if (response.status === 200) {
       return await response.json();
     }

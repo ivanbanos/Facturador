@@ -1,0 +1,57 @@
+@font-face {
+    font-family: 'orkneyBold'; /* Nombre que asignarás a la fuente */
+    src: url('fonts/orkney-bold.otf') format('opentype');
+  }
+  @font-face {
+    font-family: 'orkneyLigth'; /* Nombre que asignarás a la fuente */
+    src: url('fonts/orkney-light.otf') format('opentype');
+  }
+  @font-face {
+    font-family: 'orkneyMedium'; /* Nombre que asignarás a la fuente */
+    src: url('fonts/orkney-medium.otf') format('opentype');
+  }
+  @font-face {
+    font-family: 'orkneyRegular'; /* Nombre que asignarás a la fuente */
+    src: url('fonts/orkney-regular.otf') format('opentype');
+  }
+  
+ .custom-modal{
+    
+    font-family: 'orkneyRegular';
+}
+.header-modal{
+background-color: #0C80EA; 
+color: white;
+font-family: 'orkneyBold';
+}
+.print-button-modal{   
+    font-size: 20px;
+    width: 80%;
+    height: 70px;
+}
+.botton-light-blue-modal{
+    background-color: #7CC5FC;
+    border: 2px solid #0C80EA;
+    font-size: 90%;
+    border-radius: 30px;
+    color: #002244;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition-duration: 1s; 
+    font-family: 'orkneyBold';
+    width: 35%;
+}
+.botton-medium-blue-modal{
+    background-color: #0C80EA;
+    border: 2px solid #7CC5FC;
+    border-radius: 30px;
+    font-size: 90%;
+    color: #7CC5FC;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition-duration: 1s; 
+    font-family: 'orkneyBold';
+    width: 35%;
+}
