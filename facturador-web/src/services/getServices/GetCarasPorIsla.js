@@ -3,7 +3,7 @@ import configData from "../../components/config.json";
 const GetCarasPorIsla = async (id_isla) => {
   try {
     const response = await fetch(
-      configData.SERVER_URL + "/api/Estacion/CarasPorIsla",
+      configData.SERVER_URL + "/api/Estacion/CarasPorIsla?idIsla=" + id_isla,
       {
         method: "GET",
         mode: "cors",
@@ -14,7 +14,7 @@ const GetCarasPorIsla = async (id_isla) => {
           "Access-Control-Allow-Headers": "Content-Type",
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
-          body: JSON.stringify(id_isla),
+          //body: JSON.stringify(id_isla),
         },
       }
     );

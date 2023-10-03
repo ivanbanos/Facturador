@@ -3,9 +3,7 @@ import configData from "../../components/config.json";
 const GetTercero = async (identificacion) => {
   try {
     const response = await fetch(
-      configData.SERVER_URL +
-        "/api/Terceros/TiposIdentificacion" +
-        identificacion,
+      configData.SERVER_URL + "/api/Terceros/" + identificacion,
       {
         method: "GET",
         mode: "cors",
