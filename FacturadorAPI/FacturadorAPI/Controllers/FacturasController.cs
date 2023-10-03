@@ -75,8 +75,8 @@ namespace FacturadorAPI.Controllers
             return Ok();
         }
 
-        [HttpGet]
-        [Route("Imprimir/{idVenta}")]
+        [HttpPost]
+        [Route("Imprimir")]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> MandarImprimir(FacturaSiges factura, CancellationToken cancellationToken)
         {

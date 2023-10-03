@@ -29,7 +29,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddMediatR(typeof(IApplicationAnchor));
 builder.Services.Configure<InfoEstacion>(options => builder.Configuration.GetSection("InfoEstacion").Bind(options));
-builder.Services.Configure<ConnectionStringSettings>(options => builder.Configuration.GetSection("ConnectionStringSettings").Bind(options));
+builder.Services.Configure<ConnectionStringSettings>(options => builder.Configuration.GetSection("ConnectionStrings").Bind(options));
 
 builder.Services.AddScoped<IConexionEstacionRemota, ConexionEstacionRemota>();
 builder.Services.AddRepositories();
