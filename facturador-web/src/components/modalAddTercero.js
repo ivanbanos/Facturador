@@ -1,11 +1,50 @@
 import React, { useState } from "react";
 import { Modal, Button } from "react-bootstrap";
+import PostTercero from "../services/getServices/PostTercero";
 
 import "./styles/modal.css";
 
 const ModalAddTercero = (props) => {
   const tiposDeIdentificacion = props.tiposDeIdentificacion;
-  console.log(tiposDeIdentificacion);
+  const identificacionRecibida = props.identificacionActualizada;
+  const [identificacionModalAddTercero, setIdentificacionModalAddTercero] =
+    useState(identificacionRecibida);
+  //   console.log(identificacionModalAddTercero);
+  //   console.log(tiposDeIdentificacion);
+  const [nuevoTercero, setNuevoTercero] = useState({
+    terceroId: 0,
+    coD_CLI: "",
+    nombre: "",
+    telefono: "",
+    direccion: "",
+    identificacion: "",
+    correo: "",
+    tipoIdentificacion: "",
+  });
+
+  const handleChangeTercero = (event) => {
+    const tempTercero = {
+      ...nuevoTercero,
+      [event.target.name]: event.target.value,
+    };
+    setNuevoTercero(tempTercero);
+  };
+  const handleChangeIdentificacion = (event) => {
+    setIdentificacionModalAddTercero(event.target.value);
+    const tempTercero = {
+      ...nuevoTercero,
+      [event.target.name]: event.target.value,
+    };
+    setNuevoTercero(tempTercero);
+  };
+
+  const onSubmitTercero = (newTercero) => {
+    console.log("submittercero");
+    console.log(newTercero);
+    PostTercero(newTercero);
+    props.handleSetTerceroModalAddTercero(newTercero);
+  };
+
   return (
     <>
       <div className="div-modal-add-tercero">
@@ -25,16 +64,16 @@ const ModalAddTercero = (props) => {
           </Modal.Header>
           <Modal.Body className="body-moda-add-tercero">
             <form>
-              <div class="row mb-3">
+              <div className="row mb-3">
                 <label class="col-sm-4 col-form-label">
                   Tipo de Identificación
                 </label>
-                <div class="col-sm-8">
+                <div className="col-sm-8">
                   <select
                     className="form-select modal-tercero-input"
                     name="tipoIdentificacion"
-                    value={""}
-                    // onChange={handleChangeTercero}
+                    value={nuevoTercero.tipoIdentificacion}
+                    onChange={handleChangeTercero}
                   >
                     <option value="">Selecciona tipo identificación</option>
                     {tiposDeIdentificacion?.map((elemento) => (
@@ -48,49 +87,66 @@ const ModalAddTercero = (props) => {
                   </select>
                 </div>
               </div>
-              <div class="row mb-3">
-                <label class="col-sm-4 col-form-label">Identificación</label>
-                <div class="col-sm-8">
+              <div className="row mb-3">
+                <label className="col-sm-4 col-form-label">
+                  Identificación
+                </label>
+                <div className="col-sm-8">
                   <input
-                    type=""
-                    class="form-control modal-tercero-input"
+                    type="text"
+                    className="form-control modal-tercero-input"
+                    name="identificacion"
+                    value={nuevoTercero.identificacion}
+                    onChange={handleChangeTercero}
                   ></input>
                 </div>
               </div>
 
-              <div class="row mb-3">
-                <label class="col-sm-4 col-form-label">Nombre</label>
-                <div class="col-sm-8">
+              <div className="row mb-3">
+                <label className="col-sm-4 col-form-label">Nombre</label>
+                <div className="col-sm-8">
                   <input
                     type="text"
-                    class="form-control modal-tercero-input"
+                    className="form-control modal-tercero-input"
+                    name="nombre"
+                    value={nuevoTercero.nombre}
+                    onChange={handleChangeTercero}
                   ></input>
                 </div>
               </div>
-              <div class="row mb-3">
-                <label class="col-sm-4 col-form-label">Dirección</label>
-                <div class="col-sm-8">
+              <div className="row mb-3">
+                <label className="col-sm-4 col-form-label">Dirección</label>
+                <div className="col-sm-8">
                   <input
                     type="text"
-                    class="form-control modal-tercero-input"
+                    className="form-control modal-tercero-input"
+                    name="direccion"
+                    value={nuevoTercero.direccion}
+                    onChange={handleChangeTercero}
                   ></input>
                 </div>
               </div>
-              <div class="row mb-3">
-                <label class="col-sm-4 col-form-label">Teléfono</label>
-                <div class="col-sm-8">
+              <div className="row mb-3">
+                <label className="col-sm-4 col-form-label">Teléfono</label>
+                <div className="col-sm-8">
                   <input
                     type="text"
                     class="form-control modal-tercero-input"
+                    name="telefono"
+                    value={nuevoTercero.telefono}
+                    onChange={handleChangeTercero}
                   ></input>
                 </div>
               </div>
-              <div class="row mb-3">
-                <label class="col-sm-4 col-form-label">Correo</label>
-                <div class="col-sm-8">
+              <div className="row mb-3">
+                <label className="col-sm-4 col-form-label">Correo</label>
+                <div className="col-sm-8">
                   <input
                     type="text"
-                    class="form-control modal-tercero-input"
+                    className="form-control modal-tercero-input"
+                    name="correo"
+                    value={nuevoTercero.correo}
+                    onChange={handleChangeTercero}
                   ></input>
                 </div>
               </div>
@@ -109,10 +165,11 @@ const ModalAddTercero = (props) => {
             <Button
               className="botton-medium-blue-modal"
               onClick={() => {
+                onSubmitTercero(nuevoTercero);
                 props.handleShowAddTercero(false);
               }}
             >
-              No Enviar e Imprimir
+              Agregar
             </Button>
           </Modal.Footer>
         </Modal>

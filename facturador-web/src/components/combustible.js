@@ -19,7 +19,7 @@ const Combustible = () => {
   const handleShowAddTercero = (show) => setShowAddTercero(show);
 
   // ADD TERCERO MODAL
-
+  const [identificacion, setIdentificacion] = useState("");
   const [showFacturaElectronica, setShowFacturaElectronica] = useState(false);
 
   const handleCloseFacturaElectronica = () => setShowFacturaElectronica(false);
@@ -49,7 +49,7 @@ const Combustible = () => {
   const [formasDePago, setformasDePago] = useState([]);
   const [islaSelect, setIslaSelect] = useState("");
   const [caraSelect, setCaraSelect] = useState("");
-  const [identificacion, setIdentificacion] = useState("");
+
   const [tercero, setTercero] = useState({
     terceroId: 0,
     coD_CLI: "",
@@ -60,6 +60,12 @@ const Combustible = () => {
     correo: "",
     tipoIdentificacion: 0,
   });
+  function handleSetTerceroModalAddTercero(newTercero) {
+    setTercero(newTercero);
+    const tempFactura = { ...ultimaFactura, tercero: newTercero };
+    setUltimaFactura(tempFactura);
+    setIdentificacion(newTercero.identificacion);
+  }
   const [ultimaFactura, setUltimaFactura] = useState({
     placa: "",
     kilometraje: "",
@@ -87,8 +93,8 @@ const Combustible = () => {
 
   const handleChangeIdentificacion = async (event) => {
     const nuevaIdentificacion = event.target.value;
-    setIdentificacion(nuevaIdentificacion);
     let nuevoTercero = await GetTercero(nuevaIdentificacion);
+    setIdentificacion(nuevaIdentificacion);
     setTerceroBusqueda(nuevoTercero);
     console.log(nuevoTercero.length);
     console.log(nuevoTercero);
@@ -96,7 +102,11 @@ const Combustible = () => {
       setTercero(nuevoTercero[0]);
       const tempFactura = { ...ultimaFactura, tercero: nuevoTercero[0] };
       setUltimaFactura(tempFactura);
+      // setIdentificacion(nuevoTercero[0].identificacion);
       setShowTerceroNoExiste(false);
+    } else {
+      console.log(nuevaIdentificacion);
+      // Actualiza identificacion aquí
     }
   };
 
@@ -251,7 +261,6 @@ const Combustible = () => {
                   showTerceroNoExiste={showTerceroNoExiste}
                   handleShowTerceroNoExiste={handleShowTerceroNoExiste}
                   handleNoCambiarTercero={handleNoCambiarTercero}
-                  identificacion={identificacion}
                   handleShowAddTercero={handleShowAddTercero}
                 ></AlertTercero>
               </div>
@@ -322,6 +331,7 @@ const Combustible = () => {
         <div className="container container-factura my-4">
           <div className=" factura px-2 w-100 h-100">
             <p>{ultimaFacturaTexto ? ultimaFacturaTexto : " "}</p>
+            <h1>{identificacion}</h1>
           </div>
         </div>
         <div className="d-flex justify-content-center">
@@ -337,9 +347,10 @@ const Combustible = () => {
           <ModalAddTercero
             showAddTercero={showAddTercero}
             handleShowAddTercero={handleShowAddTercero}
-            identificacion={identificacion}
+            identificacionActualizada={identificacion}
             tiposDeIdentificacion={tiposDeIdentificacion}
             handleNoCambiarTercero={handleNoCambiarTercero}
+            handleSetTerceroModalAddTercero={handleSetTerceroModalAddTercero}
           ></ModalAddTercero>
         </div>
       </div>
