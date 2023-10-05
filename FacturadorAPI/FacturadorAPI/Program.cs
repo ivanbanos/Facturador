@@ -1,5 +1,6 @@
 using FacturadorAPI.Models;
 using FacturadorAPI.Repository.Repo;
+using FacturadorEstacionesRepositorio;
 using MachineUtilizationApi;
 using MachineUtilizationApi.Application;
 using MachineUtilizationApi.Extensions;
@@ -32,6 +33,7 @@ builder.Services.Configure<InfoEstacion>(options => builder.Configuration.GetSec
 builder.Services.Configure<ConnectionStringSettings>(options => builder.Configuration.GetSection("ConnectionStrings").Bind(options));
 
 builder.Services.AddScoped<IConexionEstacionRemota, ConexionEstacionRemota>();
+builder.Services.AddScoped<IFidelizacion, FidelizacionConexionApi>();
 builder.Services.AddRepositories();
 
 //builder.Services.AddSingleton<IAuthentication, JWTAuthentication>();
