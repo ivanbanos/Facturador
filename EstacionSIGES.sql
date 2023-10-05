@@ -3562,3 +3562,64 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+CREATE procedure [dbo].GetVentaFidelizarAutomaticaPorVenta
+(@idVenta int)
+as
+begin try
+    set nocount on;
+	select TOP (1) Venta.total as ValorVenta, Fidelizado.documento as DocumentoFidelizado, Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo)   from Venta
+	inner join FacturasPOS on FacturasPOS.ventaId = Venta.Id
+	inner join Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
+	inner join Vehiculos on Vehiculos.idrom = Venta.Ibutton
+	inner join terceros on Vehiculos.terceroId = terceros.terceroId
+	inner join Fidelizado on Fidelizado.documento = terceros.identificacion
+	where venta.id = @idVenta
+	order by venta.id desc
+
+
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'GetTerceroByQuery')
+	DROP PROCEDURE [dbo].[GetTerceroByQuery]
+GO
+CREATE procedure [dbo].[GetTerceroByQuery]
+( 
+    @identificacion CHAR (15) 
+)
+as
+begin try
+    set nocount on;
+	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
+	from dbo.terceros 
+    inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
+    inner join vehiculos on terceros.terceroId = vehiculos.terceroId
+    where REPLACE(@identificacion, ' ', '') = identificacion
+    OR  REPLACE(@identificacion, ' ', '') = vehiculos.idrom
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO

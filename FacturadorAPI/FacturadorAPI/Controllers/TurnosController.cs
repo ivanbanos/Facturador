@@ -1,0 +1,41 @@
+﻿using FacturadorAPI.Application.Commands;
+using FacturadorAPI.Models;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using System.Net;
+
+namespace FacturadorAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class TurnosController : ControllerBase
+    {
+        private readonly ILogger<TurnosController> _logger;
+        private readonly IMediator _mediator;
+
+
+        public TurnosController(ILogger<TurnosController> logger, IMediator mediator)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        }
+
+        [HttpPost]
+        [Route("AbrirTurno/{isla}/{codigo}")]
+        [ProducesResponseType(typeof(IActionResult), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> AbrirTurno(int isla, string codigo, CancellationToken cancellationToken)
+        {
+            await _mediator.Send(new AbrirTurnoCommand(isla, codigo), cancellationToken);
+            return Ok();
+        }
+
+        [HttpPost]
+        [Route("CerrarTurno/{isla}/{codigo}")]
+        [ProducesResponseType(typeof(IActionResult), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> CerrarTurno(int isla, string codigo, CancellationToken cancellationToken)
+        {
+            await _mediator.Send(new CerrarTurnoCommand(isla, codigo), cancellationToken);
+            return Ok();
+        }
+    }
+}

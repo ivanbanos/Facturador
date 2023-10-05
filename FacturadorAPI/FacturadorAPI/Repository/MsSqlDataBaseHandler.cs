@@ -1,4 +1,6 @@
-﻿using FacturadorAPI.Models;
+﻿using Dominio.Entidades;
+using FactoradorEstacionesModelo.Fidelizacion;
+using FacturadorAPI.Models;
 using FacturadorAPI.Repository;
 using MachineUtilizationApi.Config;
 using Microsoft.Extensions.Logging;
@@ -100,7 +102,7 @@ namespace MachineUtilizationApi.Repository
             var reqDict = new Dictionary<string, object>
             {
             };
-            DataTable dt = await LoadDataTableFromStoredProcAsync("BuscarFormasPagosSiges", reqDict);
+            DataTable dt = await LoadDataTableFromStoredProcAsync("GetCanastilla", reqDict);
 
 
             return dt.ConvertirCanastilla();
@@ -322,6 +324,58 @@ namespace MachineUtilizationApi.Repository
                     {"@codigoFormaPago", codigoFormaPago },
                     {"@terceroId", terceroId },
                     {"@ventaId", idVenta }
+                            });
+        }
+
+        public async Task<Puntos> GetVentaFidelizarAutomaticaPorVenta(int idVenta)
+        {
+            DataTable dt = await LoadDataTableFromStoredProcAsync("GetVentaFidelizarAutomaticaPorVenta",
+                            new Dictionary<string, object>{
+
+                    {"@idVenta", idVenta },
+                            });
+            return dt.ConvertirPuntos().FirstOrDefault();
+        }
+
+        public async Task AddFidelizado(string documento, float puntos)
+        {
+            await LoadDataTableFromStoredProcAsync("AddFidelizado",
+                            new Dictionary<string, object>{
+
+                {"@documento",documento },
+                {"@puntos",puntos }
+                            });
+        }
+
+        public async Task<Tercero> GetTerceroByQuery(string identificacion)
+        {
+            var reqDict = new Dictionary<string, object>
+            {
+                    {"@identificacion", identificacion }
+            };
+            DataTable dt = await LoadDataTableFromStoredProcAsync("GetTerceroByQuery", reqDict);
+
+
+            return dt.ConvertirTercero().FirstOrDefault();
+        }
+
+        public async Task AbrirTurno(int isla, string codigo)
+        {
+            await LoadDataTableFromStoredProcAsync("AbrirTurno",
+                            new Dictionary<string, object>{
+
+                {"@codigo",codigo },
+                {"@IdIsla",isla }
+                            });
+        }
+
+        public async Task CerrarTurno(int isla, string codigo)
+        {
+            await LoadDataTableFromStoredProcAsync("CerrarTurno",
+                            new Dictionary<string, object>{
+
+                {"@codigo",codigo },
+                {"@IdIsla",isla }
                             });
         }
     }
