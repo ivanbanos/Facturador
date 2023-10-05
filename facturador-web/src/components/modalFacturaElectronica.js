@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { Modal, Button } from "react-bootstrap";
+import ImprimirFactura from "../services/getServices/ImprimirFactura";
+import EnviarFacturaElectronica from "../services/getServices/EnviarFacturaElectronica";
 
 import "./styles/modal.css";
 
 const ModalFacturaElectronica = (props) => {
   const handleCloseFacturaElectronica = props.handleCloseFacturaElectronica;
+  const ultimaFactura = props.ultimaFactura;
 
   return (
     <>
@@ -18,27 +21,28 @@ const ModalFacturaElectronica = (props) => {
         centered
       >
         <Modal.Header className="header-modal" closeButton>
-          <Modal.Title>Convertir a Factura Electrónica</Modal.Title>
+          <Modal.Title>Enviar Factura Electrónica</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          Desea convertir la orden de compra a una factura electrónica?
-        </Modal.Body>
+        <Modal.Body>Desea enviar la factura electrónica?</Modal.Body>
         <Modal.Footer>
           <Button
             className="botton-light-blue-modal"
             onClick={() => {
               handleCloseFacturaElectronica();
+              ImprimirFactura(ultimaFactura.ventaId, ultimaFactura);
+              EnviarFacturaElectronica(ultimaFactura.ventaId);
             }}
           >
-            Convertir a Factura Electrónica
+            Enviar e Imprimir
           </Button>
           <Button
             className="botton-medium-blue-modal"
             onClick={() => {
               handleCloseFacturaElectronica();
+              ImprimirFactura(ultimaFactura.ventaId, ultimaFactura);
             }}
           >
-            No convertir a Factura Electrónica
+            No Enviar e Imprimir
           </Button>
         </Modal.Footer>
       </Modal>

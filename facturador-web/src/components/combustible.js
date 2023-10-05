@@ -7,6 +7,7 @@ import GetFormasDePago from "../services/getServices/GetFormasDePago";
 import GetTiposDeIdentificacion from "../services/getServices/GetTiposDeIdentificacion";
 import GetUltimaFacturaPorCara from "../services/getServices/GetUltimaFacturaporCara";
 import GetUltimaFacturaPorCaraTexto from "../services/getServices/GetUltimaFacturaPorCaraTexto";
+import GetTercero from "../services/getServices/GetTercero";
 import ModalImprimir from "./modalImprimir";
 import ModalFacturaElectronica from "./modalFacturaElectronica";
 
@@ -25,7 +26,7 @@ const Combustible = () => {
   const [formasDePago, setformasDePago] = useState([]);
   const [islaSelect, setIslaSelect] = useState("");
   const [caraSelect, setCaraSelect] = useState("");
-
+  const [identificacion, setIdentificacion] = useState("");
   const [tercero, setTercero] = useState({
     terceroId: 0,
     coD_CLI: "",
@@ -40,6 +41,8 @@ const Combustible = () => {
     placa: "",
     kilometraje: "",
     codigoFormaPago: "",
+    consecutivo: 0,
+    ventaId: 1,
     tercero: {
       terceroId: 0,
       coD_CLI: "",
@@ -51,14 +54,47 @@ const Combustible = () => {
       tipoIdentificacion: 0,
     },
   });
+
   const handleChangeTercero = (event) => {
-    const name = event.target.name;
-    const value = event.target.value;
     const tempTercero = { ...tercero, [event.target.name]: event.target.value };
     const tempFactura = { ...ultimaFactura, tercero: tempTercero };
     setTercero(tempTercero);
     setUltimaFactura(tempFactura);
   };
+
+  const handleChangeIdentificacion = async (event) => {
+    const nuevaIdentificacion = event.target.value;
+    setIdentificacion(nuevaIdentificacion);
+    // const tempTercero = { ...tercero, [event.target.name]: event.target.value };
+    // setTercero(tempTercero);
+
+    let nuevoTercero = await GetTercero(nuevaIdentificacion);
+    console.log(nuevoTercero.length);
+    console.log(nuevoTercero);
+    if (nuevoTercero.length > 0) {
+      setTercero(nuevoTercero[0]);
+      const tempFactura = { ...ultimaFactura, tercero: nuevoTercero[0] };
+      setUltimaFactura(tempFactura);
+    }
+  };
+
+  // const handleChangeIdentificacion = async (event) => {
+  //   const nuevaIdentificacion = event.target.value;
+  //   let nuevoTercero = await GetTercero(nuevaIdentificacion);
+  //   console.log(nuevoTercero.length);
+  //   console.log(nuevoTercero);
+
+  //   const tempTercero = { ...tercero, [event.target.name]: event.target.value };
+
+  //   if (nuevoTercero.length > 0) {
+  //     const tempFactura = { ...ultimaFactura, tercero: nuevoTercero };
+  //     setUltimaFactura(tempFactura);
+  //   }
+
+  //   // Actualiza tercero con las nuevas propiedades de tempTercero
+  //   setTercero((prevTercero) => ({ ...prevTercero, ...tempTercero }));
+  // };
+
   const handleChangeFactura = (event) => {
     const name = event.target.name;
     const value = event.target.value;
@@ -94,7 +130,11 @@ const Combustible = () => {
   const fetchInformacionCliente = async (idCara) => {
     console.log(idCara);
     let factura = await GetUltimaFacturaPorCara(idCara);
-    factura && setUltimaFactura(factura);
+    if (factura) {
+      setUltimaFactura(factura);
+      setTercero(factura.tercero);
+      setIdentificacion(factura.tercero.identificacion);
+    }
 
     let facturaTexto = await GetUltimaFacturaPorCaraTexto(idCara);
     setUltimaFacturaTexto(facturaTexto);
@@ -174,33 +214,35 @@ const Combustible = () => {
               <div className="circulo my-2 mx-3"></div>
               <div className="fs-3 text-white">Información del Cliente</div>
             </div>
-            <select
-              className="form-select w-80 h-50 select-white-blue"
-              name="tipoIdentificacion"
-              value={ultimaFactura.tercero.tipoIdentificacion || ""}
-              onChange={handleChangeTercero}
-            >
-              <option value="">Selecciona tipo identificación</option>
-              {Array.isArray(tiposDeIdentificacion) &&
-                tiposDeIdentificacion.map((elemento) => (
-                  <option
-                    key={elemento.tipoIdentificacionId}
-                    value={elemento.tipoIdentificacionId}
-                  >
-                    {elemento.descripcion}
-                  </option>
-                ))}
-            </select>
-            <div className="mt-2 p-0">
-              <input
-                type="text"
-                className="form-control dark-blue-input "
-                placeholder="Identificación"
-                name="identificacion"
-                value={ultimaFactura.tercero.identificacion || ""}
+            <form className="div-tercero-identificacion">
+              <select
+                className="form-select w-80 h-50 select-white-blue"
+                name="tipoIdentificacion"
+                value={ultimaFactura.tercero.tipoIdentificacion || ""}
                 onChange={handleChangeTercero}
-              ></input>
-            </div>
+              >
+                <option value="">Selecciona tipo identificación</option>
+                {Array.isArray(tiposDeIdentificacion) &&
+                  tiposDeIdentificacion.map((elemento) => (
+                    <option
+                      key={elemento.tipoIdentificacionId}
+                      value={elemento.tipoIdentificacionId}
+                    >
+                      {elemento.descripcion}
+                    </option>
+                  ))}
+              </select>
+              <div className="mt-2 p-0">
+                <input
+                  type="text"
+                  className="form-control dark-blue-input "
+                  placeholder="Identificación"
+                  name="identificacion"
+                  value={identificacion || ""}
+                  onChange={handleChangeIdentificacion}
+                ></input>
+              </div>
+            </form>
             <div className="mt-2">
               <div className="form-control dark-blue-input row d-flex">
                 <div className="col-4">
@@ -210,42 +252,10 @@ const Combustible = () => {
                   <p className="text-end">Dirección:</p>
                 </div>
                 <div className="col-7">
-                  <p>
-                    <input
-                      type="text"
-                      className=" dark-blue-input "
-                      name="nombre"
-                      value={ultimaFactura.tercero.nombre || ""}
-                      onChange={handleChangeTercero}
-                    ></input>
-                  </p>
-                  <p>
-                    <input
-                      type="tel"
-                      className=" dark-blue-input "
-                      name="telefono"
-                      value={ultimaFactura.tercero.telefono || ""}
-                      onChange={handleChangeTercero}
-                    ></input>
-                  </p>
-                  <p>
-                    <input
-                      type="email"
-                      className=" dark-blue-input "
-                      name="correo"
-                      value={ultimaFactura.tercero.correo || ""}
-                      onChange={handleChangeTercero}
-                    ></input>
-                  </p>
-                  <p>
-                    <input
-                      type="text"
-                      className=" dark-blue-input "
-                      name="direccion"
-                      value={ultimaFactura.tercero.direccion || ""}
-                      onChange={handleChangeTercero}
-                    ></input>
-                  </p>
+                  <p>{ultimaFactura.tercero.nombre || ""}</p>
+                  <p>{ultimaFactura.tercero.telefono || ""}</p>
+                  <p>{ultimaFactura.tercero.correo || ""}</p>
+                  <p>{ultimaFactura.tercero.direccion || ""}</p>
                 </div>
               </div>
             </div>
@@ -309,21 +319,28 @@ const Combustible = () => {
           <ModalFacturaElectronica
             handleCloseFacturaElectronica={handleCloseFacturaElectronica}
             showFacturaElectronica={showFacturaElectronica}
+            ultimaFactura={ultimaFactura}
           ></ModalFacturaElectronica>
         </div>
       </div>
       <div className="col-3  right-column columnas">
         <div className="button-container1"></div>
         <div className="d-flex flex-column align-items-center button-container">
-          <button className="botton-green m-3 right-botton">
-            <span className="">Abrir</span> <span>turno</span>
-          </button>
-          <button className="botton-medium-blue m-3 right-botton">
-            <span>Cerrar</span> <span>turno</span>
-          </button>
-          <button className="botton-light-blue right-botton m-3">
-            <span>Fidelizar</span> <span>Venta</span>
-          </button>
+          {turno === null && (
+            <button className="botton-green m-3 right-botton">
+              <span className="">Abrir</span> <span>turno</span>
+            </button>
+          )}
+          {turno && (
+            <button className="botton-medium-blue m-3 right-botton">
+              <span>Cerrar</span> <span>turno</span>
+            </button>
+          )}
+          {turno && (
+            <button className="botton-light-blue right-botton m-3">
+              <span>Fidelizar</span> <span>Venta</span>
+            </button>
+          )}
         </div>
       </div>
     </>

@@ -1,9 +1,11 @@
 import configData from "../../components/config.json";
 
-const ImprimirFactura = async (id_venta, ultimaFactura) => {
+const EnviarFacturaElectronica = async (id_venta) => {
   try {
     const response = await fetch(
-      configData.SERVER_URL + "/api/Facturas/Imprimir/" + id_venta,
+      configData.SERVER_URL +
+        "/api/Facturas/EnviarFacturaElectronica/" +
+        id_venta,
       {
         method: "POST",
         mode: "cors",
@@ -14,13 +16,13 @@ const ImprimirFactura = async (id_venta, ultimaFactura) => {
           "Access-Control-Allow-Headers": "Content-Type",
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
-          body: JSON.stringify(ultimaFactura),
         },
       }
     );
     console.log(response.status);
     if (response.status === 200) {
       let respuesta = await response.json();
+      console.log(respuesta);
       return respuesta;
     }
     if (response.status === 403) {
@@ -32,4 +34,4 @@ const ImprimirFactura = async (id_venta, ultimaFactura) => {
   }
 };
 
-export default ImprimirFactura;
+export default EnviarFacturaElectronica;

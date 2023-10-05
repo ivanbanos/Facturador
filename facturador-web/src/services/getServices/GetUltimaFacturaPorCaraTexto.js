@@ -23,16 +23,15 @@ const GetUltimaFacturaPorCaraTexto = async (id_cara) => {
 
     console.log(response.status);
     if (response.status === 200) {
-      console.log("success");
       return await response.json();
     }
     if (response.status === 403) {
-      return "fail 1";
+      return "fail";
     }
-    return "fail 2";
+    return "fail";
   } catch (error) {
     console.log(error);
-    return "fail 3";
+    return "fail";
   }
 };
 
