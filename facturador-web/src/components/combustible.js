@@ -10,13 +10,36 @@ import GetUltimaFacturaPorCaraTexto from "../services/getServices/GetUltimaFactu
 import GetTercero from "../services/getServices/GetTercero";
 import ModalImprimir from "./modalImprimir";
 import ModalFacturaElectronica from "./modalFacturaElectronica";
+import AlertTercero from "./alertaTercero";
+import ModalAddTercero from "./modalAddTercero";
 
 const Combustible = () => {
+  // ADD TERCERO MODAL
+  const [showAddTercero, setShowAddTercero] = useState(false);
+  const handleShowAddTercero = (show) => setShowAddTercero(show);
+
+  // ADD TERCERO MODAL
+
   const [showFacturaElectronica, setShowFacturaElectronica] = useState(false);
 
   const handleCloseFacturaElectronica = () => setShowFacturaElectronica(false);
   const handleShowFacturaElectrónica = () => setShowFacturaElectronica(true);
+  const [showTerceroNoExiste, setShowTerceroNoExiste] = useState(false);
 
+  function handleShowTerceroNoExiste(showTerceroNoExiste) {
+    setShowTerceroNoExiste(showTerceroNoExiste);
+  }
+  function handleNoCambiarTercero() {
+    console.log(ultimaFactura.tercero.identificacion);
+    setIdentificacion(ultimaFactura.tercero.identificacion);
+  }
+
+  const [terceroBusqueda, setTerceroBusqueda] = useState([{}]);
+  function onBlurTercero() {
+    if (terceroBusqueda.length === 0) {
+      setShowTerceroNoExiste(true);
+    } else setShowTerceroNoExiste(false);
+  }
   const [islas, setIslas] = useState([]);
 
   const [turno, setTurno] = useState(null);
@@ -65,35 +88,17 @@ const Combustible = () => {
   const handleChangeIdentificacion = async (event) => {
     const nuevaIdentificacion = event.target.value;
     setIdentificacion(nuevaIdentificacion);
-    // const tempTercero = { ...tercero, [event.target.name]: event.target.value };
-    // setTercero(tempTercero);
-
     let nuevoTercero = await GetTercero(nuevaIdentificacion);
+    setTerceroBusqueda(nuevoTercero);
     console.log(nuevoTercero.length);
     console.log(nuevoTercero);
     if (nuevoTercero.length > 0) {
       setTercero(nuevoTercero[0]);
       const tempFactura = { ...ultimaFactura, tercero: nuevoTercero[0] };
       setUltimaFactura(tempFactura);
+      setShowTerceroNoExiste(false);
     }
   };
-
-  // const handleChangeIdentificacion = async (event) => {
-  //   const nuevaIdentificacion = event.target.value;
-  //   let nuevoTercero = await GetTercero(nuevaIdentificacion);
-  //   console.log(nuevoTercero.length);
-  //   console.log(nuevoTercero);
-
-  //   const tempTercero = { ...tercero, [event.target.name]: event.target.value };
-
-  //   if (nuevoTercero.length > 0) {
-  //     const tempFactura = { ...ultimaFactura, tercero: nuevoTercero };
-  //     setUltimaFactura(tempFactura);
-  //   }
-
-  //   // Actualiza tercero con las nuevas propiedades de tempTercero
-  //   setTercero((prevTercero) => ({ ...prevTercero, ...tempTercero }));
-  // };
 
   const handleChangeFactura = (event) => {
     const name = event.target.name;
@@ -240,7 +245,15 @@ const Combustible = () => {
                   name="identificacion"
                   value={identificacion || ""}
                   onChange={handleChangeIdentificacion}
+                  onBlur={onBlurTercero}
                 ></input>
+                <AlertTercero
+                  showTerceroNoExiste={showTerceroNoExiste}
+                  handleShowTerceroNoExiste={handleShowTerceroNoExiste}
+                  handleNoCambiarTercero={handleNoCambiarTercero}
+                  identificacion={identificacion}
+                  handleShowAddTercero={handleShowAddTercero}
+                ></AlertTercero>
               </div>
             </form>
             <div className="mt-2">
@@ -321,6 +334,13 @@ const Combustible = () => {
             showFacturaElectronica={showFacturaElectronica}
             ultimaFactura={ultimaFactura}
           ></ModalFacturaElectronica>
+          <ModalAddTercero
+            showAddTercero={showAddTercero}
+            handleShowAddTercero={handleShowAddTercero}
+            identificacion={identificacion}
+            tiposDeIdentificacion={tiposDeIdentificacion}
+            handleNoCambiarTercero={handleNoCambiarTercero}
+          ></ModalAddTercero>
         </div>
       </div>
       <div className="col-3  right-column columnas">
