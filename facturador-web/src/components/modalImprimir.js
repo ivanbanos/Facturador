@@ -6,6 +6,16 @@ import ConvertirAOrden from "../services/getServices/ConvertirAOrden";
 import "./styles/modal.css";
 
 const ModalImprimir = (props) => {
+  const onClickImprimir = () => {
+    let tempUltimaFactura = {
+      ...props.ultimaFactura,
+      manguera: "",
+      iButton: "",
+      codigoInterno: "",
+    };
+    console.log(tempUltimaFactura);
+    props.handleSetUltimaFactura(tempUltimaFactura);
+  };
   const ultimaFactura = props.ultimaFactura;
   const [show, setShow] = useState(false);
   const [showConvertirAFactura, setShowConvertirAFactura] = useState(false);
@@ -38,11 +48,12 @@ const ModalImprimir = (props) => {
     <>
       <Button
         className="print-button-modal botton-light-blue-modal"
-        onClick={
+        onClick={() => {
           ultimaFactura.consecutivo === 0
-            ? handleShowConvertirAFactura
-            : handleShow
-        }
+            ? handleShowConvertirAFactura()
+            : handleShow();
+          onClickImprimir();
+        }}
       >
         Imprimir Factura
       </Button>

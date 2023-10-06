@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Modal, Button } from "react-bootstrap";
 import ImprimirFactura from "../services/getServices/ImprimirFactura";
 import EnviarFacturaElectronica from "../services/getServices/EnviarFacturaElectronica";
@@ -29,7 +29,8 @@ const ModalFacturaElectronica = (props) => {
             className="botton-light-blue-modal"
             onClick={() => {
               handleCloseFacturaElectronica();
-              ImprimirFactura(ultimaFactura.ventaId, ultimaFactura);
+              console.log(ultimaFactura);
+              ImprimirFactura(ultimaFactura);
               EnviarFacturaElectronica(ultimaFactura.ventaId);
             }}
           >

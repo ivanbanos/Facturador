@@ -24,14 +24,14 @@ const GetTurnoIsla = async (id_isla) => {
     }
     if (response.status === 204) {
       let turno = await response.json();
-      return turno;
+      return "";
     }
     if (response.status === 403) {
-      return "fail";
+      return "";
     }
-    return "fail";
+    return "";
   } catch (error) {
-    return "fail";
+    return "";
   }
 };
 

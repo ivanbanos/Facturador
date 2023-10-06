@@ -12,6 +12,7 @@ import ModalImprimir from "./modalImprimir";
 import ModalFacturaElectronica from "./modalFacturaElectronica";
 import AlertTercero from "./alertaTercero";
 import ModalAddTercero from "./modalAddTercero";
+import ModalAbrirTurno from "./modalAbrirTurno";
 
 const Combustible = () => {
   // ADD TERCERO MODAL
@@ -83,6 +84,9 @@ const Combustible = () => {
       tipoIdentificacion: 0,
     },
   });
+  const handleSetUltimaFactura = (factura) => {
+    setUltimaFactura(factura);
+  };
 
   const handleChangeTercero = (event) => {
     const tempTercero = { ...tercero, [event.target.name]: event.target.value };
@@ -96,8 +100,8 @@ const Combustible = () => {
     let nuevoTercero = await GetTercero(nuevaIdentificacion);
     setIdentificacion(nuevaIdentificacion);
     setTerceroBusqueda(nuevoTercero);
-    console.log(nuevoTercero.length);
-    console.log(nuevoTercero);
+    // console.log(nuevoTercero.length);
+    // console.log(nuevoTercero);
     if (nuevoTercero.length > 0) {
       setTercero(nuevoTercero[0]);
       const tempFactura = { ...ultimaFactura, tercero: nuevoTercero[0] };
@@ -111,8 +115,6 @@ const Combustible = () => {
   };
 
   const handleChangeFactura = (event) => {
-    const name = event.target.name;
-    const value = event.target.value;
     const tempFactura = {
       ...ultimaFactura,
       [event.target.name]: event.target.value,
@@ -186,7 +188,7 @@ const Combustible = () => {
                   {isla.isla}
                 </option>
               ))}
-            <option value="1">opcion1 </option>
+            <option value="5">opcion1 </option>
           </select>
         </div>
         <div className="info-div ">
@@ -197,8 +199,10 @@ const Combustible = () => {
                 <p className="text-end">Empleado:</p>
               </div>
               <div className="col-7">
-                <p>{turno === null ? "N/A" : turno.fechaApertura} </p>
-                <p>{turno === null ? "N/A" : turno.empleado}</p>
+                <p>
+                  {turno === null || turno === "" ? "N/A" : turno.fechaApertura}{" "}
+                </p>
+                <p>{turno === null || turno === "" ? "N/A" : turno.empleado}</p>
               </div>
             </div>
             <div className="d-flex flex-row">
@@ -338,6 +342,7 @@ const Combustible = () => {
           <ModalImprimir
             ultimaFactura={ultimaFactura}
             handleShowFacturaElectrónica={handleShowFacturaElectrónica}
+            handleSetUltimaFactura={handleSetUltimaFactura}
           ></ModalImprimir>
           <ModalFacturaElectronica
             handleCloseFacturaElectronica={handleCloseFacturaElectronica}
@@ -357,10 +362,11 @@ const Combustible = () => {
       <div className="col-3  right-column columnas">
         <div className="button-container1"></div>
         <div className="d-flex flex-column align-items-center button-container">
-          {turno === null && (
-            <button className="botton-green m-3 right-botton">
-              <span className="">Abrir</span> <span>turno</span>
-            </button>
+          {(turno === null || turno === "") && (
+            <ModalAbrirTurno></ModalAbrirTurno>
+            // <button className="botton-green m-3 right-botton">
+            //   <span className="">Abrir</span> <span>turno</span>
+            // </button>
           )}
           {turno && (
             <button className="botton-medium-blue m-3 right-botton">
