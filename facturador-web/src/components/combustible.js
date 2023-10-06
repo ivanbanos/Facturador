@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import "./styles/home.css";
-import GetIslas from "../services/getServices/GetIslas";
-import GetTurnoIsla from "../services/getServices/GetTurnoIsla";
-import GetCarasPorIsla from "../services/getServices/GetCarasPorIsla";
-import GetFormasDePago from "../services/getServices/GetFormasDePago";
-import GetTiposDeIdentificacion from "../services/getServices/GetTiposDeIdentificacion";
-import GetUltimaFacturaPorCara from "../services/getServices/GetUltimaFacturaporCara";
-import GetUltimaFacturaPorCaraTexto from "../services/getServices/GetUltimaFacturaPorCaraTexto";
+import GetIslas from "../Services/getServices/GetIslas";
+import GetTurnoIsla from "../Services/getServices/GetTurnoIsla";
+import GetCarasPorIsla from "../Services/getServices/GetCarasPorIsla";
+import GetFormasDePago from "../Services/getServices/GetFormasDePago";
+import GetTiposDeIdentificacion from "../Services/getServices/GetTiposDeIdentificacion";
+import GetUltimaFacturaPorCara from "../Services/getServices/GetUltimaFacturaporCara";
+import GetUltimaFacturaPorCaraTexto from "../Services/getServices/GetUltimaFacturaPorCaraTexto";
 import ModalImprimir from "./modalImprimir";
 import ModalFacturaElectronica from "./modalFacturaElectronica";
 
