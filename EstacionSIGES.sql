@@ -3562,7 +3562,7 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-CREATE procedure [dbo].GetVentaFidelizarAutomaticaPorVenta
+ALTER procedure [dbo].GetVentaFidelizarAutomaticaPorVenta
 (@idVenta int)
 as
 begin try
@@ -3602,7 +3602,7 @@ CREATE procedure [dbo].[GetTerceroByQuery]
 as
 begin try
     set nocount on;
-	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
+	select terceros.terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
 	from dbo.terceros 
     inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
     inner join vehiculos on terceros.terceroId = vehiculos.terceroId
