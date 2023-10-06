@@ -1,22 +1,25 @@
 import configData from "../../components/config.json";
 
-const ImprimirFactura = async (id_venta) => {
+const ImprimirFactura = async (ultimaFactura) => {
   try {
     const response = await fetch(
-      configData.SERVER_URL + "/api/Facturas/Imprimir/" + id_venta,
+      configData.SERVER_URL + "/api/Facturas/Imprimir",
       {
-        method: "GET",
+        method: "POST",
         mode: "cors",
         headers: {
           "Access-Control-Allow-Origin": "*",
-          Authorization: "Bearer ",
-          "sec-fetch-mode": "cors",
-          "Access-Control-Allow-Headers": "Content-Type",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+          "Content-Type": "application/json",
+          // Authorization: "Bearer ",
+          // "sec-fetch-mode": "cors",
+          // "Access-Control-Allow-Headers": "Content-Type",
+          // "Access-Control-Allow-Origin": "*",
+          // "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
         },
+        body: JSON.stringify(ultimaFactura),
       }
     );
+    console.log(response.status);
     if (response.status === 200) {
       let respuesta = await response.json();
       return respuesta;

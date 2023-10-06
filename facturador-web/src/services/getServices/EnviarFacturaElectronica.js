@@ -1,11 +1,13 @@
 import configData from "../../components/config.json";
 
-const GetTurnoIsla = async (id_isla) => {
+const EnviarFacturaElectronica = async (id_venta) => {
   try {
     const response = await fetch(
-      configData.SERVER_URL + "/api/Estacion/TurnoPorIsla?idIsla=" + id_isla,
+      configData.SERVER_URL +
+        "/api/Facturas/EnviarFacturaElectronica/" +
+        id_venta,
       {
-        method: "GET",
+        method: "POST",
         mode: "cors",
         headers: {
           "Access-Control-Allow-Origin": "*",
@@ -19,20 +21,17 @@ const GetTurnoIsla = async (id_isla) => {
     );
     console.log(response.status);
     if (response.status === 200) {
-      let turno = await response.json();
-      return turno;
-    }
-    if (response.status === 204) {
-      let turno = await response.json();
-      return "";
+      let respuesta = await response.json();
+      console.log(respuesta);
+      return respuesta;
     }
     if (response.status === 403) {
-      return "";
+      return "fail";
     }
-    return "";
+    return "fail";
   } catch (error) {
-    return "";
+    return "fail";
   }
 };
 
-export default GetTurnoIsla;
+export default EnviarFacturaElectronica;

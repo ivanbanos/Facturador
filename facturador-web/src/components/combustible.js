@@ -9,13 +9,37 @@ import GetUltimaFacturaPorCara from "../Services/getServices/GetUltimaFacturapor
 import GetUltimaFacturaPorCaraTexto from "../Services/getServices/GetUltimaFacturaPorCaraTexto";
 import ModalImprimir from "./modalImprimir";
 import ModalFacturaElectronica from "./modalFacturaElectronica";
+import AlertTercero from "./alertaTercero";
+import ModalAddTercero from "./modalAddTercero";
+import ModalAbrirTurno from "./modalAbrirTurno";
 
 const Combustible = () => {
+  // ADD TERCERO MODAL
+  const [showAddTercero, setShowAddTercero] = useState(false);
+  const handleShowAddTercero = (show) => setShowAddTercero(show);
+
+  // ADD TERCERO MODAL
+  const [identificacion, setIdentificacion] = useState("");
   const [showFacturaElectronica, setShowFacturaElectronica] = useState(false);
 
   const handleCloseFacturaElectronica = () => setShowFacturaElectronica(false);
   const handleShowFacturaElectrónica = () => setShowFacturaElectronica(true);
+  const [showTerceroNoExiste, setShowTerceroNoExiste] = useState(false);
 
+  function handleShowTerceroNoExiste(showTerceroNoExiste) {
+    setShowTerceroNoExiste(showTerceroNoExiste);
+  }
+  function handleNoCambiarTercero() {
+    console.log(ultimaFactura.tercero.identificacion);
+    setIdentificacion(ultimaFactura.tercero.identificacion);
+  }
+
+  const [terceroBusqueda, setTerceroBusqueda] = useState([{}]);
+  function onBlurTercero() {
+    if (terceroBusqueda.length === 0) {
+      setShowTerceroNoExiste(true);
+    } else setShowTerceroNoExiste(false);
+  }
   const [islas, setIslas] = useState([]);
 
   const [turno, setTurno] = useState(null);
@@ -36,10 +60,18 @@ const Combustible = () => {
     correo: "",
     tipoIdentificacion: 0,
   });
+  function handleSetTerceroModalAddTercero(newTercero) {
+    setTercero(newTercero);
+    const tempFactura = { ...ultimaFactura, tercero: newTercero };
+    setUltimaFactura(tempFactura);
+    setIdentificacion(newTercero.identificacion);
+  }
   const [ultimaFactura, setUltimaFactura] = useState({
     placa: "",
     kilometraje: "",
     codigoFormaPago: "",
+    consecutivo: 0,
+    ventaId: 1,
     tercero: {
       terceroId: 0,
       coD_CLI: "",
@@ -51,17 +83,37 @@ const Combustible = () => {
       tipoIdentificacion: 0,
     },
   });
+  const handleSetUltimaFactura = (factura) => {
+    setUltimaFactura(factura);
+  };
+
   const handleChangeTercero = (event) => {
-    const name = event.target.name;
-    const value = event.target.value;
     const tempTercero = { ...tercero, [event.target.name]: event.target.value };
     const tempFactura = { ...ultimaFactura, tercero: tempTercero };
     setTercero(tempTercero);
     setUltimaFactura(tempFactura);
   };
+
+  const handleChangeIdentificacion = async (event) => {
+    const nuevaIdentificacion = event.target.value;
+    let nuevoTercero = await GetTercero(nuevaIdentificacion);
+    setIdentificacion(nuevaIdentificacion);
+    setTerceroBusqueda(nuevoTercero);
+    // console.log(nuevoTercero.length);
+    // console.log(nuevoTercero);
+    if (nuevoTercero.length > 0) {
+      setTercero(nuevoTercero[0]);
+      const tempFactura = { ...ultimaFactura, tercero: nuevoTercero[0] };
+      setUltimaFactura(tempFactura);
+      // setIdentificacion(nuevoTercero[0].identificacion);
+      setShowTerceroNoExiste(false);
+    } else {
+      console.log(nuevaIdentificacion);
+      // Actualiza identificacion aquí
+    }
+  };
+
   const handleChangeFactura = (event) => {
-    const name = event.target.name;
-    const value = event.target.value;
     const tempFactura = {
       ...ultimaFactura,
       [event.target.name]: event.target.value,
@@ -94,7 +146,11 @@ const Combustible = () => {
   const fetchInformacionCliente = async (idCara) => {
     console.log(idCara);
     let factura = await GetUltimaFacturaPorCara(idCara);
-    factura && setUltimaFactura(factura);
+    if (factura) {
+      setUltimaFactura(factura);
+      setTercero(factura.tercero);
+      setIdentificacion(factura.tercero.identificacion);
+    }
 
     let facturaTexto = await GetUltimaFacturaPorCaraTexto(idCara);
     setUltimaFacturaTexto(facturaTexto);
@@ -131,7 +187,7 @@ const Combustible = () => {
                   {isla.isla}
                 </option>
               ))}
-            <option value="1">opcion1 </option>
+            <option value="5">opcion1 </option>
           </select>
         </div>
         <div className="info-div ">
@@ -142,8 +198,10 @@ const Combustible = () => {
                 <p className="text-end">Empleado:</p>
               </div>
               <div className="col-7">
-                <p>{turno === null ? "N/A" : turno.fechaApertura} </p>
-                <p>{turno === null ? "N/A" : turno.empleado}</p>
+                <p>
+                  {turno === null || turno === "" ? "N/A" : turno.fechaApertura}{" "}
+                </p>
+                <p>{turno === null || turno === "" ? "N/A" : turno.empleado}</p>
               </div>
             </div>
             <div className="d-flex flex-row">
@@ -174,33 +232,42 @@ const Combustible = () => {
               <div className="circulo my-2 mx-3"></div>
               <div className="fs-3 text-white">Información del Cliente</div>
             </div>
-            <select
-              className="form-select w-80 h-50 select-white-blue"
-              name="tipoIdentificacion"
-              value={ultimaFactura.tercero.tipoIdentificacion || ""}
-              onChange={handleChangeTercero}
-            >
-              <option value="">Selecciona tipo identificación</option>
-              {Array.isArray(tiposDeIdentificacion) &&
-                tiposDeIdentificacion.map((elemento) => (
-                  <option
-                    key={elemento.tipoIdentificacionId}
-                    value={elemento.tipoIdentificacionId}
-                  >
-                    {elemento.descripcion}
-                  </option>
-                ))}
-            </select>
-            <div className="mt-2 p-0">
-              <input
-                type="text"
-                className="form-control dark-blue-input "
-                placeholder="Identificación"
-                name="identificacion"
-                value={ultimaFactura.tercero.identificacion || ""}
+            <form className="div-tercero-identificacion">
+              <select
+                className="form-select w-80 h-50 select-white-blue"
+                name="tipoIdentificacion"
+                value={ultimaFactura.tercero.tipoIdentificacion || ""}
                 onChange={handleChangeTercero}
-              ></input>
-            </div>
+              >
+                <option value="">Selecciona tipo identificación</option>
+                {Array.isArray(tiposDeIdentificacion) &&
+                  tiposDeIdentificacion.map((elemento) => (
+                    <option
+                      key={elemento.tipoIdentificacionId}
+                      value={elemento.tipoIdentificacionId}
+                    >
+                      {elemento.descripcion}
+                    </option>
+                  ))}
+              </select>
+              <div className="mt-2 p-0">
+                <input
+                  type="text"
+                  className="form-control dark-blue-input "
+                  placeholder="Identificación"
+                  name="identificacion"
+                  value={identificacion || ""}
+                  onChange={handleChangeIdentificacion}
+                  onBlur={onBlurTercero}
+                ></input>
+                <AlertTercero
+                  showTerceroNoExiste={showTerceroNoExiste}
+                  handleShowTerceroNoExiste={handleShowTerceroNoExiste}
+                  handleNoCambiarTercero={handleNoCambiarTercero}
+                  handleShowAddTercero={handleShowAddTercero}
+                ></AlertTercero>
+              </div>
+            </form>
             <div className="mt-2">
               <div className="form-control dark-blue-input row d-flex">
                 <div className="col-4">
@@ -210,42 +277,10 @@ const Combustible = () => {
                   <p className="text-end">Dirección:</p>
                 </div>
                 <div className="col-7">
-                  <p>
-                    <input
-                      type="text"
-                      className=" dark-blue-input "
-                      name="nombre"
-                      value={ultimaFactura.tercero.nombre || ""}
-                      onChange={handleChangeTercero}
-                    ></input>
-                  </p>
-                  <p>
-                    <input
-                      type="tel"
-                      className=" dark-blue-input "
-                      name="telefono"
-                      value={ultimaFactura.tercero.telefono || ""}
-                      onChange={handleChangeTercero}
-                    ></input>
-                  </p>
-                  <p>
-                    <input
-                      type="email"
-                      className=" dark-blue-input "
-                      name="correo"
-                      value={ultimaFactura.tercero.correo || ""}
-                      onChange={handleChangeTercero}
-                    ></input>
-                  </p>
-                  <p>
-                    <input
-                      type="text"
-                      className=" dark-blue-input "
-                      name="direccion"
-                      value={ultimaFactura.tercero.direccion || ""}
-                      onChange={handleChangeTercero}
-                    ></input>
-                  </p>
+                  <p>{ultimaFactura.tercero.nombre || ""}</p>
+                  <p>{ultimaFactura.tercero.telefono || ""}</p>
+                  <p>{ultimaFactura.tercero.correo || ""}</p>
+                  <p>{ultimaFactura.tercero.direccion || ""}</p>
                 </div>
               </div>
             </div>
@@ -299,31 +334,49 @@ const Combustible = () => {
         <div className="container container-factura my-4">
           <div className=" factura px-2 w-100 h-100">
             <p>{ultimaFacturaTexto ? ultimaFacturaTexto : " "}</p>
+            <h1>{identificacion}</h1>
           </div>
         </div>
         <div className="d-flex justify-content-center">
           <ModalImprimir
             ultimaFactura={ultimaFactura}
             handleShowFacturaElectrónica={handleShowFacturaElectrónica}
+            handleSetUltimaFactura={handleSetUltimaFactura}
           ></ModalImprimir>
           <ModalFacturaElectronica
             handleCloseFacturaElectronica={handleCloseFacturaElectronica}
             showFacturaElectronica={showFacturaElectronica}
+            ultimaFactura={ultimaFactura}
           ></ModalFacturaElectronica>
+          <ModalAddTercero
+            showAddTercero={showAddTercero}
+            handleShowAddTercero={handleShowAddTercero}
+            identificacionActualizada={identificacion}
+            tiposDeIdentificacion={tiposDeIdentificacion}
+            handleNoCambiarTercero={handleNoCambiarTercero}
+            handleSetTerceroModalAddTercero={handleSetTerceroModalAddTercero}
+          ></ModalAddTercero>
         </div>
       </div>
       <div className="col-3  right-column columnas">
         <div className="button-container1"></div>
         <div className="d-flex flex-column align-items-center button-container">
-          <button className="botton-green m-3 right-botton">
-            <span className="">Abrir</span> <span>turno</span>
-          </button>
-          <button className="botton-medium-blue m-3 right-botton">
-            <span>Cerrar</span> <span>turno</span>
-          </button>
-          <button className="botton-light-blue right-botton m-3">
-            <span>Fidelizar</span> <span>Venta</span>
-          </button>
+          {(turno === null || turno === "") && (
+            <ModalAbrirTurno></ModalAbrirTurno>
+            // <button className="botton-green m-3 right-botton">
+            //   <span className="">Abrir</span> <span>turno</span>
+            // </button>
+          )}
+          {turno && (
+            <button className="botton-medium-blue m-3 right-botton">
+              <span>Cerrar</span> <span>turno</span>
+            </button>
+          )}
+          {turno && (
+            <button className="botton-light-blue right-botton m-3">
+              <span>Fidelizar</span> <span>Venta</span>
+            </button>
+          )}
         </div>
       </div>
     </>

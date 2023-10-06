@@ -17,8 +17,10 @@ const ConvertirAOrden = async (id_venta) => {
         },
       }
     );
+    console.log(response.status);
     if (response.status === 200) {
       let respuesta = await response.json();
+      console.log(respuesta);
       return respuesta;
     }
     if (response.status === 403) {

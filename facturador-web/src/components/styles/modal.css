@@ -55,3 +55,20 @@ font-family: 'orkneyBold';
     font-family: 'orkneyBold';
     width: 35%;
 }
+.body-moda-add-tercero{
+  background-color: #7CC5FC;
+  color: #002244;
+}
+.header-modal-add-tercero{
+  background-color: #002244;
+  color: white;
+  font-family: 'orkneyBold';
+}
+
+
+.modal-tercero-input{
+  border-radius: 10px;
+  border: 2px solid white;
+  background-color: #7CC5FC;
+  color: #002244;
+}
