@@ -1,7 +1,20 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "./styles/home.css";
+import GetCanastilla from "../services/getServices/GetCanastilla";
 
 const Canastilla = () => {
+  const [productos, setProductos] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        let productos = await GetCanastilla();
+        setProductos(productos);
+      } catch (error) {}
+    };
+
+    fetchData();
+  }, []);
   return (
     <>
       <div className="col-4 pt-4 pb-4 left-column columnas">
@@ -12,8 +25,16 @@ const Canastilla = () => {
               className="form-select d-inline w-80 h-50 select-white-blue"
               aria-label="Default select example"
             >
-              <option value="1">Producto 1</option>
-              <option value="2">Producto 2</option>
+              <option value="">Selecciona el producto</option>
+              {Array.isArray(productos) &&
+                productos.map((elemento) => (
+                  <option
+                    key={elemento.canastillaId}
+                    value={elemento.canastillaId}
+                  >
+                    {elemento.descripcion}
+                  </option>
+                ))}
             </select>
             <div className="d-flex flex-row">
               <label className="mx-3 d-inline fs-3">Cantidad</label>

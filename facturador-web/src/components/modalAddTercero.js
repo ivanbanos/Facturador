@@ -39,8 +39,6 @@ const ModalAddTercero = (props) => {
   };
 
   const onSubmitTercero = (newTercero) => {
-    console.log("submittercero");
-    console.log(newTercero);
     PostTercero(newTercero);
     props.handleSetTerceroModalAddTercero(newTercero);
   };
