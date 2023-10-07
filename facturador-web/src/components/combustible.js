@@ -12,13 +12,14 @@ import ModalFacturaElectronica from "./modalFacturaElectronica";
 import AlertTercero from "./alertaTercero";
 import ModalAddTercero from "./modalAddTercero";
 import ModalAbrirTurno from "./modalAbrirTurno";
+import CerrarTurno from "../services/getServices/CerrarTurno";
 
 const Combustible = () => {
-  // ADD TERCERO MODAL
+  const [codigoEmpleado, setCodigoEmpleado] = useState("");
+  const handleChangeCodigoEmpleado = (codigo) => setCodigoEmpleado(codigo);
   const [showAddTercero, setShowAddTercero] = useState(false);
   const handleShowAddTercero = (show) => setShowAddTercero(show);
 
-  // ADD TERCERO MODAL
   const [identificacion, setIdentificacion] = useState("");
   const [showFacturaElectronica, setShowFacturaElectronica] = useState(false);
 
@@ -48,6 +49,8 @@ const Combustible = () => {
   const [tiposDeIdentificacion, setTiposDeIdentificacion] = useState([]);
   const [formasDePago, setformasDePago] = useState([]);
   const [islaSelect, setIslaSelect] = useState("");
+  const [islaSelectName, setIslaSelectName] = useState("");
+
   const [caraSelect, setCaraSelect] = useState("");
 
   const [tercero, setTercero] = useState({
@@ -143,6 +146,14 @@ const Combustible = () => {
     console.log(caras);
   };
 
+  const cerrarTurno = async (islaSelect, codigoEmpleado) => {
+    await CerrarTurno(islaSelect, codigoEmpleado);
+    setTurno(null);
+    setCaras([]);
+    setIslaSelect("");
+    setIslaSelectName("");
+  };
+
   const fetchInformacionCliente = async (idCara) => {
     console.log(idCara);
     let factura = await GetUltimaFacturaPorCara(idCara);
@@ -177,17 +188,25 @@ const Combustible = () => {
               const selectIsla = event.target.value;
               setIslaSelect(selectIsla);
               fetcTurnoYCaras(selectIsla);
+              const selectedName =
+                event.target.options[event.target.selectedIndex].getAttribute(
+                  "data-name"
+                );
+              setIslaSelectName(selectedName);
+              console.log(selectedName);
             }}
           >
             <option value="">Selecciona la isla</option>
 
             {Array.isArray(islas) &&
               islas.map((isla) => (
-                <option key={isla.id} value={isla.id}>
+                <option key={isla.id} value={isla.id} data-name={isla.isla}>
                   {isla.isla}
                 </option>
               ))}
-            <option value="5">opcion1 </option>
+            <option value="5" data-name="pruebaisla">
+              opcion1{" "}
+            </option>
           </select>
         </div>
         <div className="info-div ">
@@ -334,7 +353,6 @@ const Combustible = () => {
         <div className="container container-factura my-4">
           <div className=" factura px-2 w-100 h-100">
             <p>{ultimaFacturaTexto ? ultimaFacturaTexto : " "}</p>
-            <h1>{identificacion}</h1>
           </div>
         </div>
         <div className="d-flex justify-content-center">
@@ -362,13 +380,20 @@ const Combustible = () => {
         <div className="button-container1"></div>
         <div className="d-flex flex-column align-items-center button-container">
           {(turno === null || turno === "") && (
-            <ModalAbrirTurno></ModalAbrirTurno>
-            // <button className="botton-green m-3 right-botton">
-            //   <span className="">Abrir</span> <span>turno</span>
-            // </button>
+            <ModalAbrirTurno
+              islaSelect={islaSelect}
+              islaSelectName={islaSelectName}
+              codigoEmpleado={codigoEmpleado}
+              handleChangeCodigoEmpleado={handleChangeCodigoEmpleado}
+            ></ModalAbrirTurno>
           )}
           {turno && (
-            <button className="botton-medium-blue m-3 right-botton">
+            <button
+              className="botton-medium-blue m-3 right-botton"
+              onClick={() => {
+                cerrarTurno(islaSelect, codigoEmpleado);
+              }}
+            >
               <span>Cerrar</span> <span>turno</span>
             </button>
           )}
