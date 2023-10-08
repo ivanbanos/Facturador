@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./styles/home.css";
-import GetCanastilla from "../services/getServices/GetCanastilla";
+import GetCanastilla from "../Services/getServices/GetCanastilla";
 
 const Canastilla = () => {
   const [productos, setProductos] = useState([]);

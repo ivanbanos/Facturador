@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button } from "react-bootstrap";
-import AbrirTurno from "../services/getServices/AbrirTurno";
+import AbrirTurno from "../Services/getServices/AbrirTurno";
 import "./styles/home.css";
 import "./styles/modal.css";
 

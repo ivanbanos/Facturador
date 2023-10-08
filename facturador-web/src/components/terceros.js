@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./styles/home.css";
 import "./styles/terceros.css";
-import PostTercero from "../services/getServices/PostTercero";
-import GetTiposDeIdentificacion from "../services/getServices/GetTiposDeIdentificacion";
+import PostTercero from "../Services/getServices/PostTercero";
+import GetTiposDeIdentificacion from "../Services/getServices/GetTiposDeIdentificacion";
 
 const Terceros = () => {
   const [tercero, setTercero] = useState({

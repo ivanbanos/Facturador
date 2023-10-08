@@ -1,7 +1,7 @@
 import React from "react";
 import { Modal, Button } from "react-bootstrap";
-import ImprimirFactura from "../services/getServices/ImprimirFactura";
-import EnviarFacturaElectronica from "../services/getServices/EnviarFacturaElectronica";
+import ImprimirFactura from "../Services/getServices/ImprimirFactura";
+import EnviarFacturaElectronica from "../Services/getServices/EnviarFacturaElectronica";
 
 import "./styles/modal.css";
 

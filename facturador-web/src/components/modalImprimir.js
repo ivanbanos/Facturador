@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button } from "react-bootstrap";
-import ConvertirAFactura from "../services/getServices/ConvertiraFactura";
-import ConvertirAOrden from "../services/getServices/ConvertirAOrden";
+import ConvertirAFactura from "../Services/getServices/ConvertiraFactura";
+import ConvertirAOrden from "../Services/getServices/ConvertirAOrden";
 
 import "./styles/modal.css";
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Modal, Button } from "react-bootstrap";
-import PostTercero from "../services/getServices/PostTercero";
+import PostTercero from "../Services/getServices/PostTercero";
 
 import "./styles/modal.css";
 
@@ -74,7 +74,7 @@ const ModalAddTercero = (props) => {
                     onChange={handleChangeTercero}
                   >
                     <option value="">Selecciona tipo identificación</option>
-                    {tiposDeIdentificacion?.map((elemento) => (
+                    {Array.isArray(tiposDeIdentificacion) && tiposDeIdentificacion?.map((elemento) => (
                       <option
                         key={elemento.tipoIdentificacionId}
                         value={elemento.tipoIdentificacionId}

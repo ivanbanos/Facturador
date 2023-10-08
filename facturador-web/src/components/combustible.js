@@ -12,7 +12,8 @@ import ModalFacturaElectronica from "./modalFacturaElectronica";
 import AlertTercero from "./alertaTercero";
 import ModalAddTercero from "./modalAddTercero";
 import ModalAbrirTurno from "./modalAbrirTurno";
-import CerrarTurno from "../services/getServices/CerrarTurno";
+import CerrarTurno from "../Services/getServices/CerrarTurno";
+import GetTercero from "../Services/getServices/GetTercero";
 
 const Combustible = () => {
   const [codigoEmpleado, setCodigoEmpleado] = useState("");
@@ -204,9 +205,6 @@ const Combustible = () => {
                   {isla.isla}
                 </option>
               ))}
-            <option value="5" data-name="pruebaisla">
-              opcion1{" "}
-            </option>
           </select>
         </div>
         <div className="info-div ">
@@ -242,7 +240,6 @@ const Combustible = () => {
                       {cara.descripcion}
                     </option>
                   ))}
-                <option value="1">opcion1 </option>
               </select>
             </div>
           </div>
@@ -325,7 +322,6 @@ const Combustible = () => {
                       {forma.descripcion}
                     </option>
                   ))}
-                <option value={"1"}>OpcionFP1</option>
               </select>
 
               <input
