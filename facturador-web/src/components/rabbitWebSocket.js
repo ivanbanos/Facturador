@@ -43,11 +43,10 @@ const SampleComponent = (props) => {
    // The compat mode syntax is totally different, converting to v5 syntax
     // Client is imported from '@stomp/stompjs'
     let client = new Client();
-    let randomNumer = 'Isla'+generateString(5);
     client.configure({
       brokerURL: configData.RabbitWebSocket,
       onConnect: () => {
-        client.subscribe(randomNumer, message => {
+        client.subscribe('VehiculosSICOM', message => {
           console.log(message.body);
             const now = new Date();
             setVehiculo(JSON.parse(message.body));
@@ -63,7 +62,6 @@ const SampleComponent = (props) => {
             } 
             setShow(true);
         });
-        client.publish({ destination: 'islas', body: randomNumer });
       },
     
     });
