@@ -25,12 +25,6 @@ namespace FacturadorAPI.Application.Commands
             try
             {
 
-                if (request.FacturaCanastilla.terceroId.terceroId == -1)
-                {
-
-                    //request.FacturaCanastilla.terceroId = _databaseHandler.crearTercero(0, new TipoIdentificacion() { TipoIdentificacionId = 1 }, _tercero.identificacion, "No identificado", "No identificado", "No identificado", "No identificado", "");
-
-                }
                 await _databaseHandler.GenerarFacturaCanastilla(request.FacturaCanastilla, true);
 
             }

@@ -227,12 +227,12 @@ namespace MachineUtilizationApi.Repository
             foreach (var t in facturaCanastilla.canastillas)
             {
                 var row = ventasIds.NewRow();
-                row["CanastillaId"] = t.Canastilla.CanastillaId;
-                row["Guid"] = t.Canastilla.guid;
-                row["descripcion"] = t.Canastilla.descripcion;
-                row["unidad"] = t.Canastilla.unidad;
-                row["precio"] = t.Canastilla.precio;
-                row["deleted"] = t.Canastilla.deleted;
+                row["CanastillaId"] = t.canastillaId;
+                row["Guid"] = t.canastillaGuid;
+                row["descripcion"] = t.descripcion;
+                row["unidad"] = t.unidad;
+                row["precio"] = t.precio;
+                row["deleted"] = t.deleted;
                 row["iva"] = t.iva;
                 row["cantidad"] = t.cantidad;
                 ventasIds.Rows.Add(row);
@@ -241,9 +241,9 @@ namespace MachineUtilizationApi.Repository
             {
                 {"@canastillaIds",ventasIds},
 
-                {"@terceroId",facturaCanastilla.terceroId.terceroId},
+                {"@terceroId",facturaCanastilla.terceroId},
 
-                {"@COD_FOR_PAG",facturaCanastilla.codigoFormaPago.Id},
+                {"@COD_FOR_PAG",facturaCanastilla.codigoFormaPago},
 
                 {"@imprimir", imprimir},
 
