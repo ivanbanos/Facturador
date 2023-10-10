@@ -2,7 +2,7 @@ import { useState } from "react";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
 
-function AlertTercero(props) {
+function AlertTerceroNoExisteCnastilla(props) {
   return (
     <>
       <Alert show={props.showTerceroNoExiste} variant="success">
@@ -20,7 +20,7 @@ function AlertTercero(props) {
             }}
             variant="outline-success"
           >
-            No Cambiar Tercero
+            Cancelar
           </Button>
           <Button
             onClick={() => {
@@ -37,4 +37,4 @@ function AlertTercero(props) {
   );
 }
 
-export default AlertTercero;
+export default AlertTerceroNoExisteCnastilla;
