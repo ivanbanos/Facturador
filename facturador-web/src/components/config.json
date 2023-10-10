@@ -1,4 +1,4 @@
 {
-  "SERVER_URL": "https://localhost:7217",
+  "SERVER_URL": "https://localhost:7220",
   "RabbitWebSocket": "ws://localhost:15674/ws"
 }
