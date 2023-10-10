@@ -70,7 +70,7 @@ const Combustible = () => {
     setUltimaFactura(tempFactura);
     setIdentificacion(newTercero.identificacion);
   }
-  const [ultimaFactura, setUltimaFactura] = useState({
+  const ultimaFacturaEstadoInicial = {
     placa: "",
     kilometraje: "",
     codigoFormaPago: "",
@@ -86,9 +86,18 @@ const Combustible = () => {
       correo: "",
       tipoIdentificacion: 0,
     },
-  });
+  };
+  const [ultimaFactura, setUltimaFactura] = useState(
+    ultimaFacturaEstadoInicial
+  );
+
   const handleSetUltimaFactura = (factura) => {
     setUltimaFactura(factura);
+  };
+  const resetEstadoInicial = () => {
+    handleSetUltimaFactura(ultimaFacturaEstadoInicial);
+    setIdentificacion("");
+    setUltimaFacturaTexto("");
   };
 
   const handleChangeTercero = (event) => {
@@ -100,8 +109,9 @@ const Combustible = () => {
 
   const handleChangeIdentificacion = async (event) => {
     const nuevaIdentificacion = event.target.value;
-    let nuevoTercero = await GetTercero(nuevaIdentificacion);
     setIdentificacion(nuevaIdentificacion);
+    let nuevoTercero = await GetTercero(nuevaIdentificacion);
+
     setTerceroBusqueda(nuevoTercero);
     // console.log(nuevoTercero.length);
     // console.log(nuevoTercero);
@@ -361,6 +371,7 @@ const Combustible = () => {
             handleCloseFacturaElectronica={handleCloseFacturaElectronica}
             showFacturaElectronica={showFacturaElectronica}
             ultimaFactura={ultimaFactura}
+            resetEstadoInicial={resetEstadoInicial}
           ></ModalFacturaElectronica>
           <ModalAddTercero
             showAddTercero={showAddTercero}

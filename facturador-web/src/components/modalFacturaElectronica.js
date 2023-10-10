@@ -32,6 +32,7 @@ const ModalFacturaElectronica = (props) => {
               console.log(ultimaFactura);
               ImprimirFactura(ultimaFactura);
               EnviarFacturaElectronica(ultimaFactura.ventaId);
+              props.resetEstadoInicial();
             }}
           >
             Enviar e Imprimir
@@ -41,6 +42,7 @@ const ModalFacturaElectronica = (props) => {
             onClick={() => {
               handleCloseFacturaElectronica();
               ImprimirFactura(ultimaFactura.ventaId, ultimaFactura);
+              props.resetEstadoInicial();
             }}
           >
             No Enviar e Imprimir

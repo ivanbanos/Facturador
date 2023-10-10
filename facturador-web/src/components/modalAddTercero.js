@@ -6,12 +6,7 @@ import "./styles/modal.css";
 
 const ModalAddTercero = (props) => {
   const tiposDeIdentificacion = props.tiposDeIdentificacion;
-  const identificacionRecibida = props.identificacionActualizada;
-  const [identificacionModalAddTercero, setIdentificacionModalAddTercero] =
-    useState(identificacionRecibida);
-  //   console.log(identificacionModalAddTercero);
-  //   console.log(tiposDeIdentificacion);
-  const [nuevoTercero, setNuevoTercero] = useState({
+  const terceroInicial = {
     terceroId: 0,
     coD_CLI: "",
     nombre: "",
@@ -20,17 +15,10 @@ const ModalAddTercero = (props) => {
     identificacion: "",
     correo: "",
     tipoIdentificacion: "",
-  });
+  };
+  const [nuevoTercero, setNuevoTercero] = useState(terceroInicial);
 
   const handleChangeTercero = (event) => {
-    const tempTercero = {
-      ...nuevoTercero,
-      [event.target.name]: event.target.value,
-    };
-    setNuevoTercero(tempTercero);
-  };
-  const handleChangeIdentificacion = (event) => {
-    setIdentificacionModalAddTercero(event.target.value);
     const tempTercero = {
       ...nuevoTercero,
       [event.target.name]: event.target.value,
@@ -40,7 +28,8 @@ const ModalAddTercero = (props) => {
 
   const onSubmitTercero = (newTercero) => {
     PostTercero(newTercero);
-    props.handleSetTerceroModalAddTercero(newTercero);
+    props.handleSetTerceroModalAddTercero &&
+      props.handleSetTerceroModalAddTercero(newTercero);
   };
 
   return (
@@ -74,14 +63,15 @@ const ModalAddTercero = (props) => {
                     onChange={handleChangeTercero}
                   >
                     <option value="">Selecciona tipo identificación</option>
-                    {Array.isArray(tiposDeIdentificacion) && tiposDeIdentificacion?.map((elemento) => (
-                      <option
-                        key={elemento.tipoIdentificacionId}
-                        value={elemento.tipoIdentificacionId}
-                      >
-                        {elemento.descripcion}
-                      </option>
-                    ))}
+                    {Array.isArray(tiposDeIdentificacion) &&
+                      tiposDeIdentificacion?.map((elemento) => (
+                        <option
+                          key={elemento.tipoIdentificacionId}
+                          value={elemento.tipoIdentificacionId}
+                        >
+                          {elemento.descripcion}
+                        </option>
+                      ))}
                   </select>
                 </div>
               </div>
@@ -156,6 +146,7 @@ const ModalAddTercero = (props) => {
               onClick={() => {
                 props.handleShowAddTercero(false);
                 props.handleNoCambiarTercero();
+                setNuevoTercero(terceroInicial);
               }}
             >
               Cancelar
@@ -164,6 +155,7 @@ const ModalAddTercero = (props) => {
               className="botton-medium-blue-modal"
               onClick={() => {
                 onSubmitTercero(nuevoTercero);
+                setNuevoTercero(terceroInicial);
                 props.handleShowAddTercero(false);
               }}
             >

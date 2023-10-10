@@ -142,6 +142,16 @@ const Terceros = () => {
             onClick={() => {
               console.log(tercero);
               PostTercero(tercero);
+              setTercero({
+                terceroId: 0,
+                coD_CLI: "",
+                nombre: "",
+                telefono: "",
+                direccion: "",
+                identificacion: "",
+                correo: "",
+                tipoIdentificacion: 0,
+              });
             }}
           >
             Agregar
