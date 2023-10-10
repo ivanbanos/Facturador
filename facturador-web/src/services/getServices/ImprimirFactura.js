@@ -3,7 +3,19 @@ import configData from "../../components/config.json";
 const ImprimirFactura = async (ultimaFactura) => {
   try {
     const response = await fetch(
-      configData.SERVER_URL + "/api/Facturas/Imprimir",
+      configData.SERVER_URL +
+        "/api/Facturas/Imprimir/" +
+        ultimaFactura.facturaPOSId +
+        "/" +
+        ultimaFactura.tercero.terceroId +
+        "/" +
+        ultimaFactura.codigoFormaPago +
+        "/" +
+        ultimaFactura.ventaId +
+        "/" +
+        ultimaFactura.placa +
+        "/" +
+        ultimaFactura.kilometraje,
       {
         method: "POST",
         mode: "cors",
@@ -16,12 +28,12 @@ const ImprimirFactura = async (ultimaFactura) => {
           // "Access-Control-Allow-Origin": "*",
           // "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
         },
-        body: JSON.stringify(ultimaFactura),
       }
     );
     console.log(response.status);
     if (response.status === 200) {
       let respuesta = await response.json();
+
       return respuesta;
     }
     if (response.status === 403) {

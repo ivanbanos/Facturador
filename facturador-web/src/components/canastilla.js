@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import "./styles/home.css";
 import GetCanastilla from "../Services/getServices/GetCanastilla";
 import GetTercero from "../Services/getServices/GetTercero";
+import PostCanastilla from "../Services/getServices/PostCanastilla";
 import GetTiposDeIdentificacion from "../Services/getServices/GetTiposDeIdentificacion";
 import GetFormasDePago from "../Services/getServices/GetFormasDePago";
 import AlertTerceroNoExisteCnastilla from "./alertTerceroNoExisteCanastilla";
 import ModalAddTercero from "./modalAddTercero";
 const Canastilla = () => {
   const [productos, setProductos] = useState([]);
-  const [objetoPostCanastilla, setObjetoPostCanastilla] = useState({
+  const valorInicialObjetoPostCanastilla = {
     facturasCanastillaId: 0,
     fecha: new Date().toISOString(),
     resolucion: {
@@ -44,26 +45,53 @@ const Canastilla = () => {
     descuento: 0,
     iva: 0,
     total: 0,
-  });
+  };
+  const [objetoPostCanastilla, setObjetoPostCanastilla] = useState(
+    valorInicialObjetoPostCanastilla
+  );
   const [canastillas, setCanastillas] = useState([]);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
   const [cantidadSeleccionada, setCantidadSeleccionada] = useState(0);
-  const [objetoCanastillas, setObjetoCanastillas] = useState({
-    canastilla: {
-      canastillaId: 0,
-      descripcion: "",
-      unidad: "",
-      precio: 0,
-      idWeb: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      iva: 0,
+  const valorInicialObjetoCanastillas = {
+    facturasCanastillaId: 0,
+    fecha: new Date().toISOString(),
+    resolucion: {
+      descripcionResolucion: "string",
+      fechaInicioResolucion: "2023-10-09T16:49:52.939Z",
+      fechaFinalResolucion: "2023-10-09T16:49:52.939Z",
+      consecutivoInicial: 0,
+      consecutivoFinal: 0,
+      consecutivoActual: 0,
+      tipo: 0,
+      habilitada: true,
     },
-    cantidad: 0,
-    precio: 0,
+    consecutivo: 0,
+    estado: "",
+    terceroId: {
+      terceroId: 0,
+      coD_CLI: "",
+      nombre: "",
+      telefono: "",
+      direccion: "",
+      identificacion: "",
+      correo: "",
+      tipoIdentificacion: 0,
+    },
+    impresa: 0,
+    enviada: 0,
+    codigoFormaPago: {
+      id: 0,
+      descripcion: "",
+    },
+    canastillas: [],
     subtotal: 0,
+    descuento: 0,
     iva: 0,
     total: 0,
-    precioBruto: 0,
-  });
+  };
+  const [objetoCanastillas, setObjetoCanastillas] = useState(
+    valorInicialObjetoCanastillas
+  );
   const [tercero, setTercero] = useState({
     terceroId: 0,
     coD_CLI: "",
@@ -122,6 +150,8 @@ const Canastilla = () => {
 
     setIdentificacion(newTercero.identificacion);
   }
+  const [totalItems, setTotalItems] = useState(0);
+  const [subTotal, setSubTotal] = useState(0);
   function onClickAgregarProducto() {
     if (productoSeleccionado) {
       let tempObjetoCanastillas = {
@@ -129,6 +159,7 @@ const Canastilla = () => {
         canastilla: productoSeleccionado,
         cantidad: cantidadSeleccionada,
       };
+
       setObjetoCanastillas(tempObjetoCanastillas);
 
       let tempCanastillas = [...canastillas];
@@ -142,8 +173,34 @@ const Canastilla = () => {
       console.log(tempObjetoPostCanastilla);
       setCantidadSeleccionada(0);
       setProductoSeleccionado(null);
+      let counterTotalItems = 0;
+      let counterSubTotal = 0;
+      for (let item of tempCanastillas) {
+        counterTotalItems += item.cantidad;
+        counterSubTotal += item.canastilla.precio * item.cantidad;
+      }
+      setTotalItems(counterTotalItems);
+      setSubTotal(counterSubTotal);
+      console.log(counterSubTotal);
     }
   }
+  const handleChangeFormaPago = (event) => {
+    const selectedPFormaId = event.target.value;
+    const selectedFormaPago = formasDePago.find(
+      (forma) => forma.id === parseInt(selectedPFormaId, 10)
+    );
+    const tempObjetoPostCanastilla = {
+      ...objetoPostCanastilla,
+      codigoFormaPago: selectedFormaPago,
+    };
+    setObjetoPostCanastilla(tempObjetoPostCanastilla);
+    console.log(tempObjetoPostCanastilla);
+  };
+  const onClickGenerarVenta = (canastilla) => {
+    console.log(canastilla);
+    PostCanastilla(canastilla);
+    // setObjetoPostCanastilla(valorInicialObjetoPostCanastilla)
+  };
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -245,13 +302,13 @@ const Canastilla = () => {
                   {objetoPostCanastilla.terceroId.tipoIdentificacion}
                 </p> */}
               </div>
-              {/* <div className="info-venta-div d-flex flex-column align-items-end">
+              <div className="info-venta-div d-flex flex-column align-items-end">
                 <select
                   className="form-select  w-75 h-50 select-white-blue"
                   aria-label="Default select example"
                   name="codigoFormaPago"
                   value={objetoPostCanastilla.codigoFormaPago.id || ""}
-                  // onChange={handleChangeFactura}
+                  onChange={handleChangeFormaPago}
                 >
                   <option value="">Forma de pago</option>
                   {Array.isArray(formasDePago) &&
@@ -261,42 +318,45 @@ const Canastilla = () => {
                       </option>
                     ))}
                 </select>
-              </div> */}
+              </div>
             </div>
           </div>
         </div>
       </div>
       <div className="col-5 center-column columnas">
         <div className="container container-factura my-4">
-          <div className=" factura px-2">
-            {/* <p>
-              {productoSeleccionado?.descripcion} {cantidadSeleccionada}
-            </p> */}
-            <p>Facr=tura de Venta P.O.s No. 111111</p>
-            <p>Vendido a: consumidor final </p>
-            <p>Nit/CC: 22222222222</p>
-            <p>Placa: placa</p>
-            <p>Surtidor: surtidor 2</p>
-            <p>Cara: cara 4</p>
-            <p>Manguera: manguera 4</p>
-            <p>Vendedor: Karen Vergara</p>
-            <p>Producto Cantidad Precio Total</p>
-            <p>GNV 21.200 2200,00 46.640</p>
-            <p>DISCRIMINACION TARIFAS IVA</p>
-            <p>Producto Cantidad Tarifa Total</p>
-            <p>GNV 21.200 0% 46.640</p>
-            <p>Subtotal sin IVA: 46.640</p>
-            <p>Descuento: 0,00</p>
-            <p>Subtotal IVA: 0,00</p>
-            <p>TOTAL: 46.640</p>
-            <p>Forma de pago: Efectivo</p>
+          <div className=" factura px-2 h-100">
+            <p>Vendido a: {objetoPostCanastilla.terceroId.nombre} </p>
+            <p>Nit/CC: {objetoPostCanastilla.terceroId.identificacion}</p>
+            <p>Fecha: {objetoPostCanastilla.fecha}</p>
+            <p>Fecha: {objetoPostCanastilla.codigoFormaPago.descripcion}</p>
+            {objetoPostCanastilla.canastillas.length > 0 && (
+              <p>PRODUCTOS AGREGADOS</p>
+            )}
+            {Array.isArray(objetoPostCanastilla.canastillas) &&
+              objetoPostCanastilla.canastillas.map((elemento) => (
+                <div key={elemento.canastilla.canastillaId}>
+                  <hr></hr>
+                  <p>Producto: {elemento.canastilla.descripcion}</p>
+                  <p>Precio: {elemento.canastilla.precio}</p>
+                  <p>Cantidad: {elemento.cantidad}</p>
+                </div>
+              ))}
+            <hr></hr>
+            <p>Total Items: {totalItems}</p>
+            <p>Subtotal: {subTotal}</p>
           </div>
         </div>
       </div>
       <div className="col-3  right-column columnas">
         <div className="button-container1"></div>
         <div className="d-flex flex-column align-items-center button-container">
-          <button className="botton-green m-3 right-botton">
+          <button
+            className="botton-green m-3 right-botton "
+            onClick={() => {
+              onClickGenerarVenta(objetoPostCanastilla);
+            }}
+          >
             <span className="">Generar</span> <span>Venta</span>
           </button>
           <button className="botton-medium-blue m-3 right-botton">

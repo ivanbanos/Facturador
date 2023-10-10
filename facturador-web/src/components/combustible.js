@@ -98,6 +98,7 @@ const Combustible = () => {
     handleSetUltimaFactura(ultimaFacturaEstadoInicial);
     setIdentificacion("");
     setUltimaFacturaTexto("");
+    setCaraSelect("");
   };
 
   const handleChangeTercero = (event) => {

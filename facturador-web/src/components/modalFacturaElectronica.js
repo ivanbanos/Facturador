@@ -41,7 +41,8 @@ const ModalFacturaElectronica = (props) => {
             className="botton-medium-blue-modal"
             onClick={() => {
               handleCloseFacturaElectronica();
-              ImprimirFactura(ultimaFactura.ventaId, ultimaFactura);
+              console.log(ultimaFactura);
+              ImprimirFactura(ultimaFactura);
               props.resetEstadoInicial();
             }}
           >
