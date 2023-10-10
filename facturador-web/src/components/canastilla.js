@@ -10,41 +10,10 @@ import ModalAddTercero from "./modalAddTercero";
 const Canastilla = () => {
   const [productos, setProductos] = useState([]);
   const valorInicialObjetoPostCanastilla = {
-    facturasCanastillaId: 0,
-    fecha: new Date().toISOString(),
-    resolucion: {
-      descripcionResolucion: "string",
-      fechaInicioResolucion: "2023-10-09T16:49:52.939Z",
-      fechaFinalResolucion: "2023-10-09T16:49:52.939Z",
-      consecutivoInicial: 0,
-      consecutivoFinal: 0,
-      consecutivoActual: 0,
-      tipo: 0,
-      habilitada: true,
-    },
-    consecutivo: 0,
-    estado: "",
-    terceroId: {
-      terceroId: 0,
-      coD_CLI: "",
-      nombre: "",
-      telefono: "",
-      direccion: "",
-      identificacion: "",
-      correo: "",
-      tipoIdentificacion: 0,
-    },
-    impresa: 0,
-    enviada: 0,
-    codigoFormaPago: {
-      id: 0,
-      descripcion: "",
-    },
-    canastillas: [],
-    subtotal: 0,
+    terceroId: 0,
+    codigoFormaPago: 0,
     descuento: 0,
-    iva: 0,
-    total: 0,
+    canastillas: [],
   };
   const [objetoPostCanastilla, setObjetoPostCanastilla] = useState(
     valorInicialObjetoPostCanastilla
@@ -53,46 +22,19 @@ const Canastilla = () => {
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
   const [cantidadSeleccionada, setCantidadSeleccionada] = useState(0);
   const valorInicialObjetoCanastillas = {
-    facturasCanastillaId: 0,
-    fecha: new Date().toISOString(),
-    resolucion: {
-      descripcionResolucion: "string",
-      fechaInicioResolucion: "2023-10-09T16:49:52.939Z",
-      fechaFinalResolucion: "2023-10-09T16:49:52.939Z",
-      consecutivoInicial: 0,
-      consecutivoFinal: 0,
-      consecutivoActual: 0,
-      tipo: 0,
-      habilitada: true,
-    },
-    consecutivo: 0,
-    estado: "",
-    terceroId: {
-      terceroId: 0,
-      coD_CLI: "",
-      nombre: "",
-      telefono: "",
-      direccion: "",
-      identificacion: "",
-      correo: "",
-      tipoIdentificacion: 0,
-    },
-    impresa: 0,
-    enviada: 0,
-    codigoFormaPago: {
-      id: 0,
-      descripcion: "",
-    },
-    canastillas: [],
-    subtotal: 0,
-    descuento: 0,
+    canastillaId: 0,
+    canastillaGuid: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    descripcion: "string",
+    unidad: "string",
+    precio: 0,
+    deleted: "string",
+    cantidad: 0,
     iva: 0,
-    total: 0,
   };
   const [objetoCanastillas, setObjetoCanastillas] = useState(
     valorInicialObjetoCanastillas
   );
-  const [tercero, setTercero] = useState({
+  const valorInicialTercero = {
     terceroId: 0,
     coD_CLI: "",
     nombre: "",
@@ -101,7 +43,8 @@ const Canastilla = () => {
     identificacion: "",
     correo: "",
     tipoIdentificacion: 0,
-  });
+  };
+  const [tercero, setTercero] = useState(valorInicialTercero);
 
   const [identificacion, setIdentificacion] = useState("");
   const [tiposDeIdentificacion, setTiposDeIdentificacion] = useState([]);
@@ -116,7 +59,7 @@ const Canastilla = () => {
       setTercero(nuevoTercero[0]);
       const tempObjetoPostCanastilla = {
         ...objetoPostCanastilla,
-        terceroId: nuevoTercero[0],
+        terceroId: nuevoTercero[0].terceroId,
       };
       setObjetoPostCanastilla(tempObjetoPostCanastilla);
 
@@ -135,8 +78,7 @@ const Canastilla = () => {
     setShowTerceroNoExiste(showTerceroNoExiste);
   }
   function handleNoCambiarTercero() {
-    console.log(objetoPostCanastilla.terceroId.identificacion);
-    setIdentificacion(objetoPostCanastilla.terceroId.identificacion);
+    setIdentificacion("");
   }
   const [showAddTercero, setShowAddTercero] = useState(false);
   const handleShowAddTercero = (show) => setShowAddTercero(show);
@@ -144,7 +86,7 @@ const Canastilla = () => {
     setTercero(newTercero);
     const tempObjetoPostCanastilla = {
       ...objetoPostCanastilla,
-      terceroId: newTercero,
+      terceroId: newTercero.terceroId,
     };
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
 
@@ -155,10 +97,20 @@ const Canastilla = () => {
   function onClickAgregarProducto() {
     if (productoSeleccionado) {
       let tempObjetoCanastillas = {
-        ...objetoCanastillas,
-        canastilla: productoSeleccionado,
+        canastillaId: productoSeleccionado.canastillaId,
+        canastillaGuid: productoSeleccionado.guid,
+        descripcion: productoSeleccionado.descripcion,
+        unidad: productoSeleccionado.unidad,
+        precio: productoSeleccionado.precio,
+        deleted: "string",
         cantidad: cantidadSeleccionada,
+        iva: productoSeleccionado.iva,
       };
+      // let tempObjetoCanastillas = {
+      //   ...objetoCanastillas,
+      //   canastilla: productoSeleccionado,
+      //   cantidad: cantidadSeleccionada,
+      // };
 
       setObjetoCanastillas(tempObjetoCanastillas);
 
@@ -177,7 +129,7 @@ const Canastilla = () => {
       let counterSubTotal = 0;
       for (let item of tempCanastillas) {
         counterTotalItems += item.cantidad;
-        counterSubTotal += item.canastilla.precio * item.cantidad;
+        counterSubTotal += item.precio * item.cantidad;
       }
       setTotalItems(counterTotalItems);
       setSubTotal(counterSubTotal);
@@ -185,13 +137,9 @@ const Canastilla = () => {
     }
   }
   const handleChangeFormaPago = (event) => {
-    const selectedPFormaId = event.target.value;
-    const selectedFormaPago = formasDePago.find(
-      (forma) => forma.id === parseInt(selectedPFormaId, 10)
-    );
     const tempObjetoPostCanastilla = {
       ...objetoPostCanastilla,
-      codigoFormaPago: selectedFormaPago,
+      codigoFormaPago: event.target.value,
     };
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
     console.log(tempObjetoPostCanastilla);
@@ -200,6 +148,15 @@ const Canastilla = () => {
     console.log(canastilla);
     PostCanastilla(canastilla);
     // setObjetoPostCanastilla(valorInicialObjetoPostCanastilla)
+  };
+  const resetValues = () => {
+    setIdentificacion("");
+    setSubTotal(0);
+    setTotalItems(0);
+    setObjetoCanastillas(valorInicialObjetoCanastillas);
+    setCanastillas([]);
+    setObjetoPostCanastilla(valorInicialObjetoPostCanastilla);
+    setTercero(valorInicialTercero);
   };
   useEffect(() => {
     const fetchData = async () => {
@@ -293,10 +250,10 @@ const Canastilla = () => {
             </div>
             <div className="mt-2">
               <div className="form-control dark-blue-input">
-                <p>Nombre: {objetoPostCanastilla?.terceroId?.nombre}</p>
-                <p>Teléfono: {objetoPostCanastilla?.terceroId?.telefono} </p>
-                <p>Correo: {objetoPostCanastilla?.terceroId?.correo}</p>
-                <p>Dirección: {objetoPostCanastilla?.terceroId?.direccion}</p>
+                <p>Nombre: {tercero?.nombre}</p>
+                <p>Teléfono: {tercero?.telefono} </p>
+                <p>Correo: {tercero?.correo}</p>
+                <p>Dirección: {tercero?.direccion}</p>
                 {/* <p>
                   Tipo de identificación:{" "}
                   {objetoPostCanastilla.terceroId.tipoIdentificacion}
@@ -307,7 +264,7 @@ const Canastilla = () => {
                   className="form-select  w-75 h-50 select-white-blue"
                   aria-label="Default select example"
                   name="codigoFormaPago"
-                  value={objetoPostCanastilla.codigoFormaPago.id || ""}
+                  value={objetoPostCanastilla.codigoFormaPago || ""}
                   onChange={handleChangeFormaPago}
                 >
                   <option value="">Forma de pago</option>
@@ -326,19 +283,18 @@ const Canastilla = () => {
       <div className="col-5 center-column columnas">
         <div className="container container-factura my-4">
           <div className=" factura px-2 h-100">
-            <p>Vendido a: {objetoPostCanastilla.terceroId.nombre} </p>
-            <p>Nit/CC: {objetoPostCanastilla.terceroId.identificacion}</p>
-            <p>Fecha: {objetoPostCanastilla.fecha}</p>
-            <p>Fecha: {objetoPostCanastilla.codigoFormaPago.descripcion}</p>
+            <p>Vendido a: {tercero.nombre} </p>
+            <p>Nit/CC: {tercero.identificacion}</p>
+
             {objetoPostCanastilla.canastillas.length > 0 && (
               <p>PRODUCTOS AGREGADOS</p>
             )}
             {Array.isArray(objetoPostCanastilla.canastillas) &&
               objetoPostCanastilla.canastillas.map((elemento) => (
-                <div key={elemento.canastilla.canastillaId}>
+                <div key={elemento.canastillaId}>
                   <hr></hr>
-                  <p>Producto: {elemento.canastilla.descripcion}</p>
-                  <p>Precio: {elemento.canastilla.precio}</p>
+                  <p>Producto: {elemento.descripcion}</p>
+                  <p>Precio: {elemento.precio}</p>
                   <p>Cantidad: {elemento.cantidad}</p>
                 </div>
               ))}
@@ -355,11 +311,17 @@ const Canastilla = () => {
             className="botton-green m-3 right-botton "
             onClick={() => {
               onClickGenerarVenta(objetoPostCanastilla);
+              resetValues();
             }}
           >
             <span className="">Generar</span> <span>Venta</span>
           </button>
-          <button className="botton-medium-blue m-3 right-botton">
+          <button
+            className="botton-medium-blue m-3 right-botton"
+            onClick={() => {
+              resetValues();
+            }}
+          >
             <span>Borrar</span>
           </button>
         </div>

@@ -14,6 +14,7 @@ import ModalAddTercero from "./modalAddTercero";
 import ModalAbrirTurno from "./modalAbrirTurno";
 import CerrarTurno from "../Services/getServices/CerrarTurno";
 import GetTercero from "../Services/getServices/GetTercero";
+import FidelizarVenta from "../Services/getServices/FidelizarVenta";
 
 const Combustible = () => {
   const [codigoEmpleado, setCodigoEmpleado] = useState("");
@@ -406,7 +407,10 @@ const Combustible = () => {
             </button>
           )}
           {turno && (
-            <button className="botton-light-blue right-botton m-3">
+            <button
+              className="botton-light-blue right-botton m-3"
+              onClick={() => FidelizarVenta(ultimaFactura)}
+            >
               <span>Fidelizar</span> <span>Venta</span>
             </button>
           )}
