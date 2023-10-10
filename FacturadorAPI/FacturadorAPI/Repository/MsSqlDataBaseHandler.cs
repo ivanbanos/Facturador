@@ -315,7 +315,7 @@ namespace MachineUtilizationApi.Repository
 
         public async Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje)
         {
-            await LoadDataTableFromStoredProcAsync("MandarImprimir",
+            await LoadDataTableFromStoredProcAsync("ActualizarFactura",
                             new Dictionary<string, object>{
 
                     {"@facturaPOSId", facturaPOSId },

@@ -21,8 +21,8 @@ namespace FacturadorAPI.Application.Commands
 
         public async Task<Unit> Handle(MandarImprimirCommand request, CancellationToken cancellationToken)
         {
-            await _databaseHandler.ActualizarFactura(request.Factura.facturaPOSId, request.Factura.Tercero.terceroId, request.Factura.codigoFormaPago, request.Factura.ventaId, request.Factura.Placa, request.Factura.Kilometraje);
-            await _databaseHandler.MandarImprimir(request.Factura.ventaId);
+            await _databaseHandler.ActualizarFactura(request.FacturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa, request.Kilometraje);
+            await _databaseHandler.MandarImprimir(request.VentaId);
 
             return Unit.Value;
 
