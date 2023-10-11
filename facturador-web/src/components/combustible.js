@@ -12,6 +12,7 @@ import ModalFacturaElectronica from "./modalFacturaElectronica";
 import AlertTercero from "./alertaTercero";
 import ModalAddTercero from "./modalAddTercero";
 import ModalAbrirTurno from "./modalAbrirTurno";
+import ModalCerrarTurno from "./modalCerrarTurno";
 import CerrarTurno from "../Services/getServices/CerrarTurno";
 import GetTercero from "../Services/getServices/GetTercero";
 import FidelizarVenta from "../Services/getServices/FidelizarVenta";
@@ -159,8 +160,8 @@ const Combustible = () => {
     console.log(caras);
   };
 
-  const cerrarTurno = async (islaSelect, codigoEmpleado) => {
-    await CerrarTurno(islaSelect, codigoEmpleado);
+  const cerrarTurno = async (isla, codigo) => {
+    await CerrarTurno(isla, codigo);
     setTurno(null);
     setCaras([]);
     setIslaSelect("");
@@ -397,14 +398,11 @@ const Combustible = () => {
             ></ModalAbrirTurno>
           )}
           {turno && (
-            <button
-              className="botton-medium-blue m-3 right-botton"
-              onClick={() => {
-                cerrarTurno(islaSelect, codigoEmpleado);
-              }}
-            >
-              <span>Cerrar</span> <span>turno</span>
-            </button>
+            <ModalCerrarTurno
+              islaSelect={islaSelect}
+              islaSelectName={islaSelectName}
+              cerrarTurno={cerrarTurno}
+            ></ModalCerrarTurno>
           )}
           {turno && (
             <button
