@@ -177,9 +177,11 @@ const Canastilla = () => {
       <div className="col-4 pt-4 pb-4 left-column columnas">
         <div className="info-div ">
           <div className="text-white">
-            <label className="fs-3 text-white">Agregar Producto</label>
+            <label className="titulo-informacion text-white">
+              Agregar Producto
+            </label>
             <select
-              className="form-select d-inline w-80 h-50 select-white-blue"
+              className="form-select d-inline w-80 h-50 select-white-blue text-select-list"
               aria-label="Default select example"
               value={productoSeleccionado?.canastillaId || ""}
               onChange={(event) => {
@@ -204,7 +206,9 @@ const Canastilla = () => {
                 ))}
             </select>
             <div className="d-flex flex-row">
-              <label className="mx-3 d-inline fs-3">Cantidad</label>
+              <label className="mx-3 d-inline titulo-informacion">
+                Cantidad
+              </label>
 
               <input
                 value={cantidadSeleccionada || ""}
@@ -214,7 +218,7 @@ const Canastilla = () => {
                     setCantidadSeleccionada(newCantidad);
                   }
                 }}
-                className="form-control w-50 h-50 select-white-blue"
+                className="form-control w-50 h-50 select-white-blue text-select-list"
               />
             </div>
             <div className="d-flex justify-content-center">
@@ -227,7 +231,9 @@ const Canastilla = () => {
             </div>
           </div>
           <div className="info-cliente-div">
-            <div className="fs-3 text-white">Información del Cliente</div>
+            <div className="titulo-informacion text-white">
+              Información del Cliente
+            </div>
 
             <div className="mt-2 p-0">
               <div className=" ">
@@ -261,7 +267,7 @@ const Canastilla = () => {
               </div>
               <div className="info-venta-div d-flex flex-column align-items-end">
                 <select
-                  className="form-select  w-75 h-50 select-white-blue"
+                  className="form-select  w-75 h-50 select-white-blue text-select-list"
                   aria-label="Default select example"
                   name="codigoFormaPago"
                   value={objetoPostCanastilla.codigoFormaPago || ""}

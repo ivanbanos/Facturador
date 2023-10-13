@@ -11,7 +11,7 @@ const NavBar = () => {
         <li className="menu-item">
           <Link className="links" to="/">
             <div className="item-active pt-1 d-flex">
-              <div className="circulo mb-2 mx-3"></div>
+              <div className="circulo mb-2 mx-2"></div>
               <div>COMBUSTIBLE</div>
             </div>
           </Link>

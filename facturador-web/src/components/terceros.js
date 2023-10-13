@@ -36,19 +36,19 @@ const Terceros = () => {
   return (
     <>
       <div className="col-12 pt-4 pb-4  columnas terceros-box row">
-        <div className="boder-div col-7 ">
+        <div className="boder-div col-10 ">
           <div className="row add-tercero-div">
-            <div className="col-5 icono-add-div">
-              <h1 className="text-white title-add">Agregar Tercero</h1>
+            <div className="col-3 icono-add-div d-flex align-items-center">
+              <h1 className="text-white title-add ">Agregar Tercero</h1>
             </div>
-            <div className="col-7 form-tercero-div">
-              <div className="formulario ">
-                <form>
-                  <div class="row mb-3">
-                    <label class="col-sm-2 col-form-label">
+            <div className="col-9 form-tercero-div">
+              <div className="formulario p-auto">
+                <form className="pt-5">
+                  <div class="row mb-3 p-auto">
+                    <label class="col-sm-4 col-form-label">
                       Identificación
                     </label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-8">
                       <input
                         type="text"
                         class="form-control tercero-input"
@@ -59,11 +59,11 @@ const Terceros = () => {
                     </div>
                   </div>
 
-                  <div class="row mb-3">
-                    <label class="col-sm-2 col-form-label">
+                  <div class="row mb-3 d-flex align-items-center">
+                    <label class="col-sm-4 col-form-label">
                       Tipo de Identificación
                     </label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-8">
                       <select
                         className="form-select w-80 h-50 tercero-input"
                         name="tipoIdentificacion"
@@ -84,8 +84,8 @@ const Terceros = () => {
                     </div>
                   </div>
                   <div class="row mb-3">
-                    <label class="col-sm-2 col-form-label">Nombre</label>
-                    <div class="col-sm-10">
+                    <label class="col-sm-4 col-form-label">Nombre</label>
+                    <div class="col-sm-8">
                       <input
                         type="text"
                         class="form-control tercero-input"
@@ -96,8 +96,8 @@ const Terceros = () => {
                     </div>
                   </div>
                   <div class="row mb-3">
-                    <label class="col-sm-2 col-form-label">Dirección</label>
-                    <div class="col-sm-10">
+                    <label class="col-sm-4 col-form-label">Dirección</label>
+                    <div class="col-sm-8">
                       <input
                         type="text"
                         class="form-control tercero-input"
@@ -108,8 +108,8 @@ const Terceros = () => {
                     </div>
                   </div>
                   <div class="row mb-3">
-                    <label class="col-sm-2 col-form-label">Teléfono</label>
-                    <div class="col-sm-10">
+                    <label class="col-sm-4 col-form-label">Teléfono</label>
+                    <div class="col-sm-8">
                       <input
                         type="text"
                         class="form-control tercero-input"
@@ -120,8 +120,8 @@ const Terceros = () => {
                     </div>
                   </div>
                   <div class="row mb-3">
-                    <label class="col-sm-2 col-form-label">Correo</label>
-                    <div class="col-sm-10">
+                    <label class="col-sm-4 col-form-label">Correo</label>
+                    <div class="col-sm-8">
                       <input
                         type="text"
                         class="form-control tercero-input"
@@ -138,7 +138,7 @@ const Terceros = () => {
         </div>
         <div className="d-flex justify-content-center">
           <button
-            className="print-button botton-light-blue"
+            className="add-button botton-light-blue"
             onClick={() => {
               console.log(tercero);
               PostTercero(tercero);
@@ -154,7 +154,7 @@ const Terceros = () => {
               });
             }}
           >
-            Agregar
+            Actualizar Tercero
           </button>
         </div>
       </div>
