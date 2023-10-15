@@ -274,3 +274,18 @@
     .text-select-list{
         font-size: 90%;
     }
+    .alert-error{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Asegúrate de que tenga un valor alto para estar en frente de otros elementos */
+            /* Otros estilos CSS que desees aplicar */
+          }
+    
+    

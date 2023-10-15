@@ -3,6 +3,7 @@ import "./styles/home.css";
 import "./styles/terceros.css";
 import PostTercero from "../Services/getServices/PostTercero";
 import GetTiposDeIdentificacion from "../Services/getServices/GetTiposDeIdentificacion";
+import AlertError from "./alertaError";
 
 const Terceros = () => {
   const [tercero, setTercero] = useState({
@@ -23,6 +24,8 @@ const Terceros = () => {
     };
     setTercero(tempTercero);
   };
+  const [showAlertError, setShowAlertError] = useState(false);
+  const handleSetShowAlertError = (show) => setShowAlertError(show);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -139,9 +142,13 @@ const Terceros = () => {
         <div className="d-flex justify-content-center">
           <button
             className="add-button botton-light-blue"
-            onClick={() => {
+            onClick={async () => {
               console.log(tercero);
-              PostTercero(tercero);
+              const respuesta = await PostTercero(tercero);
+
+              if (respuesta === "fail") {
+                handleSetShowAlertError(true);
+              }
               setTercero({
                 terceroId: 0,
                 coD_CLI: "",
@@ -158,6 +165,10 @@ const Terceros = () => {
           </button>
         </div>
       </div>
+      <AlertError
+        showAlertError={showAlertError}
+        handleSetShowAlertError={handleSetShowAlertError}
+      ></AlertError>
     </>
   );
 };
