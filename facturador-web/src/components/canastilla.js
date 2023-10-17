@@ -7,6 +7,9 @@ import GetTiposDeIdentificacion from "../Services/getServices/GetTiposDeIdentifi
 import GetFormasDePago from "../Services/getServices/GetFormasDePago";
 import AlertTerceroNoExisteCnastilla from "./alertTerceroNoExisteCanastilla";
 import ModalAddTercero from "./modalAddTercero";
+import AlertError from "./alertaError";
+import AlertVentaExitosa from "./AlertVentaExitosa";
+
 const Canastilla = () => {
   const [productos, setProductos] = useState([]);
   const valorInicialObjetoPostCanastilla = {
@@ -45,7 +48,8 @@ const Canastilla = () => {
     tipoIdentificacion: 0,
   };
   const [tercero, setTercero] = useState(valorInicialTercero);
-
+  const [showAlertError, setShowAlertError] = useState(false);
+  const handleSetShowAlertError = (show) => setShowAlertError(show);
   const [identificacion, setIdentificacion] = useState("");
   const [tiposDeIdentificacion, setTiposDeIdentificacion] = useState([]);
   const [formasDePago, setformasDePago] = useState([]);
@@ -80,6 +84,9 @@ const Canastilla = () => {
   function handleNoCambiarTercero() {
     setIdentificacion("");
   }
+  const [showAlertVentaExitosa, setShowAlertVentaExitosa] = useState(false);
+  const handleSetShowAlertVentaExitosa = (show) =>
+    setShowAlertVentaExitosa(show);
   const [showAddTercero, setShowAddTercero] = useState(false);
   const handleShowAddTercero = (show) => setShowAddTercero(show);
   function handleSetTerceroModalAddTercero(newTercero) {
@@ -144,9 +151,15 @@ const Canastilla = () => {
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
     console.log(tempObjetoPostCanastilla);
   };
-  const onClickGenerarVenta = (canastilla) => {
+  const onClickGenerarVenta = async (canastilla) => {
     console.log(canastilla);
-    PostCanastilla(canastilla);
+    const respuesta = await PostCanastilla(canastilla);
+    if (respuesta === "fail") {
+      handleSetShowAlertError(true);
+    } else {
+      handleSetShowAlertVentaExitosa(true);
+      resetValues();
+    }
     // setObjetoPostCanastilla(valorInicialObjetoPostCanastilla)
   };
   const resetValues = () => {
@@ -317,7 +330,6 @@ const Canastilla = () => {
             className="botton-green m-3 right-botton "
             onClick={() => {
               onClickGenerarVenta(objetoPostCanastilla);
-              resetValues();
             }}
           >
             <span className="">Generar</span> <span>Venta</span>
@@ -339,6 +351,14 @@ const Canastilla = () => {
           handleNoCambiarTercero={handleNoCambiarTercero}
         ></ModalAddTercero>
       </div>
+      <AlertError
+        showAlertError={showAlertError}
+        handleSetShowAlertError={handleSetShowAlertError}
+      ></AlertError>
+      <AlertVentaExitosa
+        showAlertVentaExitosa={showAlertVentaExitosa}
+        handleSetShowAlertVentaExitosa={handleSetShowAlertVentaExitosa}
+      ></AlertVentaExitosa>
     </>
   );
 };

@@ -25,15 +25,24 @@ const ModalImprimir = (props) => {
   const handleCloseConvertirAFactura = () => setShowConvertirAFactura(false);
   const handleShowConvertirAFactura = () => setShowConvertirAFactura(true);
 
-  function onClickConvertirAOrden() {
+  async function onClickConvertirAOrden() {
     handleClose();
-    ConvertirAOrden(ultimaFactura.ventaId);
-    props.handleShowFacturaElectrónica();
+    const respuesta = await ConvertirAOrden(ultimaFactura.ventaId);
+    console.log(respuesta);
+    if (respuesta === "fail") {
+      props.handleSetShowAlertError(true);
+    } else {
+      props.handleShowFacturaElectrónica();
+    }
   }
-  function onClickConvertirAFactura() {
+  async function onClickConvertirAFactura() {
     handleCloseConvertirAFactura();
-    ConvertirAFactura(ultimaFactura.ventaId);
-    props.handleShowFacturaElectrónica();
+    const respuesta = await ConvertirAFactura(ultimaFactura.ventaId);
+    if (respuesta === "fail") {
+      props.handleSetShowAlertError(true);
+    } else {
+      props.handleShowFacturaElectrónica();
+    }
   }
   function onClickNoConvertirAOrden() {
     handleClose();

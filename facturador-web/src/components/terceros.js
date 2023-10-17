@@ -4,6 +4,8 @@ import "./styles/terceros.css";
 import PostTercero from "../Services/getServices/PostTercero";
 import GetTiposDeIdentificacion from "../Services/getServices/GetTiposDeIdentificacion";
 import AlertError from "./alertaError";
+import AlertTerceroAgregadoExitosamente from "./alertTerceroAgregadoExitosamente";
+import GetTercero from "../Services/getServices/GetTercero";
 
 const Terceros = () => {
   const [tercero, setTercero] = useState({
@@ -17,6 +19,8 @@ const Terceros = () => {
     tipoIdentificacion: 0,
   });
   const [tiposDeIdentificacion, setTiposDeIdentificacion] = useState([]);
+  const [identificacion, setIdentificacion] = useState("");
+  // const [terceroBusqueda, setTerceroBusqueda] = useState([{}]);
   const handleChangeTercero = (event) => {
     const tempTercero = {
       ...tercero,
@@ -24,8 +28,50 @@ const Terceros = () => {
     };
     setTercero(tempTercero);
   };
+  const handleOnBlurIdentificacion = async (event) => {
+    event.preventDefault();
+    const nuevaIdentificacion = event.target.value;
+
+    let nuevoTercero = await GetTercero(nuevaIdentificacion);
+
+    if (nuevoTercero.length > 0) {
+      setTercero(nuevoTercero[0]);
+    } else {
+      const tempTercero = {
+        ...tercero,
+        identificacion: nuevaIdentificacion,
+      };
+      setTercero(tempTercero);
+    }
+  };
+  const handleChangeIdentificacion = async (event) => {
+    const nuevaIdentificacion = event.target.value;
+    setIdentificacion(nuevaIdentificacion);
+    console.log(tercero);
+    // let nuevoTercero = await GetTercero(nuevaIdentificacion);
+
+    // setTerceroBusqueda(nuevoTercero);
+    // console.log(nuevoTercero.length);
+    // console.log(nuevoTercero);
+    // if (nuevoTercero.length > 0) {
+    //   setTercero(nuevoTercero[0]);
+    // } else {
+    //   const tempTercero = {
+    //     ...tercero,
+    //     identificacion: nuevaIdentificacion,
+    //   };
+    //   setTercero(tempTercero);
+    // }
+  };
+
   const [showAlertError, setShowAlertError] = useState(false);
   const handleSetShowAlertError = (show) => setShowAlertError(show);
+  const [
+    showAlertTerceroAgregadoExitosamente,
+    setShowAlertTerceroAgregadoExitosamente,
+  ] = useState(false);
+  const handleSetShowAlertTerceroAgregadoExitosamente = (show) =>
+    setShowAlertTerceroAgregadoExitosamente(show);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -56,8 +102,10 @@ const Terceros = () => {
                         type="text"
                         class="form-control tercero-input"
                         name="identificacion"
-                        value={tercero.identificacion}
-                        onChange={handleChangeTercero}
+                        value={identificacion}
+                        onChange={handleChangeIdentificacion}
+                        onBlur={handleOnBlurIdentificacion}
+                        required
                       ></input>
                     </div>
                   </div>
@@ -72,6 +120,7 @@ const Terceros = () => {
                         name="tipoIdentificacion"
                         value={tercero.tipoIdentificacion || ""}
                         onChange={handleChangeTercero}
+                        required
                       >
                         <option value="">Selecciona tipo identificación</option>
                         {Array.isArray(tiposDeIdentificacion) &&
@@ -95,6 +144,7 @@ const Terceros = () => {
                         name="nombre"
                         value={tercero.nombre}
                         onChange={handleChangeTercero}
+                        required
                       ></input>
                     </div>
                   </div>
@@ -107,6 +157,7 @@ const Terceros = () => {
                         name="direccion"
                         value={tercero.direccion}
                         onChange={handleChangeTercero}
+                        required
                       ></input>
                     </div>
                   </div>
@@ -119,6 +170,7 @@ const Terceros = () => {
                         name="telefono"
                         value={tercero.telefono}
                         onChange={handleChangeTercero}
+                        required
                       ></input>
                     </div>
                   </div>
@@ -131,6 +183,7 @@ const Terceros = () => {
                         name="correo"
                         value={tercero.correo}
                         onChange={handleChangeTercero}
+                        required
                       ></input>
                     </div>
                   </div>
@@ -148,6 +201,8 @@ const Terceros = () => {
 
               if (respuesta === "fail") {
                 handleSetShowAlertError(true);
+              } else {
+                handleSetShowAlertTerceroAgregadoExitosamente(true);
               }
               setTercero({
                 terceroId: 0,
@@ -159,6 +214,7 @@ const Terceros = () => {
                 correo: "",
                 tipoIdentificacion: 0,
               });
+              setIdentificacion("");
             }}
           >
             Actualizar Tercero
@@ -169,6 +225,14 @@ const Terceros = () => {
         showAlertError={showAlertError}
         handleSetShowAlertError={handleSetShowAlertError}
       ></AlertError>
+      <AlertTerceroAgregadoExitosamente
+        showAlertTerceroAgregadoExitosamente={
+          showAlertTerceroAgregadoExitosamente
+        }
+        handleSetShowAlertTerceroAgregadoExitosamente={
+          handleSetShowAlertTerceroAgregadoExitosamente
+        }
+      ></AlertTerceroAgregadoExitosamente>
     </>
   );
 };

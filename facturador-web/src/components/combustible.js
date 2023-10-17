@@ -16,8 +16,11 @@ import ModalCerrarTurno from "./modalCerrarTurno";
 import CerrarTurno from "../Services/getServices/CerrarTurno";
 import GetTercero from "../Services/getServices/GetTercero";
 import FidelizarVenta from "../Services/getServices/FidelizarVenta";
+import AlertError from "./alertaError";
 
 const Combustible = () => {
+  const [showAlertError, setShowAlertError] = useState(false);
+  const handleSetShowAlertError = (show) => setShowAlertError(show);
   const [codigoEmpleado, setCodigoEmpleado] = useState("");
   const handleChangeCodigoEmpleado = (codigo) => setCodigoEmpleado(codigo);
   const [showAddTercero, setShowAddTercero] = useState(false);
@@ -374,12 +377,14 @@ const Combustible = () => {
             ultimaFactura={ultimaFactura}
             handleShowFacturaElectrónica={handleShowFacturaElectrónica}
             handleSetUltimaFactura={handleSetUltimaFactura}
+            handleSetShowAlertError={handleSetShowAlertError}
           ></ModalImprimir>
           <ModalFacturaElectronica
             handleCloseFacturaElectronica={handleCloseFacturaElectronica}
             showFacturaElectronica={showFacturaElectronica}
             ultimaFactura={ultimaFactura}
             resetEstadoInicial={resetEstadoInicial}
+            handleSetShowAlertError={handleSetShowAlertError}
           ></ModalFacturaElectronica>
           <ModalAddTercero
             showAddTercero={showAddTercero}
@@ -418,6 +423,10 @@ const Combustible = () => {
           )}
         </div>
       </div>
+      <AlertError
+        showAlertError={showAlertError}
+        handleSetShowAlertError={handleSetShowAlertError}
+      ></AlertError>
     </>
   );
 };

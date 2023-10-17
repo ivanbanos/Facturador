@@ -20,6 +20,7 @@ const ImprimirFactura = async (ultimaFactura) => {
         method: "POST",
         mode: "cors",
         headers: {
+          Accept: "text/plain",
           "Access-Control-Allow-Origin": "*",
           "Content-Type": "application/json",
           // Authorization: "Bearer ",
@@ -32,7 +33,7 @@ const ImprimirFactura = async (ultimaFactura) => {
     );
     console.log(response.status);
     if (response.status === 200) {
-      let respuesta = await response.json();
+      let respuesta = await response.text();
 
       return respuesta;
     }

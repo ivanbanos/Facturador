@@ -28,25 +28,35 @@ const ModalFacturaElectronica = (props) => {
         <Modal.Footer>
           <Button
             className="botton-light-blue-modal"
-            onClick={() => {
+            onClick={async () => {
               handleCloseFacturaElectronica();
-              setShowAlertImpresionExitosa(true);
-              console.log(ultimaFactura);
-              ImprimirFactura(ultimaFactura);
-              EnviarFacturaElectronica(ultimaFactura.ventaId);
-              props.resetEstadoInicial();
+              const respuestaImprimir = await ImprimirFactura(ultimaFactura);
+              const respuestaEnviar = await EnviarFacturaElectronica(
+                ultimaFactura.ventaId
+              );
+              if (respuestaImprimir === "fail" || respuestaEnviar === "fail") {
+                props.handleSetShowAlertError(true);
+              } else {
+                setShowAlertImpresionExitosa(true);
+
+                props.resetEstadoInicial();
+              }
             }}
           >
             Enviar e Imprimir
           </Button>
           <Button
             className="botton-medium-blue-modal"
-            onClick={() => {
+            onClick={async () => {
               handleCloseFacturaElectronica();
-              console.log(ultimaFactura);
-              ImprimirFactura(ultimaFactura);
-              props.resetEstadoInicial();
-              setShowAlertImpresionExitosa(true);
+
+              const respuestaImprimir = await ImprimirFactura(ultimaFactura);
+              if (respuestaImprimir === "fail") {
+                props.handleSetShowAlertError(true);
+              } else {
+                props.resetEstadoInicial();
+                setShowAlertImpresionExitosa(true);
+              }
             }}
           >
             No Enviar e Imprimir

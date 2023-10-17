@@ -24,7 +24,7 @@
     height: 50px;
     font-family: 'orkneyBold';
     font-size: 120%;
-    position: fixed;
+    /* position: fixed; */
     top: 25;
     left: 25px;
     background: #0C80EA;
