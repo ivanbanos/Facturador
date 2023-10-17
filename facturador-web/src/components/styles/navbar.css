@@ -73,7 +73,7 @@
     
   }
   .item-second{
-    /* border-top-left-radius: 20px; */
+    border-bottom: 3px solid #7CC5FC;
   }
 
   /* .item-no-active:first-child {

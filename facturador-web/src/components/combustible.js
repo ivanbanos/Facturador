@@ -49,9 +49,25 @@ const Combustible = () => {
   }
   const [islas, setIslas] = useState([]);
 
+  function GetLocalStorage() {
+    try {
+      setTurno(JSON.parse(localStorage.getItem("turno")) || null);
+
+      setCaras(JSON.parse(localStorage.getItem("caras")) || null);
+      setIslaSelect(JSON.parse(localStorage.getItem("islaSelect")) || null);
+      setIslaSelectName(
+        JSON.parse(localStorage.getItem("islaSelectName")) || null
+      );
+    } catch (error) {
+      localStorage.clear();
+    }
+  }
+
   const [turno, setTurno] = useState(null);
-  const [ultimaFacturaTexto, setUltimaFacturaTexto] = useState("");
   const [caras, setCaras] = useState([]);
+
+  const [ultimaFacturaTexto, setUltimaFacturaTexto] = useState("");
+
   const [tiposDeIdentificacion, setTiposDeIdentificacion] = useState([]);
   const [formasDePago, setformasDePago] = useState([]);
   const [islaSelect, setIslaSelect] = useState("");
@@ -152,14 +168,17 @@ const Combustible = () => {
 
     let formasPago = await GetFormasDePago();
     setformasDePago(formasPago);
+    GetLocalStorage();
   };
 
   const fetcTurnoYCaras = async (idIsla) => {
     let turno = await GetTurnoIsla(idIsla);
     setTurno(turno);
     console.log(turno);
+    localStorage.setItem("turno", JSON.stringify(turno));
     let caras = await GetCarasPorIsla(idIsla);
     setCaras(caras);
+    localStorage.setItem("caras", JSON.stringify(caras));
     console.log(caras);
   };
 
@@ -169,6 +188,7 @@ const Combustible = () => {
     setCaras([]);
     setIslaSelect("");
     setIslaSelectName("");
+    localStorage.clear();
   };
 
   const fetchInformacionCliente = async (idCara) => {
@@ -204,12 +224,17 @@ const Combustible = () => {
             onChange={(event) => {
               const selectIsla = event.target.value;
               setIslaSelect(selectIsla);
+              localStorage.setItem("islaSelect", selectIsla);
               fetcTurnoYCaras(selectIsla);
               const selectedName =
                 event.target.options[event.target.selectedIndex].getAttribute(
                   "data-name"
                 );
               setIslaSelectName(selectedName);
+              localStorage.setItem(
+                "islaSelectName",
+                JSON.stringify(selectedName)
+              );
               console.log(selectedName);
             }}
           >
