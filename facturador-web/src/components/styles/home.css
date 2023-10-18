@@ -300,4 +300,14 @@
         z-index: 1000; /* Asegúrate de que tenga un valor alto para estar en frente de otros elementos */
         /* Otros estilos CSS que desees aplicar */
       }
-    
+    .error-container{
+        height: 40%;
+        font-size: 100%;
+        padding-top: 0%;
+        padding-bottom: 0%;
+        margin: 0%;
+    }
+    .form-control.tercero-input.is-invalid {
+        background-color: #f8d7da; /* Color de fondo rojo para indicar un error */
+        color: #721c24; /* Color de texto rojo para indicar un error */
+      }
