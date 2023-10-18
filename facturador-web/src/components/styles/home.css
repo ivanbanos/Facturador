@@ -15,7 +15,8 @@
     font-family: 'orkneyRegular'; /* Nombre que asignarás a la fuente */
     src: url('fonts/orkney-regular.otf') format('opentype');
   }
-  
+
+
   body{
     background-color: #002244; 
     font-family: 'orkneyRegular';
@@ -28,11 +29,12 @@
         #7CC5FC 40%,
         #90DDCE 50%,
         #20A857 60%,
-        #0C80EA 85%
+        #0C80EA 83%
     );
-    margin: 25px;
+    margin: 0 25px 25px 25px;
     padding-bottom: 0.3%;
-    border-radius: 30px 50px 30px 50px;
+    padding-top: 0.3%;
+    border-radius: 0 50px 30px 50px;
 }
 .icon-container{
     display: flex;
@@ -53,7 +55,7 @@
 }
 .box{
     background-image: url("FactVista1-Fondo.png");
-    border-top-right-radius: 42%;
+    border-top-right-radius: 500px;
     border-bottom-left-radius: 150px;
     border-bottom-right-radius: 30px;
     /* border: 3px solid black;  */
@@ -63,7 +65,6 @@
     overflow: hidden;
 }
 .columnas{
-    margin-top: 50px;
     /* border: 3px solid rgb(183, 176, 41);  */
 }
 
@@ -76,7 +77,7 @@
 }
 .right-botton{
     font-size: 100%;
-    width: 60%;
+    width: 80%;
     height: 70px;
     display: flex;
     flex-direction: column;
@@ -109,13 +110,18 @@
 }
 
 .rombo {
+    margin-top: 1%;
+    width:25px;
+    height:25px;
+    border-radius:50%;
+    border: solid 4px #002244;
+    overflow:hidden;
+}
+.rombo>div {
     width: 0;
     height: 0;
-    border: 12px solid #7CC5FC;
+    border: 10px solid #7CC5FC;
     border-radius: 50%;
-    position: relative;
-    top: -11px;
-    left: -11px;
 }
 .circulo {
     width: 0;
@@ -126,23 +132,7 @@
     
     
 }
-.border-middle-rombo {
-    width: 0;
-    height: 0;
-    border: 14px solid #0C80EA;
-    border-radius: 50%;
-    position: relative;
-    top: -13px;
-    left: -13px;
-}
 
-  .border-rombo { 
-    width: 0;
-    height: 0;
-    border: 18px solid #002244;
-    border-radius: 50%;
-    top: 0px;
-}
 .circulo{
     background-color: #20A857;
 }
@@ -152,7 +142,8 @@
 
 
 .info-venta-div{
-    padding: 8px;
+    padding: 1px 10px 0px 10px; 
+    margin: 0px 5px 0px 10px;
 }
 .info-cliente-div{
     padding: 1px 10px 0px 10px; 
@@ -169,6 +160,7 @@
     cursor: pointer;
     transition-duration: 1s; 
     font-family: 'orkneyBold';
+
 }
 .botton-medium-blue{
     background-color: #0C80EA;
@@ -311,3 +303,43 @@
         background-color: #f8d7da; /* Color de fondo rojo para indicar un error */
         color: #721c24; /* Color de texto rojo para indicar un error */
       }
+    .formulario-datos-cliente{
+        padding: 0px;
+    }
+
+    @media only screen and (max-width: 1024px){
+        .box{
+            border-top-right-radius: 275px;
+        }
+
+        .icono1{
+            width: 50%;
+            height: 50%;
+            position: absolute;
+            top: -10px;
+            right: 20px;
+        }
+
+        .right-botton{
+            padding-top: 6%;
+        }
+    }
+    
+    @media only screen and (max-width: 768px){
+        .box{
+            border-top-right-radius: 220px;
+        }
+
+        .icono1{
+            width: 40%;
+            height: 40%;
+            position: absolute;
+            top: -10px;
+            right: 20px;
+        }
+
+        .right-botton{
+            padding-top: 10%;
+            font-size: 80%;
+        }
+    }

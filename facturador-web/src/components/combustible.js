@@ -211,10 +211,8 @@ const Combustible = () => {
     <>
       <div className="col-4 col-md-5 pt-4 pb-4 left-column columnas">
         <div className="d-flex flex-row isla-div">
-          <div className="border-rombo">
-            <div className="border-middle-rombo">
-              <div className="rombo"></div>
-            </div>
+          <div className="rombo">
+            <div></div>
           </div>
           <label className="mx-2 d-inline text-white title-isla">ISLAS</label>
           <select
@@ -262,7 +260,7 @@ const Combustible = () => {
                 <p>{turno === null || turno === "" ? "N/A" : turno.empleado}</p>
               </div>
             </div>
-            <div className="d-flex flex-row">
+            <div className="d-flex flex-row ms-3">
               <label className="mx-3 d-inline  titulo-informacion">Cara</label>
               <select
                 className="form-select d-inline w-50 h-50 select-white-blue text-select-list"
@@ -328,9 +326,9 @@ const Combustible = () => {
                 ></AlertTercero>
               </div>
             </form>
-            <div className="mt-2">
-              <div className="form-control dark-blue-input row d-flex">
-                <div className="col-3">
+            <div className="mt-2 formulario-datos-cliente">
+              <div className="form-control dark-blue-input d-flex">
+                <div className="col-3 me-1">
                   <p className="text-end">Nombre: </p>
                   <p className="text-end">Teléfono:</p>
                   <p className="text-end">Correo:</p>
@@ -417,6 +415,7 @@ const Combustible = () => {
             identificacionActualizada={identificacion}
             tiposDeIdentificacion={tiposDeIdentificacion}
             handleNoCambiarTercero={handleNoCambiarTercero}
+            handleSetShowAlertError={handleSetShowAlertError}
             handleSetTerceroModalAddTercero={handleSetTerceroModalAddTercero}
           ></ModalAddTercero>
         </div>

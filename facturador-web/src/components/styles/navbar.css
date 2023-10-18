@@ -15,71 +15,63 @@
     src: url('fonts/orkney-regular.otf') format('opentype');
   }
 
+.navbar{
+  margin: 25px 25px 0 25px;
+  font-family: 'orkneyBold';
+  font-size: 120%;
+
+}
+
 .menu {
     display: flex;
     list-style-type: none;
-    margin-bottom: 0%;
+    margin: 25px 25px 0 25px;
     padding: 0; /* Elimina el relleno predeterminado de la lista */
     width: 60%;
     height: 50px;
     font-family: 'orkneyBold';
     font-size: 120%;
-    
-    top: 25;
-    left: 25px;
     background: #0C80EA;
     border-bottom-right-radius: 20px;
   }
   
-  .menu-item {
-    flex: 1; 
-    text-align: center;    
-    cursor: pointer; 
-    border-bottom: 3px solid #7CC5FC;
-    height: 100%;
+  .item-active {
+    color: white;
+    border-width: 5px !important;
+    background-color: #0C80EA;
+    border-color: #0C80EA #0C80EA #0C80EA #0C80EA !important;
   }
   
-  .item-active {
-    color: white; 
-    height: 100%;
-    border-bottom-right-radius: 20px;
-    background-color: #002244;
-    /* border-bottom: 4px solid #7CC5FC;  */
-    border-right: 4px solid #7CC5FC;
-    align-items: center;
-  }
-  .item-no-active {
-    border-right: 3px solid #7CC5FC;
+  .item-active:hover {
     color: white;
-    height: 100%;
-    border-bottom-right-radius: 20px;
-    background-color: #0C80EA;
-    /* border-top: 3px solid #7CC5FC; */
-    /* border-bottom: 3px solid #7CC5FC; */
   }
+
+  .item-active:focus {
+    color: white !important;
+  }
+
+  .item-no-active {
+    color: white !important;
+    border-color: transparent !important;
+  }
+
+  .item-no-active:hover {
+    color: white !important;
+  }
+
+  .item-no-active:visited {
+    color: white !important;
+  }
+
  .icono-third {
-    border-bottom: 3px solid #7CC5FC;
+    /* border-bottom: 3px solid #7CC5FC; */
   }
   .menu-item:last-child{
     border-bottom: none;
 
   }
   .links{
+    display: block;
+    padding: 0.6rem 1rem;
     text-decoration: none;
 }
-  .menu-item:nth-child(2){
-    /* background-color: #002244; */
-   
-    
-  }
-  .item-second{
-    /* border-top-left-radius: 20px; */
-  }
-
-  /* .item-no-active:first-child {
-    border-bottom: none;
-  }
-   */
-   /* .canastilla{
-    border-top-left-radius: 100px;
-   } */ 

@@ -40,12 +40,17 @@ const ModalAddTercero = (props) => {
     setErrores(_errores);
     return Object.keys(_errores).length === 0;
   }
-  const onSubmitTercero = (newTercero) => {
+  const onSubmitTercero = async (newTercero) => {
     if (!formIsValid()) return;
-    PostTercero(newTercero);
-    props.handleSetTerceroModalAddTercero &&
-      props.handleSetTerceroModalAddTercero(newTercero);
-    setNuevoTercero(terceroInicial);
+    const respuesta = await PostTercero(newTercero);
+    if (respuesta === "fail") {
+      props.handleSetShowAlertError(true);
+    } else {
+      props.handleSetTerceroModalAddTercero &&
+        props.handleSetTerceroModalAddTercero(newTercero);
+      setNuevoTercero(terceroInicial);
+    }
+
     props.handleShowAddTercero(false);
   };
 

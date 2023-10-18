@@ -12,6 +12,7 @@ function App() {
   return (
     <>
       <BrowserRouter>
+        <NavBar></NavBar>
         <div className=" main-box">
           <div className="icon-container">
             <img
@@ -21,7 +22,6 @@ function App() {
             ></img>
           </div>
           <div className="row box mx-2">
-            <NavBar></NavBar>
             <Routes>
               <Route path="/" exact element={<Combustible />} />
               <Route path="/canastilla" exact element={<Canastilla />} />
@@ -30,7 +30,7 @@ function App() {
           </div>
         </div>
       </BrowserRouter>
-      <SampleComponent/>
+      <SampleComponent />
     </>
   );
 }
