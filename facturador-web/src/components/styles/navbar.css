@@ -24,7 +24,7 @@
     height: 50px;
     font-family: 'orkneyBold';
     font-size: 120%;
-    /* position: fixed; */
+    
     top: 25;
     left: 25px;
     background: #0C80EA;
@@ -73,7 +73,7 @@
     
   }
   .item-second{
-    border-bottom: 3px solid #7CC5FC;
+    /* border-top-left-radius: 20px; */
   }
 
   /* .item-no-active:first-child {

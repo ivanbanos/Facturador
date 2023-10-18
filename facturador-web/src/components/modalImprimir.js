@@ -77,9 +77,7 @@ const ModalImprimir = (props) => {
         centered
       >
         <Modal.Header className="header-modal" closeButton>
-          <Modal.Title>
-            Convertir a Factura {ultimaFactura.consecutivo} es ORDEN
-          </Modal.Title>
+          <Modal.Title>Convertir Orden a Factura</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           Desea convertir la orden de compra a una factura?
@@ -91,7 +89,7 @@ const ModalImprimir = (props) => {
               onClickConvertirAFactura();
             }}
           >
-            Convertir a Fac
+            Convertir a Factura
           </Button>
           <Button
             className="botton-medium-blue-modal"
@@ -114,9 +112,7 @@ const ModalImprimir = (props) => {
         centered
       >
         <Modal.Header className="header-modal" closeButton>
-          <Modal.Title>
-            Convertir a Orden de Compra {ultimaFactura.consecutivo} es FACTURA
-          </Modal.Title>
+          <Modal.Title>Convertir Factura a Orden de Compra</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           Desea convertir la factura a una orden de compra?

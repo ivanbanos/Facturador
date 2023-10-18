@@ -67,11 +67,14 @@ const ModalFacturaElectronica = (props) => {
         className={`alert-container ${
           showAlertImpresionExitosa ? "active" : ""
         }`}
-        onClick={() => {
-          setShowAlertImpresionExitosa(false);
-        }}
       >
-        <Alert variant={"info"}>Factura Impresa Exitosamente</Alert>
+        <Alert
+          variant="info"
+          onClose={() => setShowAlertImpresionExitosa(false)}
+          dismissible
+        >
+          <Alert.Heading>Fatura impresa de forma exitosa</Alert.Heading>
+        </Alert>
       </div>
     </>
   );

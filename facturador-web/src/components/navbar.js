@@ -32,11 +32,7 @@ const NavBar = () => {
             </div>
           </Link>
         </li>
-        <li
-        // className={`menu-item ${
-        //   selectedItem === "canastilla" ? "item-active" : "item-no-active"
-        // }`}
-        >
+        <li>
           <Link
             className="links"
             to="/canastilla"
@@ -51,11 +47,7 @@ const NavBar = () => {
             </div>
           </Link>
         </li>
-        <li
-        // className={`menu-item ${
-        //   selectedItem === "terceros" ? "item-active" : "item-no-active"
-        // }`}
-        >
+        <li>
           <Link
             className="links"
             to="/terceros"
