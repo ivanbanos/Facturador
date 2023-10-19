@@ -5,6 +5,7 @@ import PostTercero from "../Services/getServices/PostTercero";
 import "./styles/modal.css";
 
 const ModalAddTercero = (props) => {
+  const [errores, setErrores] = useState({});
   const tiposDeIdentificacion = props.tiposDeIdentificacion;
   const terceroInicial = {
     terceroId: 0,
@@ -25,11 +26,32 @@ const ModalAddTercero = (props) => {
     };
     setNuevoTercero(tempTercero);
   };
+  function formIsValid() {
+    const _errores = {};
+    if (!nuevoTercero.nombre) _errores.nombre = "Se requiere el nombre";
+    if (!nuevoTercero.telefono) _errores.telefono = "Se requiere el teléfono";
+    if (!nuevoTercero.direccion)
+      _errores.direccion = "Se requiere la dirección";
+    if (!nuevoTercero.identificacion)
+      _errores.identificacion = "Se requiere la identificación";
+    if (!nuevoTercero.tipoIdentificacion)
+      _errores.tipoIdentificacion = "Se requiere el tipo de identificación";
+    if (!nuevoTercero.correo) _errores.correo = "Se requiere el correo";
+    setErrores(_errores);
+    return Object.keys(_errores).length === 0;
+  }
+  const onSubmitTercero = async (newTercero) => {
+    if (!formIsValid()) return;
+    const respuesta = await PostTercero(newTercero);
+    if (respuesta === "fail") {
+      props.handleSetShowAlertError(true);
+    } else {
+      props.handleSetTerceroModalAddTercero &&
+        props.handleSetTerceroModalAddTercero(newTercero);
+      setNuevoTercero(terceroInicial);
+    }
 
-  const onSubmitTercero = (newTercero) => {
-    PostTercero(newTercero);
-    props.handleSetTerceroModalAddTercero &&
-      props.handleSetTerceroModalAddTercero(newTercero);
+    props.handleShowAddTercero(false);
   };
 
   return (
@@ -73,6 +95,11 @@ const ModalAddTercero = (props) => {
                         </option>
                       ))}
                   </select>
+                  {errores.tipoIdentificacion && (
+                    <div className="alert alert-danger error-container">
+                      {errores.tipoIdentificacion}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="row mb-3">
@@ -82,10 +109,13 @@ const ModalAddTercero = (props) => {
                 <div className="col-sm-8">
                   <input
                     type="text"
-                    className="form-control modal-tercero-input"
+                    className={`form-control modal-tercero-input ${
+                      errores.identificacion ? "is-invalid" : ""
+                    }`}
                     name="identificacion"
                     value={nuevoTercero.identificacion}
                     onChange={handleChangeTercero}
+                    placeholder={errores.identificacion || "Identificación"}
                   ></input>
                 </div>
               </div>
@@ -95,10 +125,13 @@ const ModalAddTercero = (props) => {
                 <div className="col-sm-8">
                   <input
                     type="text"
-                    className="form-control modal-tercero-input"
+                    className={`form-control modal-tercero-input ${
+                      errores.nombre ? "is-invalid" : ""
+                    }`}
                     name="nombre"
                     value={nuevoTercero.nombre}
                     onChange={handleChangeTercero}
+                    placeholder={errores.nombre || "Nombre"}
                   ></input>
                 </div>
               </div>
@@ -107,10 +140,13 @@ const ModalAddTercero = (props) => {
                 <div className="col-sm-8">
                   <input
                     type="text"
-                    className="form-control modal-tercero-input"
+                    className={`form-control modal-tercero-input ${
+                      errores.direccion ? "is-invalid" : ""
+                    }`}
                     name="direccion"
                     value={nuevoTercero.direccion}
                     onChange={handleChangeTercero}
+                    placeholder={errores.direccion || "Dirección"}
                   ></input>
                 </div>
               </div>
@@ -119,10 +155,13 @@ const ModalAddTercero = (props) => {
                 <div className="col-sm-8">
                   <input
                     type="text"
-                    class="form-control modal-tercero-input"
+                    className={`form-control modal-tercero-input ${
+                      errores.telefono ? "is-invalid" : ""
+                    }`}
                     name="telefono"
                     value={nuevoTercero.telefono}
                     onChange={handleChangeTercero}
+                    placeholder={errores.telefono || "Teléfono"}
                   ></input>
                 </div>
               </div>
@@ -131,10 +170,13 @@ const ModalAddTercero = (props) => {
                 <div className="col-sm-8">
                   <input
                     type="text"
-                    className="form-control modal-tercero-input"
+                    className={`form-control modal-tercero-input ${
+                      errores.correo ? "is-invalid" : ""
+                    }`}
                     name="correo"
                     value={nuevoTercero.correo}
                     onChange={handleChangeTercero}
+                    placeholder={errores.correo || "Correo"}
                   ></input>
                 </div>
               </div>
@@ -155,8 +197,6 @@ const ModalAddTercero = (props) => {
               className="botton-medium-blue-modal"
               onClick={() => {
                 onSubmitTercero(nuevoTercero);
-                setNuevoTercero(terceroInicial);
-                props.handleShowAddTercero(false);
               }}
             >
               Agregar

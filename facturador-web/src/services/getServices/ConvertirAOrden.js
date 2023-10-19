@@ -8,6 +8,7 @@ const ConvertirAOrden = async (id_venta) => {
         method: "GET",
         mode: "cors",
         headers: {
+          Accept: "text/plain",
           "Access-Control-Allow-Origin": "*",
           Authorization: "Bearer ",
           "sec-fetch-mode": "cors",
@@ -19,7 +20,7 @@ const ConvertirAOrden = async (id_venta) => {
     );
     console.log(response.status);
     if (response.status === 200) {
-      let respuesta = await response.json();
+      let respuesta = await response.text();
       console.log(respuesta);
       return respuesta;
     }

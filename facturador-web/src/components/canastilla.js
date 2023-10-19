@@ -7,6 +7,9 @@ import GetTiposDeIdentificacion from "../Services/getServices/GetTiposDeIdentifi
 import GetFormasDePago from "../Services/getServices/GetFormasDePago";
 import AlertTerceroNoExisteCnastilla from "./alertTerceroNoExisteCanastilla";
 import ModalAddTercero from "./modalAddTercero";
+import AlertError from "./alertaError";
+import AlertVentaExitosa from "./AlertVentaExitosa";
+
 const Canastilla = () => {
   const [productos, setProductos] = useState([]);
   const valorInicialObjetoPostCanastilla = {
@@ -45,7 +48,8 @@ const Canastilla = () => {
     tipoIdentificacion: 0,
   };
   const [tercero, setTercero] = useState(valorInicialTercero);
-
+  const [showAlertError, setShowAlertError] = useState(false);
+  const handleSetShowAlertError = (show) => setShowAlertError(show);
   const [identificacion, setIdentificacion] = useState("");
   const [tiposDeIdentificacion, setTiposDeIdentificacion] = useState([]);
   const [formasDePago, setformasDePago] = useState([]);
@@ -80,6 +84,9 @@ const Canastilla = () => {
   function handleNoCambiarTercero() {
     setIdentificacion("");
   }
+  const [showAlertVentaExitosa, setShowAlertVentaExitosa] = useState(false);
+  const handleSetShowAlertVentaExitosa = (show) =>
+    setShowAlertVentaExitosa(show);
   const [showAddTercero, setShowAddTercero] = useState(false);
   const handleShowAddTercero = (show) => setShowAddTercero(show);
   function handleSetTerceroModalAddTercero(newTercero) {
@@ -144,9 +151,15 @@ const Canastilla = () => {
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
     console.log(tempObjetoPostCanastilla);
   };
-  const onClickGenerarVenta = (canastilla) => {
+  const onClickGenerarVenta = async (canastilla) => {
     console.log(canastilla);
-    PostCanastilla(canastilla);
+    const respuesta = await PostCanastilla(canastilla);
+    if (respuesta === "fail") {
+      handleSetShowAlertError(true);
+    } else {
+      handleSetShowAlertVentaExitosa(true);
+      resetValues();
+    }
     // setObjetoPostCanastilla(valorInicialObjetoPostCanastilla)
   };
   const resetValues = () => {
@@ -177,9 +190,11 @@ const Canastilla = () => {
       <div className="col-4 pt-4 pb-4 left-column columnas">
         <div className="info-div ">
           <div className="text-white">
-            <label className="fs-3 text-white">Agregar Producto</label>
+            <label className="titulo-informacion text-white">
+              Agregar Producto
+            </label>
             <select
-              className="form-select d-inline w-80 h-50 select-white-blue"
+              className="form-select d-inline w-80 h-50 select-white-blue text-select-list"
               aria-label="Default select example"
               value={productoSeleccionado?.canastillaId || ""}
               onChange={(event) => {
@@ -204,7 +219,9 @@ const Canastilla = () => {
                 ))}
             </select>
             <div className="d-flex flex-row">
-              <label className="mx-3 d-inline fs-3">Cantidad</label>
+              <label className="mx-3 d-inline titulo-informacion">
+                Cantidad
+              </label>
 
               <input
                 value={cantidadSeleccionada || ""}
@@ -214,7 +231,7 @@ const Canastilla = () => {
                     setCantidadSeleccionada(newCantidad);
                   }
                 }}
-                className="form-control w-50 h-50 select-white-blue"
+                className="form-control w-50 h-50 select-white-blue text-select-list"
               />
             </div>
             <div className="d-flex justify-content-center">
@@ -227,7 +244,9 @@ const Canastilla = () => {
             </div>
           </div>
           <div className="info-cliente-div">
-            <div className="fs-3 text-white">Información del Cliente</div>
+            <div className="titulo-informacion text-white">
+              Información del Cliente
+            </div>
 
             <div className="mt-2 p-0">
               <div className=" ">
@@ -261,7 +280,7 @@ const Canastilla = () => {
               </div>
               <div className="info-venta-div d-flex flex-column align-items-end">
                 <select
-                  className="form-select  w-75 h-50 select-white-blue"
+                  className="form-select  w-75 h-50 select-white-blue text-select-list"
                   aria-label="Default select example"
                   name="codigoFormaPago"
                   value={objetoPostCanastilla.codigoFormaPago || ""}
@@ -311,7 +330,6 @@ const Canastilla = () => {
             className="botton-green m-3 right-botton "
             onClick={() => {
               onClickGenerarVenta(objetoPostCanastilla);
-              resetValues();
             }}
           >
             <span className="">Generar</span> <span>Venta</span>
@@ -333,6 +351,14 @@ const Canastilla = () => {
           handleNoCambiarTercero={handleNoCambiarTercero}
         ></ModalAddTercero>
       </div>
+      <AlertError
+        showAlertError={showAlertError}
+        handleSetShowAlertError={handleSetShowAlertError}
+      ></AlertError>
+      <AlertVentaExitosa
+        showAlertVentaExitosa={showAlertVentaExitosa}
+        handleSetShowAlertVentaExitosa={handleSetShowAlertVentaExitosa}
+      ></AlertVentaExitosa>
     </>
   );
 };

@@ -12,7 +12,8 @@ const ModalCerrarTurno = (props) => {
   const handleChangeCodigoEmpleado = (codigo) => setCodigoEmpleado(codigo);
   const islaSelect = props.islaSelect;
   const cerrarTurno = props.cerrarTurno;
-
+  console.log(islaSelect);
+  console.log(props.islaSelectName);
   return (
     <>
       <Button

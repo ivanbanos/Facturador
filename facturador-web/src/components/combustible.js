@@ -16,8 +16,11 @@ import ModalCerrarTurno from "./modalCerrarTurno";
 import CerrarTurno from "../Services/getServices/CerrarTurno";
 import GetTercero from "../Services/getServices/GetTercero";
 import FidelizarVenta from "../Services/getServices/FidelizarVenta";
+import AlertError from "./alertaError";
 
 const Combustible = () => {
+  const [showAlertError, setShowAlertError] = useState(false);
+  const handleSetShowAlertError = (show) => setShowAlertError(show);
   const [codigoEmpleado, setCodigoEmpleado] = useState("");
   const handleChangeCodigoEmpleado = (codigo) => setCodigoEmpleado(codigo);
   const [showAddTercero, setShowAddTercero] = useState(false);
@@ -46,9 +49,25 @@ const Combustible = () => {
   }
   const [islas, setIslas] = useState([]);
 
+  function GetLocalStorage() {
+    try {
+      setTurno(JSON.parse(localStorage.getItem("turno")) || null);
+
+      setCaras(JSON.parse(localStorage.getItem("caras")) || null);
+      setIslaSelect(JSON.parse(localStorage.getItem("islaSelect")) || null);
+      setIslaSelectName(
+        JSON.parse(localStorage.getItem("islaSelectName")) || null
+      );
+    } catch (error) {
+      localStorage.clear();
+    }
+  }
+
   const [turno, setTurno] = useState(null);
-  const [ultimaFacturaTexto, setUltimaFacturaTexto] = useState("");
   const [caras, setCaras] = useState([]);
+
+  const [ultimaFacturaTexto, setUltimaFacturaTexto] = useState("");
+
   const [tiposDeIdentificacion, setTiposDeIdentificacion] = useState([]);
   const [formasDePago, setformasDePago] = useState([]);
   const [islaSelect, setIslaSelect] = useState("");
@@ -149,14 +168,17 @@ const Combustible = () => {
 
     let formasPago = await GetFormasDePago();
     setformasDePago(formasPago);
+    GetLocalStorage();
   };
 
   const fetcTurnoYCaras = async (idIsla) => {
     let turno = await GetTurnoIsla(idIsla);
     setTurno(turno);
     console.log(turno);
+    localStorage.setItem("turno", JSON.stringify(turno));
     let caras = await GetCarasPorIsla(idIsla);
     setCaras(caras);
+    localStorage.setItem("caras", JSON.stringify(caras));
     console.log(caras);
   };
 
@@ -166,6 +188,7 @@ const Combustible = () => {
     setCaras([]);
     setIslaSelect("");
     setIslaSelectName("");
+    localStorage.clear();
   };
 
   const fetchInformacionCliente = async (idCara) => {
@@ -186,27 +209,30 @@ const Combustible = () => {
 
   return (
     <>
-      <div className="col-4 pt-4 pb-4 left-column columnas">
+      <div className="col-4 col-md-5 pt-4 pb-4 left-column columnas">
         <div className="d-flex flex-row isla-div">
-          <div className="border-rombo">
-            <div className="border-middle-rombo">
-              <div className="rombo"></div>
-            </div>
+          <div className="rombo">
+            <div></div>
           </div>
-          <label className="mx-2 fs-3 d-inline text-white">ISLAS</label>
+          <label className="mx-2 d-inline text-white title-isla">ISLAS</label>
           <select
-            className="form-select dark-blue-input d-inline w-50 h-50"
+            className="form-select dark-blue-input d-inline w-50 h-50 text-select-list"
             aria-label="Default select example"
             value={islaSelect}
             onChange={(event) => {
               const selectIsla = event.target.value;
               setIslaSelect(selectIsla);
+              localStorage.setItem("islaSelect", selectIsla);
               fetcTurnoYCaras(selectIsla);
               const selectedName =
                 event.target.options[event.target.selectedIndex].getAttribute(
                   "data-name"
                 );
               setIslaSelectName(selectedName);
+              localStorage.setItem(
+                "islaSelectName",
+                JSON.stringify(selectedName)
+              );
               console.log(selectedName);
             }}
           >
@@ -234,10 +260,10 @@ const Combustible = () => {
                 <p>{turno === null || turno === "" ? "N/A" : turno.empleado}</p>
               </div>
             </div>
-            <div className="d-flex flex-row">
-              <label className="mx-3 d-inline fs-3">Cara</label>
+            <div className="d-flex flex-row ms-3">
+              <label className="mx-3 d-inline  titulo-informacion">Cara</label>
               <select
-                className="form-select d-inline w-50 h-50 select-white-blue"
+                className="form-select d-inline w-50 h-50 select-white-blue text-select-list"
                 aria-label="Default select example"
                 value={caraSelect}
                 onChange={(event) => {
@@ -259,11 +285,14 @@ const Combustible = () => {
           <div className="info-cliente-div">
             <div className="d-flex my-3 titulos-circulo">
               <div className="circulo my-2 mx-3"></div>
-              <div className="fs-3 text-white">Información del Cliente</div>
+              <div className="titulo-informacion text-white">
+                Información del Cliente
+              </div>
             </div>
+
             <form className="div-tercero-identificacion">
               <select
-                className="form-select w-80 h-50 select-white-blue"
+                className="form-select w-100 h-50 select-white-blue text-select-list"
                 name="tipoIdentificacion"
                 value={ultimaFactura.tercero.tipoIdentificacion || ""}
                 onChange={handleChangeTercero}
@@ -282,7 +311,7 @@ const Combustible = () => {
               <div className="mt-2 p-0">
                 <input
                   type="text"
-                  className="form-control dark-blue-input "
+                  className="form-control dark-blue-input w-100 "
                   placeholder="Identificación"
                   name="identificacion"
                   value={identificacion || ""}
@@ -297,15 +326,15 @@ const Combustible = () => {
                 ></AlertTercero>
               </div>
             </form>
-            <div className="mt-2">
-              <div className="form-control dark-blue-input row d-flex">
-                <div className="col-4">
+            <div className="mt-2 formulario-datos-cliente">
+              <div className="form-control dark-blue-input d-flex">
+                <div className="col-3 me-1">
                   <p className="text-end">Nombre: </p>
                   <p className="text-end">Teléfono:</p>
                   <p className="text-end">Correo:</p>
                   <p className="text-end">Dirección:</p>
                 </div>
-                <div className="col-7">
+                <div className="col-8 datos-cliente">
                   <p>{ultimaFactura.tercero.nombre || ""}</p>
                   <p>{ultimaFactura.tercero.telefono || ""}</p>
                   <p>{ultimaFactura.tercero.correo || ""}</p>
@@ -317,12 +346,14 @@ const Combustible = () => {
           <div className="info-venta-div">
             <div className="d-flex titulos-circulo">
               <div className="circulo my-2 mx-3"></div>
-              <div className="fs-3 text-white">Información de la Venta</div>
+              <div className="titulo-informacion text-white">
+                Información de la Venta
+              </div>
             </div>
 
             <div className="info-venta-div d-flex flex-column align-items-end">
               <select
-                className="form-select  w-75 h-50 select-white-blue"
+                className="form-select  w-75 h-50 select-white-blue text-select-list"
                 aria-label="Default select example"
                 name="codigoFormaPago"
                 value={ultimaFactura.codigoFormaPago || ""}
@@ -339,7 +370,7 @@ const Combustible = () => {
 
               <input
                 type="text"
-                className="form-control select-white-blue w-50 h-40"
+                className="form-control select-white-blue w-50 h-40 text-select-list"
                 placeholder="Placa"
                 name="placa"
                 value={ultimaFactura.placa || ""}
@@ -348,7 +379,7 @@ const Combustible = () => {
 
               <input
                 type="text"
-                className="form-control select-white-blue w-50 h-40"
+                className="form-control select-white-blue w-50 h-40 text-select-list"
                 placeholder="Kilometraje"
                 name="kilometraje"
                 value={ultimaFactura.kilometraje || ""}
@@ -358,7 +389,7 @@ const Combustible = () => {
           </div>
         </div>
       </div>
-      <div className="col-5 center-column columnas">
+      <div className="col-5 col-md-5 center-column columnas">
         <div className="container container-factura my-4">
           <div className=" factura px-2 w-100 h-100">
             <p>{ultimaFacturaTexto ? ultimaFacturaTexto : " "}</p>
@@ -369,12 +400,14 @@ const Combustible = () => {
             ultimaFactura={ultimaFactura}
             handleShowFacturaElectrónica={handleShowFacturaElectrónica}
             handleSetUltimaFactura={handleSetUltimaFactura}
+            handleSetShowAlertError={handleSetShowAlertError}
           ></ModalImprimir>
           <ModalFacturaElectronica
             handleCloseFacturaElectronica={handleCloseFacturaElectronica}
             showFacturaElectronica={showFacturaElectronica}
             ultimaFactura={ultimaFactura}
             resetEstadoInicial={resetEstadoInicial}
+            handleSetShowAlertError={handleSetShowAlertError}
           ></ModalFacturaElectronica>
           <ModalAddTercero
             showAddTercero={showAddTercero}
@@ -382,13 +415,13 @@ const Combustible = () => {
             identificacionActualizada={identificacion}
             tiposDeIdentificacion={tiposDeIdentificacion}
             handleNoCambiarTercero={handleNoCambiarTercero}
+            handleSetShowAlertError={handleSetShowAlertError}
             handleSetTerceroModalAddTercero={handleSetTerceroModalAddTercero}
           ></ModalAddTercero>
         </div>
       </div>
-      <div className="col-3  right-column columnas">
-        <div className="button-container1"></div>
-        <div className="d-flex flex-column align-items-center button-container">
+      <div className="col-3 col-md-2 right-column columnas d-flex align-items-center">
+        <div className="d-flex  flex-column align-items-center button-container">
           {(turno === null || turno === "") && (
             <ModalAbrirTurno
               islaSelect={islaSelect}
@@ -414,6 +447,10 @@ const Combustible = () => {
           )}
         </div>
       </div>
+      <AlertError
+        showAlertError={showAlertError}
+        handleSetShowAlertError={handleSetShowAlertError}
+      ></AlertError>
     </>
   );
 };
