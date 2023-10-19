@@ -1939,7 +1939,9 @@ begin try
 	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from dbo.FacturasPOS
 	 
-	inner join venta on venta.Id = FacturasPOS.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	inner join venta on venta.Id = FacturasPOS.ventaId 
+    left join turno on venta.idturno = turno.id 
+    left join empleado on turno.idEmpleado = empleado.id
 	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
@@ -2926,6 +2928,25 @@ begin try
 	if @noabierto = 0
 	begin
 		update turno set idEstado = 4 where Id=@IdTurno
+
+        
+        declare @facturasTemp as Table(id int)
+
+        insert into @facturasTemp(id)
+        select top(2) Id from Venta
+        where idTurno = @IdTurno
+        order by Id desc
+
+        Update FacturasPOS
+				set impresa = -1,
+				enviada=0
+				from FacturasPOS
+				inner join @facturasTemp ft on FacturasPOS.ventaId = ft.id
+        Update OrdenesDeDespacho
+				set impresa = -1,
+				enviada=0
+				from OrdenesDeDespacho
+				inner join @facturasTemp ft on OrdenesDeDespacho.ventaId = ft.id
 	end
 end try
 begin catch
