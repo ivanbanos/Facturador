@@ -15,7 +15,7 @@ const ModalAbrirTurno = (props) => {
   return (
     <>
       <Button
-        className="botton-green m-3 right-botton"
+        className="botton-green m-1 right-botton"
         onClick={() => {
           handleShowModalAbrirTurno();
         }}

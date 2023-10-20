@@ -75,3 +75,21 @@
     padding: 0.6rem 1rem;
     text-decoration: none;
 }
+
+@media only screen and (max-width: 768px){
+  
+  .navbar{
+    margin: 0 25px 0 25px;
+    font-size: 100%;
+    padding-top: 0%;
+  }
+
+  .item-active {
+    padding: 1px 16px;
+  }
+  
+  .item-no-active {
+    padding: 5px 16px 1px 16px;
+  }
+
+}
