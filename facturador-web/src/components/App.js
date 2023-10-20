@@ -4,7 +4,7 @@ import NavBar from "./navbar";
 import logo from "./icono.png";
 import Combustible from "./combustible";
 import Canastilla from "./canastilla.js";
-import SampleComponent from "./rabbitWebSocket";
+import VehiculosSICOMModal from "./rabbitWebSocket";
 import Terceros from "./terceros";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
 
@@ -30,7 +30,7 @@ function App() {
           </div>
         </div>
       </BrowserRouter>
-      <SampleComponent />
+      <VehiculosSICOMModal />
     </>
   );
 }

@@ -33,7 +33,7 @@ const compareDates = (d1, d2) => {
   }
 };
 
-const SampleComponent = (props) => {
+const VehiculosSICOMModal = (props) => {
 
   const [show, setShow] = useState(false);
   const [vehiculo, setVehiculo] = useState({placa:""});
@@ -42,32 +42,44 @@ const SampleComponent = (props) => {
    const handleCloseModal = () => setShow(false);
    // The compat mode syntax is totally different, converting to v5 syntax
     // Client is imported from '@stomp/stompjs'
-    let client = new Client();
-    client.configure({
+    const client = new Client({
       brokerURL: configData.RabbitWebSocket,
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+      connectHeaders: {
+        login: 'siges',
+        passcode: 'siges',
+      },
       onConnect: () => {
+        
         client.subscribe('VehiculosSICOM', message => {
-          console.log(message.body);
             const now = new Date();
             setVehiculo(JSON.parse(message.body));
             let vehiculoJson = JSON.parse(message.body);
-            console.log(vehiculoJson.estado);
-            console.log(vehiculoJson.estado != 0);
-            setEstado("Autorizado")
-            if (compareDates(now,vehiculoJson.fechaFin)>=0) {
-              setEstado("No Autorizado, motivo vencido")
-            } 
-             if(vehiculoJson.estado != 0){
-              setEstado("No Autorizado, motivo "+vehiculoJson.motivoTexto)
-            } 
-            setShow(true);
+            if((vehiculoJson.isla == JSON.parse(localStorage.getItem("islaSelectName")) || null)){
+              setEstado("Autorizado")
+              if (compareDates(now,vehiculoJson.fechaFin)>=0) {
+                setEstado("No Autorizado, motivo vencido")
+              } 
+               if(vehiculoJson.estado != 0){
+                setEstado("No Autorizado, motivo "+vehiculoJson.motivoTexto)
+              } 
+              setShow(true);
+            }
         });
       },
     
     });
-    
-    client.activate();
-  
+    useEffect(() => {
+      client.activate();
+    }, []); 
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setShow(false);
+      }, 15000);
+      return () => clearInterval(interval);
+    }, []);
   return (
     <>
     <Modal
@@ -80,29 +92,29 @@ const SampleComponent = (props) => {
         centered
       >
         <Modal.Header className="header-modal" closeButton>
-          <Modal.Title>Vehiculo</Modal.Title>
+          <Modal.Title className="SICOM">Vehiculo</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-              <label className="col-sm-12 col-form-label">
+              <label className="col-sm-12 col-form-label SICOM">
                 {estado}
               </label>
             <div className="row mb-3">
-              <label className="col-sm-6 col-form-label">
+              <label className="col-sm-6 col-form-label SICOM">
                 Placa
               </label>
-              <label className="col-sm-6 col-form-label">
+              <label className="col-sm-6 col-form-label SICOM">
                 {vehiculo.placa}
               </label>
-              <label className="col-sm-6 col-form-label">
+              <label className="col-sm-6 col-form-label SICOM">
                 IButton
               </label>
-              <label className="col-sm-6 col-form-label">
+              <label className="col-sm-6 col-form-label SICOM">
                 {vehiculo.idrom}
               </label>
-              <label className="col-sm-6 col-form-label">
+              <label className="col-sm-6 col-form-label SICOM">
                 Fecha de vencimiento
               </label>
-              <label className="col-sm-6 col-form-label">
+              <label className="col-sm-6 col-form-label SICOM">
                 {vehiculo.fechaFin}
               </label>
             </div>
@@ -113,4 +125,4 @@ const SampleComponent = (props) => {
   );
 }
 
-export default SampleComponent;
+export default VehiculosSICOMModal;

@@ -83,7 +83,15 @@ namespace FacturadorAPI.Controllers
             await _mediator.Send(new MandarImprimirCommand(FacturaPOSId, TerceroId, FormaPago, VentaId, Placa, Kilometraje), cancellationToken);
             return Ok();
         }
-        
+
+        [HttpPost]
+        [Route("ImprimirPorConsecutivo/{consecutivo}")]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> MandarImprimirConsecutivo(string consecutivo, CancellationToken cancellationToken)
+        {
+            await _mediator.Send(new MandarImprimirConsecutivoCommand(consecutivo), cancellationToken);
+            return Ok();
+        }
 
 
     }

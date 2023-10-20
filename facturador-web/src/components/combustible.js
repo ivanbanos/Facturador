@@ -209,6 +209,7 @@ const Combustible = () => {
 
   return (
     <>
+    
       <div className="col-4 col-md-5 pt-4 pb-4 left-column columnas">
         <div className="d-flex flex-row isla-div">
           <div className="rombo">

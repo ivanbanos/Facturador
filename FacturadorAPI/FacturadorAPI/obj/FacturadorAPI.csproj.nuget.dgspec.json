@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ivana\\Repos\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj": {}
+    "C:\\Users\\Ivan\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ivana\\Repos\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj": {
+    "C:\\Users\\Ivan\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ivana\\Repos\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
+        "projectUniqueName": "C:\\Users\\Ivan\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
         "projectName": "FacturadorAPI",
-        "projectPath": "C:\\Users\\ivana\\Repos\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
-        "packagesPath": "C:\\Users\\ivana\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ivana\\Repos\\Facturador\\FacturadorAPI\\FacturadorAPI\\obj\\",
+        "projectPath": "C:\\Users\\Ivan\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
+        "packagesPath": "C:\\Users\\Ivan\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Ivan\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\ivana\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Ivan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -22,7 +22,6 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\sdk\\7.0.304\\Sdks\\Microsoft.NET.Sdk.Web\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -97,7 +96,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.304\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.402\\RuntimeIdentifierGraph.json"
         }
       }
     }
