@@ -116,7 +116,7 @@ const Terceros = () => {
             <div className="col-9 form-tercero-div">
               <div className="formulario p-auto">
                 <form className="pt-5">
-                  <div className="row mb-3 p-auto">
+                  <div className="row margen-input-3 p-auto">
                     <label className="col-sm-4 col-form-label">
                       Identificación
                     </label>
@@ -136,7 +136,7 @@ const Terceros = () => {
                     </div>
                   </div>
 
-                  <div className="row mb-3 d-flex align-items-center">
+                  <div className="row margen-input-3 d-flex align-items-center">
                     <label className="col-sm-4 col-form-label">
                       Tipo de Identificación
                     </label>
@@ -166,7 +166,7 @@ const Terceros = () => {
                       )}
                     </div>
                   </div>
-                  <div className="row mb-3">
+                  <div className="row margen-input-3">
                     <label className="col-sm-4 col-form-label">Nombre</label>
                     <div className="col-sm-8">
                       <input
@@ -182,7 +182,7 @@ const Terceros = () => {
                       ></input>
                     </div>
                   </div>
-                  <div className="row mb-3">
+                  <div className="row margen-input-3">
                     <label className="col-sm-4 col-form-label">Dirección</label>
                     <div className="col-sm-8">
                       <input
@@ -198,7 +198,7 @@ const Terceros = () => {
                       ></input>
                     </div>
                   </div>
-                  <div className="row mb-3">
+                  <div className="row margen-input-3">
                     <label className="col-sm-4 col-form-label">Teléfono</label>
                     <div className="col-sm-8">
                       <input

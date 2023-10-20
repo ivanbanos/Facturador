@@ -95,3 +95,14 @@ font-family: 'orkneyBold';
 .alert {
   position: relative;
 }
+
+@media only screen and (max-width: 768px){
+  
+  .botton-light-blue-modal {
+      
+      width: 145px;
+      height: 40px;
+      margin-top: 6px;
+  }
+  
+}

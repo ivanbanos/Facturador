@@ -17,6 +17,7 @@ import CerrarTurno from "../Services/getServices/CerrarTurno";
 import GetTercero from "../Services/getServices/GetTercero";
 import FidelizarVenta from "../Services/getServices/FidelizarVenta";
 import AlertError from "./alertaError";
+import ModalImprimirPorConsecutivo from "./modalImprimirPorConsecutivo";
 
 const Combustible = () => {
   const [showAlertError, setShowAlertError] = useState(false);
@@ -250,20 +251,22 @@ const Combustible = () => {
           <div className="text-white info-isla-div">
             <div className="row info-turno-div pt-2">
               <div className="col-4">
-                <p className="text-end">Turno: </p>
-                <p className="text-end">Empleado:</p>
+                <p className="text-end texto-turno">Turno: </p>
+                <p className="text-end texto-turno">Empleado:</p>
               </div>
               <div className="col-7">
-                <p>
+                <p className="texto-turno">
                   {turno === null || turno === "" ? "N/A" : turno.fechaApertura}{" "}
                 </p>
-                <p>{turno === null || turno === "" ? "N/A" : turno.empleado}</p>
+                <p className="texto-turno">
+                  {turno === null || turno === "" ? "N/A" : turno.empleado}
+                </p>
               </div>
             </div>
             <div className="d-flex flex-row ms-3">
               <label className="mx-3 d-inline  titulo-informacion">Cara</label>
               <select
-                className="form-select d-inline w-50 h-50 select-white-blue text-select-list"
+                className="form-select d-inline w-50 altura-select select-white-blue text-select-list"
                 aria-label="Default select example"
                 value={caraSelect}
                 onChange={(event) => {
@@ -283,7 +286,7 @@ const Combustible = () => {
             </div>
           </div>
           <div className="info-cliente-div">
-            <div className="d-flex my-3 titulos-circulo">
+            <div className="d-flex div-titulo-info-cliente titulos-circulo">
               <div className="circulo my-2 mx-3"></div>
               <div className="titulo-informacion text-white">
                 Información del Cliente
@@ -311,7 +314,7 @@ const Combustible = () => {
               <div className="mt-2 p-0">
                 <input
                   type="text"
-                  className="form-control dark-blue-input w-100 "
+                  className="form-control dark-blue-input w-100 input-identificacion "
                   placeholder="Identificación"
                   name="identificacion"
                   value={identificacion || ""}
@@ -327,18 +330,26 @@ const Combustible = () => {
               </div>
             </form>
             <div className="mt-2 formulario-datos-cliente">
-              <div className="form-control dark-blue-input d-flex">
+              <div className="form-control dark-blue-input input-datos-cliente d-flex">
                 <div className="col-3 me-1">
-                  <p className="text-end">Nombre: </p>
-                  <p className="text-end">Teléfono:</p>
-                  <p className="text-end">Correo:</p>
-                  <p className="text-end">Dirección:</p>
+                  <p className="text-end texto-datos-cliente">Nombre: </p>
+                  <p className="text-end texto-datos-cliente">Teléfono:</p>
+                  <p className="text-end texto-datos-cliente">Correo:</p>
+                  <p className="text-end texto-datos-cliente">Dirección:</p>
                 </div>
                 <div className="col-8 datos-cliente">
-                  <p>{ultimaFactura.tercero.nombre || ""}</p>
-                  <p>{ultimaFactura.tercero.telefono || ""}</p>
-                  <p>{ultimaFactura.tercero.correo || ""}</p>
-                  <p>{ultimaFactura.tercero.direccion || ""}</p>
+                  <p className="texto-datos-cliente">
+                    {ultimaFactura.tercero.nombre || ""}
+                  </p>
+                  <p className="texto-datos-cliente">
+                    {ultimaFactura.tercero.telefono || ""}
+                  </p>
+                  <p className="texto-datos-cliente">
+                    {ultimaFactura.tercero.correo || ""}
+                  </p>
+                  <p className="texto-datos-cliente">
+                    {ultimaFactura.tercero.direccion || ""}
+                  </p>
                 </div>
               </div>
             </div>
@@ -353,7 +364,7 @@ const Combustible = () => {
 
             <div className="info-venta-div d-flex flex-column align-items-end">
               <select
-                className="form-select  w-75 h-50 select-white-blue text-select-list"
+                className="form-select  w-75 altura-select select-white-blue text-select-list"
                 aria-label="Default select example"
                 name="codigoFormaPago"
                 value={ultimaFactura.codigoFormaPago || ""}
@@ -370,7 +381,7 @@ const Combustible = () => {
 
               <input
                 type="text"
-                className="form-control select-white-blue w-50 h-40 text-select-list"
+                className="form-control select-white-blue w-50 altura-select text-select-list"
                 placeholder="Placa"
                 name="placa"
                 value={ultimaFactura.placa || ""}
@@ -379,7 +390,7 @@ const Combustible = () => {
 
               <input
                 type="text"
-                className="form-control select-white-blue w-50 h-40 text-select-list"
+                className="form-control select-white-blue w-50 altura-select text-select-list"
                 placeholder="Kilometraje"
                 name="kilometraje"
                 value={ultimaFactura.kilometraje || ""}
@@ -390,9 +401,11 @@ const Combustible = () => {
         </div>
       </div>
       <div className="col-5 col-md-5 center-column columnas">
-        <div className="container container-factura my-4">
+        <div className="container container-factura">
           <div className=" factura px-2 w-100 h-100">
-            <p>{ultimaFacturaTexto ? ultimaFacturaTexto : " "}</p>
+            <p className="texto-factura">
+              {ultimaFacturaTexto ? ultimaFacturaTexto : " "}
+            </p>
           </div>
         </div>
         <div className="d-flex justify-content-center">
@@ -422,6 +435,7 @@ const Combustible = () => {
       </div>
       <div className="col-3 col-md-2 right-column columnas d-flex align-items-center">
         <div className="d-flex  flex-column align-items-center button-container">
+          <ModalImprimirPorConsecutivo></ModalImprimirPorConsecutivo>
           {(turno === null || turno === "") && (
             <ModalAbrirTurno
               islaSelect={islaSelect}
@@ -439,7 +453,7 @@ const Combustible = () => {
           )}
           {turno && (
             <button
-              className="botton-light-blue right-botton m-3"
+              className="botton-light-blue right-botton m-1"
               onClick={() => FidelizarVenta(ultimaFactura)}
             >
               <span>Fidelizar</span> <span>Venta</span>

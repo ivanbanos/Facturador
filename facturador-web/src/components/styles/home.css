@@ -49,13 +49,16 @@
     
 }
 .icono1{
-    width: 100%;
-    height: 100%;
+    width: 80%;
+    height: 80%;
+    position: absolute;
+    top: -10px;
+    right: 20px;
 
 }
 .box{
     background-image: url("FactVista1-Fondo.png");
-    border-top-right-radius: 500px;
+    border-top-right-radius: 300px;
     border-bottom-left-radius: 150px;
     border-bottom-right-radius: 30px;
     /* border: 3px solid black;  */
@@ -78,7 +81,7 @@
 .right-botton{
     font-size: 100%;
     width: 80%;
-    height: 70px;
+    height: 25%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -95,9 +98,14 @@
   grid-template-rows: 1fr auto; /* Una fila que ocupa todo el espacio disponible y una fila automática para alinear en la parte inferior */
   height: 300px; 
 }
-.button-container1{
-    height: 50%;
+.button-container-canastilla{
+    
+    display: grid;
+  grid-template-columns: 1fr; /* Una sola columna */
+  grid-template-rows: 1fr auto; /* Una fila que ocupa todo el espacio disponible y una fila automática para alinear en la parte inferior */
+ padding-top: 70%;
 }
+
 .isla-div{
     border-bottom-right-radius: 50px;
    
@@ -107,6 +115,9 @@
     margin-bottom: 15px;
     background-color: #0C80EA;
     box-shadow: -5px -10px 10px rgba(0, 0, 0, 0.2);
+}
+.altura-select{
+    height: 50%
 }
 
 .rombo {
@@ -148,6 +159,10 @@
 .info-cliente-div{
     padding: 1px 10px 0px 10px; 
     margin: 0px 5px 0px 10px;
+}
+.div-titulo-info-cliente{
+    margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 
 .botton-light-blue{
@@ -211,6 +226,8 @@
     border-radius: 10px;
     overflow: hidden;
     height: 80%;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 .factura{
     
@@ -322,10 +339,17 @@
 
         .right-botton{
             padding-top: 6%;
+            font-size: 76%;
+            /* width: 85%; */
+            /* height: 72px; */
         }
     }
     
     @media only screen and (max-width: 768px){
+        .main-box{
+            margin: 0 25px 0 25px;
+        }
+
         .box{
             border-top-right-radius: 220px;
         }
@@ -339,7 +363,98 @@
         }
 
         .right-botton{
-            padding-top: 10%;
+      
+            
+            width: 95%;
+            height: 60px;
+            font-size: 60%!important;
+            
+        }
+        .texto-factura{
+            font-size: 70%;
+        }
+        .button-container {
+            padding-top: 61%;
+        }
+        .button-container-canastilla{
+            padding-top: 80%;
+        }
+        .info-turno-div{
+            font-size: 80%;
+            height: 57px;
+        }
+        .isla-div {
+            width: 81%;
+            margin-top: -25px;
+            padding: 5px;
+            margin-bottom: 0px;
+        }
+        .text-select-list{
+            font-size: 70%;
+        }
+        .title-isla {
+            font-size: 120%;
+            margin-top: auto;
+        }
+        .titulo-informacion {
+            font-size: 115%;
+            margin: auto;
+        }
+        .div-titulo-info-cliente{
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+        .texto-turno{
+            padding: 0%;
+            margin-bottom: 2%;
+        }
+        .input-identificacion{
+            height: 25px;
+            font-size: 90%;
+        }
+        .input-datos-cliente{
+            height: 90px;
             font-size: 80%;
         }
+        .input-datos-cliente-canastilla{
+            height: 120px;
+            font-size: 80%;
+        }
+        .texto-canastilla{
+            font-size: 11.5px;
+        }
+        .texto-datos-cliente-canastilla{
+            margin-bottom: 5%;
+        }
+        .texto-datos-cliente{
+            margin-bottom: 0%;
+        }
+        .altura-select{
+            height: 28px;
+            font-size: 63%;
+        }
+        .container-factura{
+            padding-left: 25px;
+            padding-right: 25px;
+            /* border-radius: 10px;
+            overflow: hidden; */
+            height: 370px;
+            margin-bottom: 0px;
+            /* margin-bottom: 0%; */
+        }
+        .botton-agregar-producto{
+            height: 40px;
+            font-size: 90%;
+        }
+        
+        
+    }
+    @media only screen and (max-width: 1175px){
+  
+        .right-botton{
+            padding-top: 10%;
+            font-size: 81%;
+            /* width: 85%; */
+        }
+        
     }

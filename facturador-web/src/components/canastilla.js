@@ -191,10 +191,10 @@ const Canastilla = () => {
         <div className="info-div ">
           <div className="text-white">
             <label className="titulo-informacion text-white">
-              Agregar Producto
+              AGREGAR PRODUCTO
             </label>
             <select
-              className="form-select d-inline w-80 h-50 select-white-blue text-select-list"
+              className="form-select d-inline w-80 altura-select select-white-blue text-select-list"
               aria-label="Default select example"
               value={productoSeleccionado?.canastillaId || ""}
               onChange={(event) => {
@@ -231,12 +231,12 @@ const Canastilla = () => {
                     setCantidadSeleccionada(newCantidad);
                   }
                 }}
-                className="form-control w-50 h-50 select-white-blue text-select-list"
+                className="form-control w-50 altura-select select-white-blue text-select-list"
               />
             </div>
             <div className="d-flex justify-content-center">
               <button
-                className="print-button botton-light-blue"
+                className="print-button botton-light-blue botton-agregar-producto"
                 onClick={onClickAgregarProducto}
               >
                 Agregar
@@ -252,7 +252,7 @@ const Canastilla = () => {
               <div className=" ">
                 <input
                   type="text"
-                  className="form-control dark-blue-input "
+                  className="form-control dark-blue-input  "
                   placeholder="Identificación"
                   name="identificacion"
                   value={identificacion || ""}
@@ -268,19 +268,23 @@ const Canastilla = () => {
               </div>
             </div>
             <div className="mt-2">
-              <div className="form-control dark-blue-input">
-                <p>Nombre: {tercero?.nombre}</p>
-                <p>Teléfono: {tercero?.telefono} </p>
-                <p>Correo: {tercero?.correo}</p>
-                <p>Dirección: {tercero?.direccion}</p>
-                {/* <p>
-                  Tipo de identificación:{" "}
-                  {objetoPostCanastilla.terceroId.tipoIdentificacion}
-                </p> */}
+              <div className="form-control dark-blue-input input-datos-cliente-canastilla">
+                <p className="texto-datos-cliente-canastilla">
+                  Nombre: {tercero?.nombre}
+                </p>
+                <p className="texto-datos-cliente-canastilla">
+                  Teléfono: {tercero?.telefono}{" "}
+                </p>
+                <p className="texto-datos-cliente-canastilla">
+                  Correo: {tercero?.correo}
+                </p>
+                <p className="texto-datos-cliente-canastilla">
+                  Dirección: {tercero?.direccion}
+                </p>
               </div>
               <div className="info-venta-div d-flex flex-column align-items-end">
                 <select
-                  className="form-select  w-75 h-50 select-white-blue text-select-list"
+                  className="form-select  w-75 altura-select select-white-blue text-select-list"
                   aria-label="Default select example"
                   name="codigoFormaPago"
                   value={objetoPostCanastilla.codigoFormaPago || ""}
@@ -301,7 +305,7 @@ const Canastilla = () => {
       </div>
       <div className="col-5 center-column columnas">
         <div className="container container-factura my-4">
-          <div className=" factura px-2 h-100">
+          <div className=" factura px-2 h-100 texto-canastilla">
             <p>Vendido a: {tercero.nombre} </p>
             <p>Nit/CC: {tercero.identificacion}</p>
 
@@ -325,7 +329,7 @@ const Canastilla = () => {
       </div>
       <div className="col-3  right-column columnas">
         <div className="button-container1"></div>
-        <div className="d-flex flex-column align-items-center button-container">
+        <div className="d-flex flex-column align-items-center button-container-canastilla">
           <button
             className="botton-green m-3 right-botton "
             onClick={() => {

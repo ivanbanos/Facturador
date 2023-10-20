@@ -66,3 +66,36 @@
     width: 40%;
     height: 70px;
 }
+.margen-input-3 {
+    margin-bottom: 1rem;
+}
+
+@media only screen and (max-width: 768px){
+  
+    .title-add{
+        font-family: 'orkneyBold';
+        font-size: 140%;
+    }
+    .boder-div{
+        height: 350px;
+        
+    }
+    .terceros-box{
+        height: 450px;
+    }
+    .form-tercero-div{
+        font-size: 80%;
+    }
+    .tercero-input{
+      font-size: 80%;
+    }
+    .add-button{   
+        font-size: 110%;
+        width: 35%;
+        height: 40px;
+    }
+    .margen-input-3 {
+        margin-bottom: 2%;
+    }
+    
+  }
