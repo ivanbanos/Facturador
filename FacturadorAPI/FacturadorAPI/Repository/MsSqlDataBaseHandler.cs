@@ -378,5 +378,26 @@ namespace MachineUtilizationApi.Repository
                 {"@IdIsla",isla }
                             });
         }
+
+        public async Task MandarImprimirConsecutivo(string consecutivo)
+        {
+            DataTable dt = await LoadDataTableFromStoredProcAsync("MandarImprimirConsecutivo",
+                            new Dictionary<string, object>{
+
+                    {"@consecutivo", consecutivo }
+                            });
+        }
+
+
+        public async Task ReimprimirTurno(DateTime fecha, int idIsla, int posicion)
+        {
+            DataTable dt = await LoadDataTableFromStoredProcAsync("ReimprimirTurno",
+                            new Dictionary<string, object>{
+
+                    {"@Fecha", fecha },
+                    {"@IdIsla", idIsla },
+                    {"@posicion", posicion }
+                            });
+        }
     }
 }

@@ -37,5 +37,15 @@ namespace FacturadorAPI.Controllers
             await _mediator.Send(new CerrarTurnoCommand(isla, codigo), cancellationToken);
             return Ok();
         }
+
+
+        [HttpPost]
+        [Route("reimprimirTurno/{fecha}/{isla}/{posicion}")]
+        [ProducesResponseType(typeof(IActionResult), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> ReimprimirTurno(DateTime fecha, int isla, int posicion, CancellationToken cancellationToken)
+        {
+            await _mediator.Send(new ReimprimirTurnoCommand(fecha, isla, posicion), cancellationToken);
+            return Ok();
+        }
     }
 }

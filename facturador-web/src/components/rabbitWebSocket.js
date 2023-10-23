@@ -74,12 +74,16 @@ const VehiculosSICOMModal = (props) => {
     useEffect(() => {
       client.activate();
     }, []); 
+
+    
     useEffect(() => {
+      if (show) {
       const interval = setInterval(() => {
         setShow(false);
       }, 15000);
+    }
       return () => clearInterval(interval);
-    }, []);
+    }, [show]);
   return (
     <>
     <Modal
@@ -87,7 +91,7 @@ const VehiculosSICOMModal = (props) => {
         onHide={handleCloseModal}
         backdrop="static"
         keyboard={false}
-        dialogClassName="custom-modal"
+        dialogClassName="custom-modal SICOM-modal"
         aria-labelledby="contained-modal-title-vcenter"
         centered
       >

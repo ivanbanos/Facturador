@@ -99,6 +99,9 @@ font-family: 'orkneyBold';
 .SICOM{
   font-size: 48pt;
 }
+.SICOM-modal{
+  width: 70%;
+}
 @media only screen and (max-width: 768px){
   
   .botton-light-blue-modal {
