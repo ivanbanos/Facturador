@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button } from "react-bootstrap";
+import ImprimirPorConsecutivo from "../Services/getServices/ImprimirPorConsecutivo";
 import "./styles/home.css";
 import "./styles/modal.css";
+import { Alert } from "react-bootstrap";
 
 const ModalImprimirPorConsecutivo = (props) => {
   const [showModalImprimirPorConsecutivo, setShowModalImprimirPorConsecutivo] =
@@ -11,6 +13,8 @@ const ModalImprimirPorConsecutivo = (props) => {
   const handleShowModalImprimirPorConsecutivo = () =>
     setShowModalImprimirPorConsecutivo(true);
   const [consecutivo, setConsecutivo] = useState("");
+  const [showAlertImpresionExitosa, setShowAlertImpresionExitosa] =
+    useState(false);
 
   return (
     <>
@@ -58,20 +62,43 @@ const ModalImprimirPorConsecutivo = (props) => {
             className="botton-light-blue-modal"
             onClick={() => {
               handleCloseModalImprimirPorConsecutivo();
+              setConsecutivo("");
             }}
           >
             Cancelar
           </Button>
           <Button
             className="botton-medium-blue-modal"
-            onClick={() => {
+            onClick={async () => {
               handleCloseModalImprimirPorConsecutivo();
+              const respuestaImprimir = await ImprimirPorConsecutivo(
+                consecutivo
+              );
+              if (respuestaImprimir === "fail") {
+                props.handleSetShowAlertError(true);
+              } else {
+                setConsecutivo("");
+                setShowAlertImpresionExitosa(true);
+              }
             }}
           >
             Imprimir
           </Button>
         </Modal.Footer>
       </Modal>
+      <div
+        className={`alert-container ${
+          showAlertImpresionExitosa ? "active" : ""
+        }`}
+      >
+        <Alert
+          variant="info"
+          onClose={() => setShowAlertImpresionExitosa(false)}
+          dismissible
+        >
+          <Alert.Heading>Fatura impresa de forma exitosa</Alert.Heading>
+        </Alert>
+      </div>
     </>
   );
 };

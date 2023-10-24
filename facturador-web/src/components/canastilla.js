@@ -186,15 +186,15 @@ const Canastilla = () => {
     fetchData();
   }, []);
   return (
-    <>
+    <div className="div-canastilla row">
       <div className="col-4 pt-4 pb-4 left-column columnas">
         <div className="info-div ">
           <div className="text-white">
-            <label className="titulo-informacion text-white">
+            <label className="titulo-informacion text-white py-1 ms-2">
               AGREGAR PRODUCTO
             </label>
             <select
-              className="form-select d-inline w-80 altura-select select-white-blue text-select-list"
+              className="form-select d-inline w-80 altura-select select-white-blue text-select-list my-2"
               aria-label="Default select example"
               value={productoSeleccionado?.canastillaId || ""}
               onChange={(event) => {
@@ -219,7 +219,7 @@ const Canastilla = () => {
                 ))}
             </select>
             <div className="d-flex flex-row">
-              <label className="mx-3 d-inline titulo-informacion">
+              <label className="mx-3 d-inline titulo-informacion my-1">
                 Cantidad
               </label>
 
@@ -244,7 +244,7 @@ const Canastilla = () => {
             </div>
           </div>
           <div className="info-cliente-div">
-            <div className="titulo-informacion text-white">
+            <div className="titulo-informacion text-white my-2">
               Información del Cliente
             </div>
 
@@ -252,7 +252,7 @@ const Canastilla = () => {
               <div className=" ">
                 <input
                   type="text"
-                  className="form-control dark-blue-input  "
+                  className="form-control dark-blue-input my-2 "
                   placeholder="Identificación"
                   name="identificacion"
                   value={identificacion || ""}
@@ -268,7 +268,7 @@ const Canastilla = () => {
               </div>
             </div>
             <div className="mt-2">
-              <div className="form-control dark-blue-input input-datos-cliente-canastilla">
+              <div className="form-control dark-blue-input input-datos-cliente-canastilla my-3">
                 <p className="texto-datos-cliente-canastilla">
                   Nombre: {tercero?.nombre}
                 </p>
@@ -363,7 +363,7 @@ const Canastilla = () => {
         showAlertVentaExitosa={showAlertVentaExitosa}
         handleSetShowAlertVentaExitosa={handleSetShowAlertVentaExitosa}
       ></AlertVentaExitosa>
-    </>
+    </div>
   );
 };
 

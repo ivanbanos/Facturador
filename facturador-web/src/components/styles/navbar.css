@@ -76,7 +76,7 @@
     text-decoration: none;
 }
 
-@media only screen and (max-width: 768px){
+@media only screen and (max-width: 801px){
   
   .navbar{
     margin: 0 25px 0 25px;
@@ -91,5 +91,15 @@
   .item-no-active {
     padding: 5px 16px 1px 16px;
   }
+
+}
+@media only screen and (max-width: 1280px){
+  
+  .navbar{
+    margin: 3px 25px 0 25px;
+    font-size: 105%;
+    padding-top: 0%;
+  }
+
 
 }

@@ -18,6 +18,7 @@ import GetTercero from "../Services/getServices/GetTercero";
 import FidelizarVenta from "../Services/getServices/FidelizarVenta";
 import AlertError from "./alertaError";
 import ModalImprimirPorConsecutivo from "./modalImprimirPorConsecutivo";
+import ModalReimprimirTurno from "./modalReimprimirTurno";
 
 const Combustible = () => {
   const [showAlertError, setShowAlertError] = useState(false);
@@ -210,7 +211,6 @@ const Combustible = () => {
 
   return (
     <>
-    
       <div className="col-4 col-md-5 pt-4 pb-4 left-column columnas">
         <div className="d-flex flex-row isla-div">
           <div className="rombo">
@@ -436,7 +436,9 @@ const Combustible = () => {
       </div>
       <div className="col-3 col-md-2 right-column columnas d-flex align-items-center">
         <div className="d-flex  flex-column align-items-center button-container">
-          <ModalImprimirPorConsecutivo></ModalImprimirPorConsecutivo>
+          <ModalImprimirPorConsecutivo
+            handleSetShowAlertError={handleSetShowAlertError}
+          ></ModalImprimirPorConsecutivo>
           {(turno === null || turno === "") && (
             <ModalAbrirTurno
               islaSelect={islaSelect}
@@ -460,6 +462,11 @@ const Combustible = () => {
               <span>Fidelizar</span> <span>Venta</span>
             </button>
           )}
+          <ModalReimprimirTurno
+            islaSelect={islaSelect}
+            islaSelectName={islaSelectName}
+            handleSetShowAlertError={handleSetShowAlertError}
+          ></ModalReimprimirTurno>
         </div>
       </div>
       <AlertError
