@@ -31,7 +31,7 @@ const ImprimirFactura = async (ultimaFactura) => {
         },
       }
     );
-    console.log(response.status);
+
     if (response.status === 200) {
       let respuesta = await response.text();
 

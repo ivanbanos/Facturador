@@ -17,7 +17,7 @@ const GetTurnoIsla = async (id_isla) => {
         },
       }
     );
-    console.log(response.status);
+
     if (response.status === 200) {
       let turno = await response.json();
       return turno;

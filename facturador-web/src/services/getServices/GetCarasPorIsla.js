@@ -18,7 +18,7 @@ const GetCarasPorIsla = async (id_isla) => {
         },
       }
     );
-    console.log(response.status);
+
     if (response.status === 200) {
       let caras = await response.json();
       return caras;

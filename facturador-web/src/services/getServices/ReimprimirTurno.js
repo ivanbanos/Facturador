@@ -2,15 +2,6 @@ import configData from "../../components/config.json";
 
 const ReimprimirTurno = async (fecha, isla, posicion) => {
   try {
-    console.log(
-      configData.SERVER_URL +
-        "/api/Facturas/ImprimirPorConsecutivo/" +
-        fecha +
-        "/" +
-        isla +
-        "/" +
-        posicion
-    );
     const response = await fetch(
       configData.SERVER_URL +
         "/api/Turnos/reimprimirTurno/" +
@@ -34,7 +25,7 @@ const ReimprimirTurno = async (fecha, isla, posicion) => {
         },
       }
     );
-    console.log(response.status);
+
     if (response.status === 200) {
       let respuesta = await response.text();
 
@@ -45,7 +36,6 @@ const ReimprimirTurno = async (fecha, isla, posicion) => {
     }
     return "fail";
   } catch (error) {
-    console.log(error);
     return "fail";
   }
 };

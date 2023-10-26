@@ -17,10 +17,10 @@ const GetTercero = async (identificacion) => {
         },
       }
     );
-    console.log(response.status);
+
     if (response.status === 200) {
       let tercero = await response.json();
-      console.log(tercero);
+
       return tercero;
     }
     if (response.status === 403) {

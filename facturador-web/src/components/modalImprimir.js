@@ -13,7 +13,7 @@ const ModalImprimir = (props) => {
       iButton: "",
       codigoInterno: "",
     };
-    console.log(tempUltimaFactura);
+
     props.handleSetUltimaFactura(tempUltimaFactura);
   };
   const ultimaFactura = props.ultimaFactura;
@@ -28,7 +28,7 @@ const ModalImprimir = (props) => {
   async function onClickConvertirAOrden() {
     handleClose();
     const respuesta = await ConvertirAOrden(ultimaFactura.ventaId);
-    console.log(respuesta);
+
     if (respuesta === "fail") {
       props.handleSetShowAlertError(true);
     } else {

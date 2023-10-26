@@ -1,13 +1,6 @@
 import configData from "../../components/config.json";
 
 const FidelizarVenta = async (identificacion, ventaId) => {
-  console.log(
-    configData.SERVER_URL +
-      "/api/Fidelizacion/FidelizarVenta/" +
-      identificacion +
-      "/" +
-      ventaId
-  );
   try {
     const response = await fetch(
       configData.SERVER_URL +
@@ -16,6 +9,7 @@ const FidelizarVenta = async (identificacion, ventaId) => {
         "/" +
         ventaId,
       {
+        Accept: "text/plain",
         method: "POST",
         mode: "cors",
         headers: {
@@ -24,9 +18,9 @@ const FidelizarVenta = async (identificacion, ventaId) => {
         },
       }
     );
-    console.log(response.status);
+
     if (response.status === 200) {
-      let respuesta = await response.json();
+      let respuesta = await response.text();
 
       return respuesta;
     }

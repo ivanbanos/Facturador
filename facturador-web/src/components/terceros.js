@@ -60,7 +60,6 @@ const Terceros = () => {
   const handleChangeIdentificacion = async (event) => {
     const nuevaIdentificacion = event.target.value;
     setIdentificacion(nuevaIdentificacion);
-    console.log(tercero);
   };
 
   const [showAlertError, setShowAlertError] = useState(false);
@@ -73,7 +72,6 @@ const Terceros = () => {
     setShowAlertTerceroAgregadoExitosamente(show);
 
   const addTercero = async () => {
-    console.log(tercero);
     if (!formIsValid()) return;
     const respuesta = await PostTercero(tercero);
 

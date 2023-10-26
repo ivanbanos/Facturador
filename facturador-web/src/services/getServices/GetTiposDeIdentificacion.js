@@ -5,7 +5,7 @@ const GetTiposDeIdentificacion = async () => {
     const response = await fetch(
       configData.SERVER_URL + "/api/Terceros/TiposIdentificacion"
     );
-    console.log(response.status);
+
     if (response.status === 200) {
       return await response.json();
     }

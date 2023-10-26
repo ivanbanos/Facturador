@@ -69,7 +69,6 @@ const Canastilla = () => {
 
       // setShowTerceroNoExiste(false);
     } else {
-      console.log(nuevaIdentificacion);
     }
   };
   function onBlurTercero() {
@@ -129,7 +128,7 @@ const Canastilla = () => {
         canastillas: tempCanastillas,
       };
       setObjetoPostCanastilla(tempObjetoPostCanastilla);
-      console.log(tempObjetoPostCanastilla);
+
       setCantidadSeleccionada(0);
       setProductoSeleccionado(null);
       let counterTotalItems = 0;
@@ -140,7 +139,6 @@ const Canastilla = () => {
       }
       setTotalItems(counterTotalItems);
       setSubTotal(counterSubTotal);
-      console.log(counterSubTotal);
     }
   }
   const handleChangeFormaPago = (event) => {
@@ -149,10 +147,8 @@ const Canastilla = () => {
       codigoFormaPago: event.target.value,
     };
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
-    console.log(tempObjetoPostCanastilla);
   };
   const onClickGenerarVenta = async (canastilla) => {
-    console.log(canastilla);
     const respuesta = await PostCanastilla(canastilla);
     if (respuesta === "fail") {
       handleSetShowAlertError(true);

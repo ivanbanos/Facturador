@@ -16,7 +16,6 @@ const PostTercero = async (tercero) => {
       },
       body: JSON.stringify(tercero),
     });
-    console.log(response.status);
     if (response.status === 200) {
       let respuesta = await response.json();
       return respuesta;

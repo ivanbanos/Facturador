@@ -40,7 +40,6 @@ const Combustible = () => {
     setShowTerceroNoExiste(showTerceroNoExiste);
   }
   function handleNoCambiarTercero() {
-    console.log(ultimaFactura.tercero.identificacion);
     setIdentificacion(ultimaFactura.tercero.identificacion);
   }
 
@@ -138,8 +137,7 @@ const Combustible = () => {
     let nuevoTercero = await GetTercero(nuevaIdentificacion);
 
     setTerceroBusqueda(nuevoTercero);
-    // console.log(nuevoTercero.length);
-    // console.log(nuevoTercero);
+
     if (nuevoTercero.length > 0) {
       setTercero(nuevoTercero[0]);
       const tempFactura = { ...ultimaFactura, tercero: nuevoTercero[0] };
@@ -147,7 +145,6 @@ const Combustible = () => {
       // setIdentificacion(nuevoTercero[0].identificacion);
       setShowTerceroNoExiste(false);
     } else {
-      console.log(nuevaIdentificacion);
       // Actualiza identificacion aquí
     }
   };
@@ -158,7 +155,6 @@ const Combustible = () => {
       [event.target.name]: event.target.value,
     };
     setUltimaFactura(tempFactura);
-    console.log(tempFactura);
   };
 
   const fetcInicial = async () => {
@@ -167,7 +163,6 @@ const Combustible = () => {
 
     let tiposDeIdentificacion = await GetTiposDeIdentificacion();
     setTiposDeIdentificacion(tiposDeIdentificacion);
-    console.log(tiposDeIdentificacion);
 
     let formasPago = await GetFormasDePago();
     setformasDePago(formasPago);
@@ -177,12 +172,11 @@ const Combustible = () => {
   const fetcTurnoYCaras = async (idIsla) => {
     let turno = await GetTurnoIsla(idIsla);
     setTurno(turno);
-    console.log(turno);
+
     localStorage.setItem("turno", JSON.stringify(turno));
     let caras = await GetCarasPorIsla(idIsla);
     setCaras(caras);
     localStorage.setItem("caras", JSON.stringify(caras));
-    console.log(caras);
   };
 
   const cerrarTurno = async (isla, codigo) => {
@@ -195,7 +189,6 @@ const Combustible = () => {
   };
 
   const fetchInformacionCliente = async (idCara) => {
-    console.log(idCara);
     let factura = await GetUltimaFacturaPorCara(idCara);
     if (factura) {
       setUltimaFactura(factura);
@@ -236,7 +229,6 @@ const Combustible = () => {
                 "islaSelectName",
                 JSON.stringify(selectedName)
               );
-              console.log(selectedName);
             }}
           >
             <option value="">Selecciona la isla</option>

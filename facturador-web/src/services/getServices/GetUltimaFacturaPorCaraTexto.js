@@ -2,12 +2,6 @@ import configData from "../../components/config.json";
 
 const GetUltimaFacturaPorCaraTexto = async (id_cara) => {
   try {
-    console.log(
-      configData.SERVER_URL +
-        "/api/Facturas/UltimaFacturaPorCara/" +
-        id_cara +
-        "/Texto"
-    );
     const response = await fetch(
       configData.SERVER_URL +
         "/api/Facturas/UltimaFacturaPorCara/" +
@@ -21,7 +15,6 @@ const GetUltimaFacturaPorCaraTexto = async (id_cara) => {
       }
     );
 
-    console.log(response.status);
     if (response.status === 200) {
       return await response.text();
     }
@@ -30,7 +23,6 @@ const GetUltimaFacturaPorCaraTexto = async (id_cara) => {
     }
     return "fail";
   } catch (error) {
-    console.log(error);
     return "fail";
   }
 };

@@ -3,7 +3,6 @@ import configData from "../../components/config.json";
 const GetIslas = async () => {
   try {
     const response = await fetch(configData.SERVER_URL + "/api/Estacion/Islas");
-    console.log(response.status);
 
     if (response.status === 200) {
       return await response.json();
@@ -13,7 +12,6 @@ const GetIslas = async () => {
     }
     return "fail";
   } catch (error) {
-    console.log(error);
     return "fail";
   }
 };

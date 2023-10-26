@@ -13,15 +13,10 @@ const ImprimirPorConsecutivo = async (consecutivo) => {
           Accept: "text/plain",
           "Access-Control-Allow-Origin": "*",
           "Content-Type": "application/json",
-          // Authorization: "Bearer ",
-          // "sec-fetch-mode": "cors",
-          // "Access-Control-Allow-Headers": "Content-Type",
-          // "Access-Control-Allow-Origin": "*",
-          // "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
         },
       }
     );
-    console.log(response.status);
+
     if (response.status === 200) {
       let respuesta = await response.text();
 

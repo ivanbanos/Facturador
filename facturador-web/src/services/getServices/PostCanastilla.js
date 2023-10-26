@@ -17,7 +17,6 @@ const PostCanastilla = async (canastilla) => {
       },
       body: JSON.stringify(canastilla),
     });
-    console.log(response.status);
     if (response.status === 200) {
       let respuesta = await response.text();
       return respuesta;
