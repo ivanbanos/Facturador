@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button } from "react-bootstrap";
-import ImprimirPorConsecutivo from "../Services/getServices/ImprimirPorConsecutivo";
+import FidelizarVenta from "../Services/getServices/FidelizarVenta";
 import "./styles/home.css";
 import "./styles/modal.css";
 import { Alert } from "react-bootstrap";
 
-const ModalImprimirPorConsecutivo = (props) => {
-  const [showModalImprimirPorConsecutivo, setShowModalImprimirPorConsecutivo] =
-    useState(false);
-  const handleCloseModalImprimirPorConsecutivo = () =>
-    setShowModalImprimirPorConsecutivo(false);
-  const handleShowModalImprimirPorConsecutivo = () =>
-    setShowModalImprimirPorConsecutivo(true);
-  const [consecutivo, setConsecutivo] = useState("");
-  const [showAlertImpresionExitosa, setShowAlertImpresionExitosa] =
+const ModalFidelizarVenta = (props) => {
+  const [showModalFidelizarVenta, setShowModalFidelizarVenta] = useState(false);
+  const handleCloseModalFidelizarVenta = () =>
+    setShowModalFidelizarVenta(false);
+  const handleShowModalFidelizarVenta = () => setShowModalFidelizarVenta(true);
+  const [identificacionFidelizar, setIdentificacionFidelizar] = useState("");
+  const [showAlertFidelizacionExitosa, setShowAlertFidelizacionExitosa] =
     useState(false);
 
   return (
@@ -21,15 +19,15 @@ const ModalImprimirPorConsecutivo = (props) => {
       <Button
         className="botton-light-blue right-botton m-1"
         onClick={() => {
-          handleShowModalImprimirPorConsecutivo();
+          handleShowModalFidelizarVenta();
         }}
       >
-        Imprimir Por Consecutivo
+        Fidelizar Venta
       </Button>
 
       <Modal
-        show={showModalImprimirPorConsecutivo}
-        onHide={handleCloseModalImprimirPorConsecutivo}
+        show={showModalFidelizarVenta}
+        onHide={handleCloseModalFidelizarVenta}
         backdrop="static"
         keyboard={false}
         dialogClassName="custom-modal"
@@ -37,21 +35,21 @@ const ModalImprimirPorConsecutivo = (props) => {
         centered
       >
         <Modal.Header className="header-modal" closeButton>
-          <Modal.Title>Imprimir Factura Por Consecutivo</Modal.Title>
+          <Modal.Title>Fidelizar Venta</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <form>
             <div className="row mb-3">
-              <label className="col-sm-5 col-form-label">
-                Consecutivo de Factura{" "}
-              </label>
+              <label className="col-sm-5 col-form-label">Identificación</label>
               <div className="col-sm-7">
                 <input
                   type="text"
                   className="form-control modal-tercero-input"
                   name="identificacion"
-                  value={consecutivo}
-                  onChange={(event) => setConsecutivo(event.target.value)}
+                  value={identificacionFidelizar}
+                  onChange={(event) =>
+                    setIdentificacionFidelizar(event.target.value)
+                  }
                 ></input>
               </div>
             </div>
@@ -61,8 +59,8 @@ const ModalImprimirPorConsecutivo = (props) => {
           <Button
             className="botton-light-blue-modal"
             onClick={() => {
-              handleCloseModalImprimirPorConsecutivo();
-              setConsecutivo("");
+              handleCloseModalFidelizarVenta();
+              setIdentificacionFidelizar("");
             }}
           >
             Cancelar
@@ -70,37 +68,38 @@ const ModalImprimirPorConsecutivo = (props) => {
           <Button
             className="botton-medium-blue-modal"
             onClick={async () => {
-              handleCloseModalImprimirPorConsecutivo();
-              const respuestaImprimir = await ImprimirPorConsecutivo(
-                consecutivo
+              handleCloseModalFidelizarVenta();
+              const respuestaFidelizar = await FidelizarVenta(
+                identificacionFidelizar,
+                props.ventaId
               );
-              if (respuestaImprimir === "fail") {
+              if (respuestaFidelizar === "fail") {
                 props.handleSetShowAlertError(true);
               } else {
-                setConsecutivo("");
-                setShowAlertImpresionExitosa(true);
+                setIdentificacionFidelizar("");
+                setShowAlertFidelizacionExitosa(true);
               }
             }}
           >
-            Imprimir
+            Fidelizar
           </Button>
         </Modal.Footer>
       </Modal>
       <div
         className={`alert-container ${
-          showAlertImpresionExitosa ? "active" : ""
+          showAlertFidelizacionExitosa ? "active" : ""
         }`}
       >
         <Alert
           variant="info"
-          onClose={() => setShowAlertImpresionExitosa(false)}
+          onClose={() => setShowAlertFidelizacionExitosa(false)}
           dismissible
         >
-          <Alert.Heading>Factura impresa de forma exitosa</Alert.Heading>
+          <Alert.Heading>Fidelización exitosa</Alert.Heading>
         </Alert>
       </div>
     </>
   );
 };
 
-export default ModalImprimirPorConsecutivo;
+export default ModalFidelizarVenta;
