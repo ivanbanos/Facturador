@@ -92,9 +92,10 @@ const VehiculosSICOMModal = (props) => {
         onHide={handleCloseModal}
         backdrop="static"
         keyboard={false}
+        className = "SICOM-modal"
         dialogClassName="custom-modal SICOM-modal"
         aria-labelledby="contained-modal-title-vcenter"
-        centered
+        
       >
         <Modal.Header className="header-modal" closeButton>
           <Modal.Title className="SICOM">Vehiculo</Modal.Title>
@@ -110,10 +111,10 @@ const VehiculosSICOMModal = (props) => {
             <label className="col-sm-6 col-form-label SICOM">
               {vehiculo.idrom}
             </label>
-            <label className="col-sm-6 col-form-label SICOM">
+            <label className="col-sm-12 col-form-label SICOM">
               Fecha de vencimiento
             </label>
-            <label className="col-sm-6 col-form-label SICOM">
+            <label className="col-sm-12 col-form-label SICOM">
               {vehiculo.fechaFin}
             </label>
           </div>
