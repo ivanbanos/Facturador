@@ -1,13 +1,20 @@
 import configData from "../../components/config.json";
 
-const FidelizarVenta = async (ultimaFactura) => {
+const FidelizarVenta = async (identificacion, ventaId) => {
+  console.log(
+    configData.SERVER_URL +
+      "/api/Fidelizacion/FidelizarVenta/" +
+      identificacion +
+      "/" +
+      ventaId
+  );
   try {
     const response = await fetch(
       configData.SERVER_URL +
         "/api/Fidelizacion/FidelizarVenta/" +
-        ultimaFactura.tercero.identificacion +
+        identificacion +
         "/" +
-        ultimaFactura.ventaId,
+        ventaId,
       {
         method: "POST",
         mode: "cors",

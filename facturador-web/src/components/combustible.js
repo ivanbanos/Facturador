@@ -19,6 +19,7 @@ import FidelizarVenta from "../Services/getServices/FidelizarVenta";
 import AlertError from "./alertaError";
 import ModalImprimirPorConsecutivo from "./modalImprimirPorConsecutivo";
 import ModalReimprimirTurno from "./modalReimprimirTurno";
+import ModalFidelizarVenta from "./modalFidelizarVenta";
 
 const Combustible = () => {
   const [showAlertError, setShowAlertError] = useState(false);
@@ -455,12 +456,16 @@ const Combustible = () => {
             ></ModalCerrarTurno>
           )}
           {turno && (
-            <button
-              className="botton-light-blue right-botton m-1"
-              onClick={() => FidelizarVenta(ultimaFactura)}
-            >
-              <span>Fidelizar</span> <span>Venta</span>
-            </button>
+            <ModalFidelizarVenta
+              handleSetShowAlertError={handleSetShowAlertError}
+              ventaId={ultimaFactura.ventaId}
+            ></ModalFidelizarVenta>
+            // <button
+            //   className="botton-light-blue right-botton m-1"
+            //   onClick={() => FidelizarVenta(ultimaFactura)}
+            // >
+            //   <span>Fidelizar</span> <span>Venta</span>
+            // </button>
           )}
           <ModalReimprimirTurno
             islaSelect={islaSelect}
