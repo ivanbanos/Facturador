@@ -1,4 +1,5 @@
-﻿using FactoradorEstacionesModelo.Fidelizacion;
+﻿using Dominio.Entidades;
+using FactoradorEstacionesModelo.Fidelizacion;
 using FacturadorAPI.Models;
 
 namespace MachineUtilizationApi.Repository
@@ -18,6 +19,7 @@ namespace MachineUtilizationApi.Repository
         Task<IEnumerable<Canastilla>> GetCanastillas();
         Task<FacturaSiges> GetFacturaPorIdVenta(int idFactura);
         Task<IEnumerable<FacturaSiges>> GetFacturasPorFechas(DateTime fechaInicio, DateTime fechaFin);
+        Task<Fidelizado> GetFidelizado(string identificacion);
         Task<Tercero> GetTerceroByQuery(string identificacion);
         Task<IEnumerable<TurnoSiges>> GetTurnosByFechas(DateTime fechaInicio, DateTime fechaFin);
         Task<IEnumerable<TurnoSurtidor>> GetTurnoSurtidorInfo(int id);

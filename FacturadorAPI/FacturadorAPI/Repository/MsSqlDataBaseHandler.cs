@@ -399,5 +399,15 @@ namespace MachineUtilizationApi.Repository
                     {"@posicion", posicion }
                             });
         }
+
+        public async Task<Fidelizado> GetFidelizado(string identificacion)
+        {
+            DataTable dt = await LoadDataTableFromStoredProcAsync("GetFidelizado",
+                            new Dictionary<string, object>{
+
+                    {"@documento", identificacion },
+                            });
+            return dt.ConvertirFidelizado().FirstOrDefault(); 
+        }
     }
 }
