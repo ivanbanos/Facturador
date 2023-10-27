@@ -26,6 +26,10 @@ namespace FacturadorAPI.Application.Commands
         {
             var puntos = await _databaseHandler.GetVentaFidelizarAutomaticaPorVenta(request.IdVenta);
             var tercero = await _databaseHandler.GetTerceroByQuery(request.Identificacion);
+            if (tercero == null)
+            {
+                throw new Exception("Tercero no existe");
+            }
             var factura = await _databaseHandler.GetFacturaPorIdVenta(request.IdVenta);
             
 

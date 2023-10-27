@@ -23,10 +23,24 @@ namespace FacturadorAPI.Controllers
         [HttpPost]
         [Route("FidelizarVenta/{identificacion}/{idVenta}")]
         [ProducesResponseType(typeof(IEnumerable<Canastilla>), (int)HttpStatusCode.OK)]
-        public async Task<IActionResult> ListarCanastillas(string identificacion, int idVenta, CancellationToken cancellationToken)
+        public async Task<IActionResult> FidelizarVenta(string identificacion, int idVenta, CancellationToken cancellationToken)
         {
-            await _mediator.Send(new FidelizarVentaCommand(identificacion, idVenta), cancellationToken);
-            return Ok();
+            try
+            {
+
+                await _mediator.Send(new FidelizarVentaCommand(identificacion, idVenta), cancellationToken);
+                return Ok();
+            }catch(Exception ex)
+            {
+                if(ex.Message == "Venta fidelizada" || ex.Message == "Tercero no existe")
+                {
+                    return BadRequest(ex.Message);
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
     }
 }
