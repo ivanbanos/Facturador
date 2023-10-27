@@ -23,7 +23,7 @@ namespace FacturadorEstacionesRepositorio
      };
         }
 
-        public async Task SubirPuntops(float total, string documentoFidelizado, string factura)
+        public async Task<bool> SubirPuntops(float total, string documentoFidelizado, string factura)
         {
             var puntos = new Puntos(total, factura, documentoFidelizado, _infoEstacion.NitCentroVenta);
             using (var client = new HttpClient())
@@ -38,6 +38,7 @@ namespace FacturadorEstacionesRepositorio
                 response.EnsureSuccessStatusCode();
 
                 string responseBody = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<bool>(responseBody);
             }
         }
 

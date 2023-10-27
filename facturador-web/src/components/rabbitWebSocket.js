@@ -81,7 +81,7 @@ const VehiculosSICOMModal = (props) => {
     if (show) {
       const interval = setInterval(() => {
         setShow(false);
-      }, 15000);
+      }, 30000);
       return () => clearInterval(interval);
     }
   }, [show]);
@@ -107,8 +107,8 @@ const VehiculosSICOMModal = (props) => {
             <label className="col-sm-6 col-form-label SICOM">
               {vehiculo.placa}
             </label>
-            <label className="col-sm-6 col-form-label SICOM">IButton</label>
-            <label className="col-sm-6 col-form-label SICOM">
+            <label className="col-sm-12 col-form-label SICOM">IButton</label>
+            <label className="col-sm-12 col-form-label SICOM">
               {vehiculo.idrom}
             </label>
             <label className="col-sm-12 col-form-label SICOM">
