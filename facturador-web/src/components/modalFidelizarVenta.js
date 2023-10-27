@@ -77,6 +77,7 @@ const ModalFidelizarVenta = (props) => {
                 props.handleSetShowAlertError(true);
               } else {
                 setIdentificacionFidelizar("");
+                props.getFacturaInformacion();
                 setShowAlertFidelizacionExitosa(true);
               }
             }}

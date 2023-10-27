@@ -117,11 +117,12 @@ const Combustible = () => {
   const handleSetUltimaFactura = (factura) => {
     setUltimaFactura(factura);
   };
-  const resetEstadoInicial = () => {
-    handleSetUltimaFactura(ultimaFacturaEstadoInicial);
-    setIdentificacion("");
-    setUltimaFacturaTexto("");
-    setCaraSelect("");
+  const getFacturaInformacion = () => {
+    // handleSetUltimaFactura(ultimaFacturaEstadoInicial);
+    // setIdentificacion("");
+    // setUltimaFacturaTexto("");
+    // setCaraSelect("");
+    fetchInformacionCliente(caraSelect);
   };
 
   const handleChangeTercero = (event) => {
@@ -413,7 +414,7 @@ const Combustible = () => {
             handleCloseFacturaElectronica={handleCloseFacturaElectronica}
             showFacturaElectronica={showFacturaElectronica}
             ultimaFactura={ultimaFactura}
-            resetEstadoInicial={resetEstadoInicial}
+            getFacturaInformacion={getFacturaInformacion}
             handleSetShowAlertError={handleSetShowAlertError}
           ></ModalFacturaElectronica>
           <ModalAddTercero
@@ -451,6 +452,7 @@ const Combustible = () => {
             <ModalFidelizarVenta
               handleSetShowAlertError={handleSetShowAlertError}
               ventaId={ultimaFactura.ventaId}
+              getFacturaInformacion={getFacturaInformacion}
             ></ModalFidelizarVenta>
             // <button
             //   className="botton-light-blue right-botton m-1"

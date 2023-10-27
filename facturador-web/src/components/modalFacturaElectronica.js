@@ -39,7 +39,7 @@ const ModalFacturaElectronica = (props) => {
               } else {
                 setShowAlertImpresionExitosa(true);
 
-                props.resetEstadoInicial();
+                props.getFacturaInformacion();
               }
             }}
           >
@@ -54,7 +54,7 @@ const ModalFacturaElectronica = (props) => {
               if (respuestaImprimir === "fail") {
                 props.handleSetShowAlertError(true);
               } else {
-                props.resetEstadoInicial();
+                props.getFacturaInformacion();
                 setShowAlertImpresionExitosa(true);
               }
             }}
