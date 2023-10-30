@@ -38,7 +38,7 @@ namespace FacturadorAPI.Application.Commands
             {
                 await _databaseHandler.ActualizarFactura(factura.facturaPOSId, tercero.terceroId, factura.codigoFormaPago, factura.ventaId, factura.Placa, factura.Kilometraje);
                 
-                var fidelizados = await _fidelizacion.GetFidelizados();
+                var fidelizados = await _fidelizacion.GetFidelizados(tercero.identificacion);
                 foreach (var fidelizado in fidelizados)
                 {
                     await _databaseHandler.AddFidelizado(fidelizado.Documento, fidelizado.Puntos ?? 0);

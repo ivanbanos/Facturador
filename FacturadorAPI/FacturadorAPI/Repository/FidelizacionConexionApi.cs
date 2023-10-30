@@ -56,7 +56,7 @@ namespace FacturadorEstacionesRepositorio
             }
         }
 
-        public async Task<IEnumerable<Fidelizado>> GetFidelizados()
+        public async Task<IEnumerable<Fidelizado>> GetFidelizados(string documentoFidelizado)
         {
             using (var client = new HttpClient())
             {
@@ -65,7 +65,7 @@ namespace FacturadorEstacionesRepositorio
                 Console.WriteLine($"{token}");
                 client.DefaultRequestHeaders.Authorization =
     new AuthenticationHeaderValue("Bearer", token);
-                var path = $"/api/Fidelizados/CentroVenta/{_infoEstacion.CentroVenta}";
+                var path = $"/api/Fidelizados/CentroVenta/{_infoEstacion.CentroVenta}/Fidelizado/{documentoFidelizado}";
                 Console.WriteLine($"{_infoEstacion.UrlFidelizacion}{path}");
                 var response = await client.GetAsync($"{_infoEstacion.UrlFidelizacion}{path}");
                 response.EnsureSuccessStatusCode();

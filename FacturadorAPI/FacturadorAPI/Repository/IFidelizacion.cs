@@ -8,7 +8,7 @@ namespace FacturadorEstacionesRepositorio
 {
     public interface IFidelizacion
     {
-        Task<IEnumerable<Fidelizado>> GetFidelizados();
+        Task<IEnumerable<Fidelizado>> GetFidelizados(string documentoFidelizado);
         Task<bool> SubirPuntops(float total, string documentoFidelizado, string factura);
     }
 }
