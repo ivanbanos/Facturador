@@ -143,6 +143,7 @@ const ModalFidelizarVenta = (props) => {
       >
         <Alert
           variant="info"
+          show={showAlertFidelizacionExitosa}
           onClose={() => setShowAlertFidelizacionExitosa(false)}
           dismissible
         >

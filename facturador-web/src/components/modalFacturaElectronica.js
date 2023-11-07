@@ -70,6 +70,7 @@ const ModalFacturaElectronica = (props) => {
       >
         <Alert
           variant="info"
+          show={showAlertImpresionExitosa}
           onClose={() => setShowAlertImpresionExitosa(false)}
           dismissible
         >
