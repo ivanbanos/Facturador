@@ -9,6 +9,7 @@ namespace MachineUtilizationApi.Repository
         Task AbrirTurno(int isla, string codigo);
         Task ActualizarCanastilla(IEnumerable<Canastilla> canastillas);
         Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje);
+        Task ActualizarFacturaFidelizada(string identificacion, int ventaId);
         Task ActuralizarFacturasEnviados(List<int> list);
         Task AddFidelizado(string documento, float v);
         Task CerrarTurno(int isla, string codigo);
@@ -19,7 +20,7 @@ namespace MachineUtilizationApi.Repository
         Task<IEnumerable<Canastilla>> GetCanastillas();
         Task<FacturaSiges> GetFacturaPorIdVenta(int idFactura);
         Task<IEnumerable<FacturaSiges>> GetFacturasPorFechas(DateTime fechaInicio, DateTime fechaFin);
-        Task<Fidelizado> GetFidelizado(string identificacion);
+        Task<Fidelizado> GetFidelizado(int ventaId);
         Task<Tercero> GetTerceroByQuery(string identificacion);
         Task<IEnumerable<TurnoSiges>> GetTurnosByFechas(DateTime fechaInicio, DateTime fechaFin);
         Task<IEnumerable<TurnoSurtidor>> GetTurnoSurtidorInfo(int id);

@@ -400,14 +400,24 @@ namespace MachineUtilizationApi.Repository
                             });
         }
 
-        public async Task<Fidelizado> GetFidelizado(string identificacion)
+        public async Task<Fidelizado> GetFidelizado(int ventaId)
         {
             DataTable dt = await LoadDataTableFromStoredProcAsync("GetFidelizado",
                             new Dictionary<string, object>{
 
-                    {"@documento", identificacion },
+                    {"@ventaId", ventaId },
                             });
             return dt.ConvertirFidelizado().FirstOrDefault(); 
+        }
+
+        public async Task ActualizarFacturaFidelizada(string identificacion, int ventaId)
+        {
+            await LoadDataTableFromStoredProcAsync("ActualizarFacturaFidelizada",
+                            new Dictionary<string, object>{
+
+                {"@identificacion",identificacion },
+                {"@ventaId",ventaId }
+                            });
         }
     }
 }

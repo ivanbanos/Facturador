@@ -25,20 +25,16 @@ namespace FacturadorAPI.Application.Commands
         public async Task<Unit> Handle(FidelizarVentaCommand request, CancellationToken cancellationToken)
         {
             var puntos = await _databaseHandler.GetVentaFidelizarAutomaticaPorVenta(request.IdVenta);
-            var tercero = await _databaseHandler.GetTerceroByQuery(request.Identificacion);
-            if (tercero == null)
-            {
-                throw new Exception("Tercero no existe");
-            }
+            
             var factura = await _databaseHandler.GetFacturaPorIdVenta(request.IdVenta);
             
 
-            var ok = await _fidelizacion.SubirPuntops((float)puntos.ValorVenta, tercero.identificacion, puntos.Factura);
+            var ok = await _fidelizacion.SubirPuntops((float)puntos.ValorVenta, request.Identificacion, puntos.Factura);
             if (ok)
             {
-                await _databaseHandler.ActualizarFactura(factura.facturaPOSId, tercero.terceroId, factura.codigoFormaPago, factura.ventaId, factura.Placa, factura.Kilometraje);
+                await _databaseHandler.ActualizarFacturaFidelizada(request.Identificacion, factura.ventaId);
                 
-                var fidelizados = await _fidelizacion.GetFidelizados(tercero.identificacion);
+                var fidelizados = await _fidelizacion.GetFidelizados(request.Identificacion);
                 foreach (var fidelizado in fidelizados)
                 {
                     await _databaseHandler.AddFidelizado(fidelizado.Documento, fidelizado.Puntos ?? 0);
