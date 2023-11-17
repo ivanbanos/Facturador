@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Modal, Button } from "react-bootstrap";
 import ImprimirPorConsecutivo from "../Services/getServices/ImprimirPorConsecutivo";
 import "./styles/home.css";
@@ -93,6 +93,7 @@ const ModalImprimirPorConsecutivo = (props) => {
       >
         <Alert
           variant="info"
+          show={showAlertImpresionExitosa}
           onClose={() => setShowAlertImpresionExitosa(false)}
           dismissible
         >
