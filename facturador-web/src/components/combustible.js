@@ -13,6 +13,7 @@ import AlertTercero from "./alertaTercero";
 import ModalAddTercero from "./modalAddTercero";
 import ModalAbrirTurno from "./modalAbrirTurno";
 import ModalCerrarTurno from "./modalCerrarTurno";
+import ModalAgregarBolsa from "./modalAgregarBolsa";
 import CerrarTurno from "../Services/getServices/CerrarTurno";
 import GetTercero from "../Services/getServices/GetTercero";
 import FidelizarVenta from "../Services/getServices/FidelizarVenta";
@@ -33,7 +34,7 @@ const Combustible = () => {
   const [showFacturaElectronica, setShowFacturaElectronica] = useState(false);
 
   const handleCloseFacturaElectronica = () => setShowFacturaElectronica(false);
-  const handleShowFacturaElectrónica = () => setShowFacturaElectronica(true);
+  const handleShowFacturaElectrónica = () => {setShowFacturaElectronica(true);}
   const [showTerceroNoExiste, setShowTerceroNoExiste] = useState(false);
 
   function handleShowTerceroNoExiste(showTerceroNoExiste) {
@@ -181,12 +182,10 @@ const Combustible = () => {
   };
 
   const cerrarTurno = async (isla, codigo) => {
-    await CerrarTurno(isla, codigo);
-    setTurno(null);
-    setCaras([]);
-    setIslaSelect("");
-    setIslaSelectName("");
-    localStorage.clear();
+    let respuesta = await CerrarTurno(isla, codigo);
+    if(respuesta === "fail"){
+      handleSetShowAlertError(true);
+    }
   };
 
   const fetchInformacionCliente = async (idCara) => {
@@ -439,6 +438,7 @@ const Combustible = () => {
               islaSelectName={islaSelectName}
               codigoEmpleado={codigoEmpleado}
               handleChangeCodigoEmpleado={handleChangeCodigoEmpleado}
+              handleSetShowAlertError={handleSetShowAlertError}
             ></ModalAbrirTurno>
           )}
           {turno && (
@@ -449,9 +449,16 @@ const Combustible = () => {
             ></ModalCerrarTurno>
           )}
           {turno && (
+            <ModalAgregarBolsa
+              islaSelect={islaSelect}
+              islaSelectName={islaSelectName}
+              handleSetShowAlertError={handleSetShowAlertError}
+            ></ModalAgregarBolsa>
+          )}
+          {turno && (
             <ModalFidelizarVenta
               handleSetShowAlertError={handleSetShowAlertError}
-              ventaId={ultimaFactura.ventaId}
+              ventaId={ultimaFactura.Mangueras}
               getFacturaInformacion={getFacturaInformacion}
             ></ModalFidelizarVenta>
             // <button

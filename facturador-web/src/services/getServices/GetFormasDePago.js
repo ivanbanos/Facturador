@@ -1,9 +1,8 @@
-import configData from "../../components/config.json";
 
 const GetFormasDePago = async () => {
   try {
     const response = await fetch(
-      configData.SERVER_URL + "/api/Facturas/FormasDePago",
+      window.SERVER_URL + "/api/Facturas/FormasDePago",
       {
         method: "GET",
         mode: "cors",

@@ -1,11 +1,26 @@
-import configData from "../../components/config.json";
 
-const EnviarFacturaElectronica = async (id_venta) => {
+const EnviarFacturaElectronica = async (ultimaFactura) => {
   try {
+    if(ultimaFactura.kilometraje==""){
+    ultimaFactura.kilometraje="NP";
+  }
+  if(ultimaFactura.placa==""){
+    ultimaFactura.placa="NP";
+  }
     const response = await fetch(
-      configData.SERVER_URL +
+      window.SERVER_URL +
         "/api/Facturas/EnviarFacturaElectronica/" +
-        id_venta,
+        ultimaFactura.ventaId +
+        "/" +
+        ultimaFactura.tercero.terceroId +
+        "/" +
+        ultimaFactura.codigoFormaPago +
+        "/" +
+        ultimaFactura.ventaId +
+        
+        "?Kilometraje="
+        +ultimaFactura.kilometraje+"&Placa="+
+        ultimaFactura.placa,
       {
         method: "POST",
         mode: "cors",

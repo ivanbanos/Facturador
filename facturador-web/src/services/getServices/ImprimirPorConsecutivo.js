@@ -1,9 +1,8 @@
-import configData from "../../components/config.json";
 
 const ImprimirPorConsecutivo = async (consecutivo) => {
   try {
     const response = await fetch(
-      configData.SERVER_URL +
+      window.SERVER_URL +
         "/api/Facturas/ImprimirPorConsecutivo/" +
         consecutivo,
       {

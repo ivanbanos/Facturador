@@ -1,9 +1,8 @@
-import configData from "../../components/config.json";
 
 const ReimprimirTurno = async (fecha, isla, posicion) => {
   try {
     const response = await fetch(
-      configData.SERVER_URL +
+      window.SERVER_URL +
         "/api/Turnos/reimprimirTurno/" +
         fecha +
         "/" +
@@ -27,9 +26,7 @@ const ReimprimirTurno = async (fecha, isla, posicion) => {
     );
 
     if (response.status === 200) {
-      let respuesta = await response.text();
-
-      return respuesta;
+      return "ok";
     }
     if (response.status === 403) {
       return "fail";

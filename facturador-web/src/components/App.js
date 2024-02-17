@@ -30,7 +30,7 @@ function App() {
           </div>
         </div>
       </BrowserRouter>
-      <VehiculosSICOMModal />
+      {/* <VehiculosSICOMModal /> */}
     </>
   );
 }

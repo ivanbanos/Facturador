@@ -10,6 +10,7 @@ const ModalAbrirTurno = (props) => {
   const handleShowModalAbrirTurno = () => setShowModalAbrirTurno(true);
   const codigoEmpleado = props.codigoEmpleado;
   const handleChangeCodigoEmpleado = props.handleChangeCodigoEmpleado;
+  const handleSetShowAlertError = props.handleSetShowAlertError;
   const islaSelect = props.islaSelect;
 
   return (
@@ -81,9 +82,12 @@ const ModalAbrirTurno = (props) => {
           </Button>
           <Button
             className="botton-medium-blue-modal"
-            onClick={() => {
+            onClick={async () => {
               handleCloseModalAbrirTurno();
-              AbrirTurno(islaSelect, codigoEmpleado);
+              let respuesta = await AbrirTurno(islaSelect, codigoEmpleado);
+              if(respuesta === "fail"){
+                handleSetShowAlertError(true);
+              }
             }}
           >
             Abrir Turno

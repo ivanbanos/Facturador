@@ -1,4 +1,3 @@
-import configData from "./config.json";
 import React, { useState, useEffect } from "react";
 import { Client } from "@stomp/stompjs";
 import { Modal, Button } from "react-bootstrap";
@@ -43,7 +42,7 @@ const VehiculosSICOMModal = (props) => {
   // The compat mode syntax is totally different, converting to v5 syntax
   // Client is imported from '@stomp/stompjs'
   const client = new Client({
-    brokerURL: configData.RabbitWebSocket,
+    brokerURL: window.RabbitWebSocket,
     reconnectDelay: 5000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,

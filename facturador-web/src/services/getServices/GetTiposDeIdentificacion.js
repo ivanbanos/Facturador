@@ -1,9 +1,8 @@
-import configData from "../../components/config.json";
 
 const GetTiposDeIdentificacion = async () => {
   try {
     const response = await fetch(
-      configData.SERVER_URL + "/api/Terceros/TiposIdentificacion"
+      window.SERVER_URL + "/api/Terceros/TiposIdentificacion"
     );
 
     if (response.status === 200) {

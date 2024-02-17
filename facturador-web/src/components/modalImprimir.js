@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Modal, Button } from "react-bootstrap";
 import ConvertirAFactura from "../Services/getServices/ConvertiraFactura";
 import ConvertirAOrden from "../Services/getServices/ConvertirAOrden";
+import { Alert } from "react-bootstrap";
+import ImprimirFactura from "../Services/getServices/ImprimirFactura";
 
 import "./styles/modal.css";
 
@@ -20,10 +22,12 @@ const ModalImprimir = (props) => {
   const [show, setShow] = useState(false);
   const [showConvertirAFactura, setShowConvertirAFactura] = useState(false);
 
+  const [showAlertImpresionExitosa, setShowAlertImpresionExitosa] =
+    useState(false);
   const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
+  const handleShow = () => {if(!window.ConvertirAOrden){props.handleShowFacturaElectrónica();} else{setShow(true);}}
   const handleCloseConvertirAFactura = () => setShowConvertirAFactura(false);
-  const handleShowConvertirAFactura = () => setShowConvertirAFactura(true);
+  const handleShowConvertirAFactura = () => {if(!window.ConvertirAFactura){props.handleShowFacturaElectrónica();} else{setShowConvertirAFactura(true);}}
 
   async function onClickConvertirAOrden() {
     handleClose();
@@ -32,7 +36,16 @@ const ModalImprimir = (props) => {
     if (respuesta === "fail") {
       props.handleSetShowAlertError(true);
     } else {
-      props.handleShowFacturaElectrónica();
+      if(!window.GenerarFacturaelectronica){
+        const respuestaImprimir = await ImprimirFactura(ultimaFactura);
+        if (respuestaImprimir === "fail") {
+          props.handleSetShowAlertError(true);
+        } else {
+          props.getFacturaInformacion();
+          setShowAlertImpresionExitosa(true);
+        }
+      }else{
+          props.handleShowFacturaElectrónica();}
     }
   }
   async function onClickConvertirAFactura() {
@@ -58,6 +71,7 @@ const ModalImprimir = (props) => {
       <Button
         className="print-button-modal botton-light-blue-modal"
         onClick={() => {
+          
           ultimaFactura.consecutivo === 0
             ? handleShowConvertirAFactura()
             : handleShow();
@@ -136,6 +150,14 @@ const ModalImprimir = (props) => {
           </Button>
         </Modal.Footer>
       </Modal>
+      <Alert
+          variant="info"
+          show={showAlertImpresionExitosa}
+          onClose={() => setShowAlertImpresionExitosa(false)}
+          dismissible
+        >
+          <Alert.Heading>Fatura impresa de forma exitosa</Alert.Heading>
+        </Alert>
     </>
   );
 };

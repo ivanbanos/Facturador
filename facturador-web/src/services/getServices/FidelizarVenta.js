@@ -1,9 +1,8 @@
-import configData from "../../components/config.json";
 
 const FidelizarVenta = async (identificacion, ventaId) => {
   try {
     const response = await fetch(
-      configData.SERVER_URL +
+      window.SERVER_URL +
         "/api/Fidelizacion/FidelizarVenta/" +
         identificacion +
         "/" +
@@ -24,9 +23,7 @@ const FidelizarVenta = async (identificacion, ventaId) => {
     );
 
     if (response.status === 200) {
-      let respuesta = await response.text();
-
-      return respuesta;
+      return "ok";
     }
     if (response.status === 403) {
       return "fail";

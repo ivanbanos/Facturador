@@ -19,27 +19,13 @@ const ModalFidelizarVenta = (props) => {
     nombre: "",
   });
   const [hasError, setHasError] = useState(false);
-  const handleChangeIdentificacion = async () => {
-    let nuevoTercero = await GetTercero(identificacionFidelizar);
-
-    setTerceroBusqueda(nuevoTercero);
-
-    if (nuevoTercero.length > 0) {
-      setTercero(nuevoTercero[0]);
-      setHasError(false);
-    } else {
-      setTercero({
-        nombre: "",
-      });
-      setHasError(true);
-    }
-  };
+  
   const onClickFidelizarVenta = async () => {
     if (!hasError) {
       handleCloseModalFidelizarVenta();
       const respuestaFidelizar = await FidelizarVenta(
         identificacionFidelizar,
-        props.ventaId
+        props.manguera
       );
       if (respuestaFidelizar === "fail") {
         props.handleSetShowAlertError(true);
@@ -92,24 +78,8 @@ const ModalFidelizarVenta = (props) => {
                   onChange={(event) =>
                     setIdentificacionFidelizar(event.target.value)
                   }
-                  onBlur={handleChangeIdentificacion}
                 ></input>
               </div>
-              {tercero.nombre && (
-                <>
-                  <label className="col-sm-5 col-form-label">Cliente</label>
-                  <div className="col-sm-7">
-                    <p className="form-control modal-tercero-input">
-                      {tercero.nombre}
-                    </p>
-                  </div>
-                </>
-              )}
-              {hasError && (
-                <div className="alert alert-danger error-container">
-                  "Debe ingresar una identificación válida"
-                </div>
-              )}
             </div>
           </form>
         </Modal.Body>

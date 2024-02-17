@@ -1,9 +1,14 @@
-import configData from "../../components/config.json";
 
 const ImprimirFactura = async (ultimaFactura) => {
   try {
+    if(ultimaFactura.kilometraje==""){
+      ultimaFactura.kilometraje="NP";
+    }
+    if(ultimaFactura.placa==""){
+      ultimaFactura.placa="NP";
+    }
     const response = await fetch(
-      configData.SERVER_URL +
+      window.SERVER_URL +
         "/api/Facturas/Imprimir/" +
         ultimaFactura.facturaPOSId +
         "/" +
@@ -12,10 +17,10 @@ const ImprimirFactura = async (ultimaFactura) => {
         ultimaFactura.codigoFormaPago +
         "/" +
         ultimaFactura.ventaId +
-        "/" +
-        ultimaFactura.placa +
-        "/" +
-        ultimaFactura.kilometraje,
+        
+        "?Kilometraje="
+        +ultimaFactura.kilometraje+"&Placa="+
+        ultimaFactura.placa ,
       {
         method: "POST",
         mode: "cors",

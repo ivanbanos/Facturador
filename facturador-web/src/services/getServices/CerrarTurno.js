@@ -1,9 +1,8 @@
-import configData from "../../components/config.json";
 
 const CerrarTurno = async (isla, codigo) => {
   try {
     const response = await fetch(
-      configData.SERVER_URL + "/api/Turnos/CerrarTurno/" + isla + "/" + codigo,
+      window.SERVER_URL + "/api/Turnos/CerrarTurno/" + isla + "/" + codigo,
       {
         method: "POST",
         mode: "cors",
@@ -18,8 +17,7 @@ const CerrarTurno = async (isla, codigo) => {
       }
     );
     if (response.status === 200) {
-      let respuesta = await response.json();
-      return respuesta;
+      return "ok";
     }
     if (response.status === 403) {
       return "fail";

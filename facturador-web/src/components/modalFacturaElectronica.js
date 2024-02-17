@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Modal, Button } from "react-bootstrap";
 import ImprimirFactura from "../Services/getServices/ImprimirFactura";
 import EnviarFacturaElectronica from "../Services/getServices/EnviarFacturaElectronica";
@@ -10,6 +10,8 @@ const ModalFacturaElectronica = (props) => {
   const ultimaFactura = props.ultimaFactura;
   const [showAlertImpresionExitosa, setShowAlertImpresionExitosa] =
     useState(false);
+
+
   return (
     <>
       <Modal
@@ -30,11 +32,11 @@ const ModalFacturaElectronica = (props) => {
             className="botton-light-blue-modal"
             onClick={async () => {
               handleCloseFacturaElectronica();
-              const respuestaImprimir = await ImprimirFactura(ultimaFactura);
+              
               const respuestaEnviar = await EnviarFacturaElectronica(
-                ultimaFactura.ventaId
+                ultimaFactura
               );
-              if (respuestaImprimir === "fail" || respuestaEnviar === "fail") {
+              if (respuestaEnviar === "fail") {
                 props.handleSetShowAlertError(true);
               } else {
                 setShowAlertImpresionExitosa(true);
@@ -48,8 +50,9 @@ const ModalFacturaElectronica = (props) => {
           <Button
             className="botton-medium-blue-modal"
             onClick={async () => {
-              handleCloseFacturaElectronica();
+              
 
+              handleCloseFacturaElectronica();
               const respuestaImprimir = await ImprimirFactura(ultimaFactura);
               if (respuestaImprimir === "fail") {
                 props.handleSetShowAlertError(true);

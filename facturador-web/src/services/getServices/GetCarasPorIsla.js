@@ -1,9 +1,8 @@
-import configData from "../../components/config.json";
 
 const GetCarasPorIsla = async (id_isla) => {
   try {
     const response = await fetch(
-      configData.SERVER_URL + "/api/Estacion/CarasPorIsla?idIsla=" + id_isla,
+      window.SERVER_URL + "/api/Estacion/CarasPorIsla?idIsla=" + id_isla,
       {
         method: "GET",
         mode: "cors",

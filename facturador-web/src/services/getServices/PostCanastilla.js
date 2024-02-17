@@ -1,8 +1,7 @@
-import configData from "../../components/config.json";
 
 const PostCanastilla = async (canastilla) => {
   try {
-    const response = await fetch(configData.SERVER_URL + "/api/Canastilla", {
+    const response = await fetch(window.SERVER_URL + "/api/Canastilla", {
       method: "POST",
       mode: "cors",
       headers: {

@@ -1,8 +1,7 @@
-import configData from "../../components/config.json";
 
 const PostTercero = async (tercero) => {
   try {
-    const response = await fetch(configData.SERVER_URL + "/api/Terceros", {
+    const response = await fetch(window.SERVER_URL + "/api/Terceros", {
       method: "POST",
       mode: "cors",
       headers: {

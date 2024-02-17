@@ -1,9 +1,8 @@
-import configData from "../../components/config.json";
 
 const ConvertirAOrden = async (id_venta) => {
   try {
     const response = await fetch(
-      configData.SERVER_URL + "/api/Facturas/ConvertirAOrden/" + id_venta,
+      window.SERVER_URL + "/api/Facturas/ConvertirAOrden/" + id_venta,
       {
         method: "GET",
         mode: "cors",

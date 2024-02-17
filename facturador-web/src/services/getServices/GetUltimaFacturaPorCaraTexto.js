@@ -1,9 +1,8 @@
-import configData from "../../components/config.json";
 
 const GetUltimaFacturaPorCaraTexto = async (id_cara) => {
   try {
     const response = await fetch(
-      configData.SERVER_URL +
+      window.SERVER_URL +
         "/api/Facturas/UltimaFacturaPorCara/" +
         id_cara +
         "/Texto",
