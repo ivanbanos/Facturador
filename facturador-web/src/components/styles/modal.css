@@ -112,3 +112,9 @@ font-family: 'orkneyBold';
   }
   
 }
+@media (min-width: 200px) and (max-width: 722px) {
+.print-button-modal{   
+  
+width: 40%;
+  height: 70px;
+}}

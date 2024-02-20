@@ -34,7 +34,9 @@ const Combustible = () => {
   const [showFacturaElectronica, setShowFacturaElectronica] = useState(false);
 
   const handleCloseFacturaElectronica = () => setShowFacturaElectronica(false);
-  const handleShowFacturaElectrónica = () => {setShowFacturaElectronica(true);}
+  const handleShowFacturaElectrónica = () => {
+    setShowFacturaElectronica(true);
+  };
   const [showTerceroNoExiste, setShowTerceroNoExiste] = useState(false);
 
   function handleShowTerceroNoExiste(showTerceroNoExiste) {
@@ -183,7 +185,7 @@ const Combustible = () => {
 
   const cerrarTurno = async (isla, codigo) => {
     let respuesta = await CerrarTurno(isla, codigo);
-    if(respuesta === "fail"){
+    if (respuesta === "fail") {
       handleSetShowAlertError(true);
     }
   };
@@ -204,8 +206,8 @@ const Combustible = () => {
   }, []);
 
   return (
-    <>
-      <div className="col-4 col-md-5 pt-4 pb-4 left-column columnas">
+    <div className="contenedor-principal p-0">
+      <div className="col-4 col-md-5 pt-4 pb-4 left-column columnas custom-style">
         <div className="d-flex flex-row isla-div">
           <div className="rombo">
             <div></div>
@@ -244,11 +246,11 @@ const Combustible = () => {
         <div className="info-div ">
           <div className="text-white info-isla-div">
             <div className="row info-turno-div pt-2">
-              <div className="col-4">
+              <div className="col-4 turno-xs">
                 <p className="text-end texto-turno">Turno: </p>
                 <p className="text-end texto-turno">Empleado:</p>
               </div>
-              <div className="col-7">
+              <div className="col-7 turno-xs-info">
                 <p className="texto-turno">
                   {turno === null || turno === "" ? "N/A" : turno.fechaApertura}{" "}
                 </p>
@@ -257,10 +259,12 @@ const Combustible = () => {
                 </p>
               </div>
             </div>
-            <div className="d-flex flex-row ms-3">
-              <label className="mx-3 d-inline  titulo-informacion">Cara</label>
+            <div className="d-flex flex-row ms-3 info-cara-xs">
+              <label className="mx-3 d-inline  titulo-informacion titulo-cara-xs">
+                Cara
+              </label>
               <select
-                className="form-select d-inline w-50 altura-select select-white-blue text-select-list"
+                className="form-select d-inline w-50 altura-select select-white-blue text-select-list select-cara-xs"
                 aria-label="Default select example"
                 value={caraSelect}
                 onChange={(event) => {
@@ -325,7 +329,7 @@ const Combustible = () => {
             </form>
             <div className="mt-2 formulario-datos-cliente">
               <div className="form-control dark-blue-input input-datos-cliente d-flex">
-                <div className="col-3 me-1">
+                <div className="col-3 me-1 datos-cliente-xs">
                   <p className="text-end texto-datos-cliente">Nombre: </p>
                   <p className="text-end texto-datos-cliente">Teléfono:</p>
                   <p className="text-end texto-datos-cliente">Correo:</p>
@@ -356,46 +360,51 @@ const Combustible = () => {
               </div>
             </div>
 
-            <div className="info-venta-div d-flex flex-column align-items-end">
-              <select
-                className="form-select  w-75 altura-select select-white-blue text-select-list"
-                aria-label="Default select example"
-                name="codigoFormaPago"
-                value={ultimaFactura.codigoFormaPago || ""}
-                onChange={handleChangeFactura}
-              >
-                <option value="">Forma de pago</option>
-                {Array.isArray(formasDePago) &&
-                  formasDePago.map((forma) => (
-                    <option key={forma.id} value={forma.id}>
-                      {forma.descripcion}
-                    </option>
-                  ))}
-              </select>
-
-              <input
-                type="text"
-                className="form-control select-white-blue w-50 altura-select text-select-list"
-                placeholder="Placa"
-                name="placa"
-                value={ultimaFactura.placa || ""}
-                onChange={handleChangeFactura}
-              ></input>
-
-              <input
-                type="text"
-                className="form-control select-white-blue w-50 altura-select text-select-list"
-                placeholder="Kilometraje"
-                name="kilometraje"
-                value={ultimaFactura.kilometraje || ""}
-                onChange={handleChangeFactura}
-              ></input>
+            <div className="info-venta-div d-flex flex-column ">
+              <div className="div-info-venta ">
+                <label className="label-info-venta ">Forma de Pago</label>
+                <select
+                  className="form-select  w-75 altura-select select-white-blue text-select-list"
+                  aria-label="Default select example"
+                  name="codigoFormaPago"
+                  value={ultimaFactura.codigoFormaPago || ""}
+                  onChange={handleChangeFactura}
+                >
+                  <option value=""></option>
+                  {Array.isArray(formasDePago) &&
+                    formasDePago.map((forma) => (
+                      <option key={forma.id} value={forma.id}>
+                        {forma.descripcion}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div className="div-info-venta ">
+                <label className="label-info-venta ">Placa</label>
+                <input
+                  type="text"
+                  className="form-control select-white-blue w-75 altura-select text-select-list"
+                  name="placa"
+                  value={ultimaFactura.placa || ""}
+                  onChange={handleChangeFactura}
+                ></input>
+              </div>
+              <div className="div-info-venta ">
+                <label className="label-info-venta ">Kilometraje</label>
+                <input
+                  type="text"
+                  className="form-control select-white-blue w-75 altura-select text-select-list"
+                  name="kilometraje"
+                  value={ultimaFactura.kilometraje || ""}
+                  onChange={handleChangeFactura}
+                ></input>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <div className="col-5 col-md-5 center-column columnas">
-        <div className="container container-factura">
+      <div className="col-5 col-md-5 center-column columnas custom-style">
+        <div className="container container-factura contenedor-factura">
           <div className=" factura px-2 w-100 h-100">
             <p className="texto-factura">
               {ultimaFacturaTexto ? ultimaFacturaTexto : " "}
@@ -427,8 +436,8 @@ const Combustible = () => {
           ></ModalAddTercero>
         </div>
       </div>
-      <div className="col-3 col-md-2 right-column columnas d-flex align-items-center">
-        <div className="d-flex  flex-column align-items-center button-container">
+      <div className="col-3 col-md-2 right-column columnas  ">
+        <div className="d-flex  flex-column button-container custom-style">
           <ModalImprimirPorConsecutivo
             handleSetShowAlertError={handleSetShowAlertError}
           ></ModalImprimirPorConsecutivo>
@@ -461,12 +470,6 @@ const Combustible = () => {
               ventaId={ultimaFactura.Mangueras}
               getFacturaInformacion={getFacturaInformacion}
             ></ModalFidelizarVenta>
-            // <button
-            //   className="botton-light-blue right-botton m-1"
-            //   onClick={() => FidelizarVenta(ultimaFactura)}
-            // >
-            //   <span>Fidelizar</span> <span>Venta</span>
-            // </button>
           )}
           <ModalReimprimirTurno
             islaSelect={islaSelect}
@@ -479,7 +482,7 @@ const Combustible = () => {
         showAlertError={showAlertError}
         handleSetShowAlertError={handleSetShowAlertError}
       ></AlertError>
-    </>
+    </div>
   );
 };
 

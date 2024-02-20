@@ -39,6 +39,16 @@
 .div-canastilla{
     height: 700px;
 }
+.div-info-venta{
+    display: flex;
+    width: 100%;
+    margin-top: 8px;
+}
+.label-info-venta{
+    color: white;
+    width: 30%;
+    font-family: 'orkneyBold';
+}
 .icon-container{
     display: flex;
     justify-content: center; /* Centra horizontalmente */
@@ -50,6 +60,9 @@
     width: 200px;
     
     
+}
+.contenedor-principal{
+    display: flex;
 }
 .icono1{
     width: 80%;
@@ -72,6 +85,10 @@
 }
 .columnas{
     /* border: 3px solid rgb(183, 176, 41);  */
+}
+.right-column{
+    align-items: center;
+    display: flex;
 }
 
 
@@ -100,6 +117,7 @@
   grid-template-columns: 1fr; /* Una sola columna */
   grid-template-rows: 1fr auto; /* Una fila que ocupa todo el espacio disponible y una fila automática para alinear en la parte inferior */
   height: 300px; 
+  align-items: center;
 }
 .button-container-canastilla{
     
@@ -158,6 +176,7 @@
 .info-venta-div{
     padding: 1px 10px 0px 10px; 
     margin: 0px 5px 0px 10px;
+    align-items: flex-end;
 }
 .info-cliente-div{
     padding: 1px 10px 0px 10px; 
@@ -252,7 +271,7 @@
         padding: 0; /* Elimina cualquier relleno interno del div contenedor */
       }
 
-      @media (max-width: 768px) {
+      @media (min-width: 723px) and (max-width: 768px){
         .right-button {
             width: 10%; /* Cambia el ancho del botón en tablet */
             height: 100%; /* Cambia la altura del botón en tablet */
@@ -327,7 +346,7 @@
         padding: 0px;
     }
 
-    @media only screen and (max-width: 1024px){
+    @media (min-width: 802px) and (max-width: 1024px){
         .box{
             border-top-right-radius: 275px;
         }
@@ -347,12 +366,12 @@
             /* height: 72px; */
         }
     }
-    @media only screen and (max-width: 1280px){
+    @media (min-width: 1176px) and (max-width: 1280px){
   
       
       
       }
-    @media only screen and (max-width: 801px){
+    @media (min-width: 769px) and (max-width: 801px){
         .main-box{
             margin: 0 25px 0 25px;
         }
@@ -457,7 +476,7 @@
         
         
     }
-    @media only screen and (max-width: 1175px){
+    @media (min-width: 1025px) and (max-width: 1175px){
   
         .right-botton{
             padding-top: 10%;
@@ -465,4 +484,71 @@
             /* width: 85%; */
         }
         
+    }
+
+    @media (min-width: 200px) and (max-width: 722px) {
+        
+        .contenedor-principal{
+            display:block;
+        }
+        .contenedor-factura{
+            display: none;
+        }
+        .custom-style{
+            width: 100%;
+            
+        }
+        div.button-container {
+            /* width: 100%; */
+            display: grid !important;
+            grid-template-columns: auto auto auto auto auto; /* Una sola columna */
+            height: 200px; 
+            align-items: baseline;
+            justify-items: center;
+            padding-top: 14px;
+            padding-left: 21px;
+        }
+        .right-botton{
+           
+            width: 110px;
+            height: 50%;
+        }
+
+        .botton-light-blue {
+           
+            border: 3px solid #0C80EA;
+            border-radius: 20px;
+          
+            
+        }
+        .botton-green {
+            border: 3px solid #90DDCE;
+    border-radius: 20px;
+        }
+        .turno-xs {
+            width: 20%;
+            font-size: 100%;
+        }
+        .turno-xs-info{
+            width: auto;
+            font-size: 100%;
+        }
+        .info-cara-xs{
+            width: 100%;
+        }
+        .titulo-cara-xs{
+            width: 13%;
+        }
+        .select-cara-xs{
+            width: 100px;
+        }
+        .info-venta-div{
+            align-items: flex-start;
+        }
+        .datos-cliente-xs{
+            width: 18%;
+        }
+        
+
+
     }
