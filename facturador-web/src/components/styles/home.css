@@ -37,7 +37,7 @@
     border-radius: 0 50px 30px 50px;
 }
 .div-canastilla{
-    height: 700px;
+    height: 110%;
 }
 .div-info-venta{
     display: flex;
@@ -48,6 +48,19 @@
     color: white;
     width: 30%;
     font-family: 'orkneyBold';
+}
+.label-info-venta-canastilla{
+    margin-top: 7px;
+    margin-left: 6px;
+    color: white;
+    width: 45%;
+    font-family: 'orkneyBold';
+}
+.div-info-venta-canastilla{
+    display: flex;
+    width: 100%;
+    margin-top: 8px;
+    margin-bottom: 25px;
 }
 .icon-container{
     display: flex;
@@ -124,7 +137,10 @@
     display: grid;
   grid-template-columns: 1fr; /* Una sola columna */
   grid-template-rows: 1fr auto; /* Una fila que ocupa todo el espacio disponible y una fila automática para alinear en la parte inferior */
- padding-top: 70%;
+ /* padding-top: 70%; */
+ width: 80%;
+ flex-direction: column;
+ display: flex;
 }
 
 .isla-div{
@@ -139,6 +155,9 @@
 }
 .altura-select{
     height: 50%
+}
+.select-cantidad{
+    width: 50%;
 }
 
 .rombo {
@@ -202,7 +221,7 @@
 .botton-medium-blue{
     background-color: #0C80EA;
     border: 5px solid #7CC5FC;
-    border-radius: 30px;
+    border-radius: 20px;
     color: #7CC5FC;
     text-align: center;
     text-decoration: none;
@@ -548,7 +567,55 @@
         .datos-cliente-xs{
             width: 18%;
         }
-        
-
+        .div-canastilla{
+            display: block;
+        }
+        .button-container-canastilla{
+         padding-top: 5px;
+         width: 100%;
+         flex-direction: row;
+         justify-content: center;
+        }
+        .right-botton-xs{
+            height: 60px;
+            padding-top: 2px;
+        }
+        .right-botton-xs span{
+            height: 100%;
+            padding-top: 3px;
+           
+        }
+        .custom-style-canastilla{
+            width: 100%;
+        }
+        .select-producto-xs{width: 80%;}
+        .select-cantidad{
+            width: 57%;
+        }
+        .botton-agregar-producto{
+            height: 50px;
+            width: 40%;
+            margin-bottom: 10px;
+        }
+        .label-info-venta-canastilla{
+            /* margin-top: 7px;
+            margin-left: 6px; */
+            width: 30%;
+            font-size: 120%;
+            
+        }
+        .div-info-venta-canastilla{
+            width: 100%;
+            margin-bottom: 0px;
+        }
+.box{
+    border-top-right-radius: 150px;
+}
+.icon-container {
+    top: 0px;
+    right: -30px;
+    height: 150px;
+    width: 150px;
+}
 
     }

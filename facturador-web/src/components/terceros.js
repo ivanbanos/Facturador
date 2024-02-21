@@ -108,12 +108,12 @@ const Terceros = () => {
       <div className="col-12 pt-4 pb-4  columnas terceros-box row">
         <div className="boder-div col-10 ">
           <div className="row add-tercero-div">
-            <div className="col-3 icono-add-div d-flex align-items-center">
+            <div className="icono-add-div ">
               <h1 className="text-white title-add ">Agregar Tercero</h1>
             </div>
             <div className="col-9 form-tercero-div">
               <div className="formulario p-auto">
-                <form className="pt-5">
+                <form className="formulario-div">
                   <div className="row margen-input-3 p-auto">
                     <label className="col-sm-4 col-form-label">
                       Identificación

@@ -183,14 +183,14 @@ const Canastilla = () => {
   }, []);
   return (
     <div className="div-canastilla row">
-      <div className="col-4 pt-4 pb-4 left-column columnas">
+      <div className="col-4 pt-4 pb-4 left-column columnas custom-style-canastilla">
         <div className="info-div ">
           <div className="text-white">
             <label className="titulo-informacion text-white py-1 ms-2">
               AGREGAR PRODUCTO
             </label>
             <select
-              className="form-select d-inline w-80 altura-select select-white-blue text-select-list my-2"
+              className="form-select d-inline w-80 altura-select select-white-blue text-select-list my-2 select-producto-xs"
               aria-label="Default select example"
               value={productoSeleccionado?.canastillaId || ""}
               onChange={(event) => {
@@ -227,7 +227,7 @@ const Canastilla = () => {
                     setCantidadSeleccionada(newCantidad);
                   }
                 }}
-                className="form-control w-50 altura-select select-white-blue text-select-list"
+                className="form-control altura-select select-white-blue text-select-list select-cantidad"
               />
             </div>
             <div className="d-flex justify-content-center">
@@ -279,27 +279,32 @@ const Canastilla = () => {
                 </p>
               </div>
               <div className="info-venta-div d-flex flex-column align-items-end">
-                <select
-                  className="form-select  w-75 altura-select select-white-blue text-select-list"
-                  aria-label="Default select example"
-                  name="codigoFormaPago"
-                  value={objetoPostCanastilla.codigoFormaPago || ""}
-                  onChange={handleChangeFormaPago}
-                >
-                  <option value="">Forma de pago</option>
-                  {Array.isArray(formasDePago) &&
-                    formasDePago.map((forma) => (
-                      <option key={forma.id} value={forma.id}>
-                        {forma.descripcion}
-                      </option>
-                    ))}
-                </select>
+                <div className="div-info-venta-canastilla ">
+                  <label className="label-info-venta-canastilla ">
+                    Forma de Pago
+                  </label>
+                  <select
+                    className="form-select  w-75 altura-select select-white-blue text-select-list"
+                    aria-label="Default select example"
+                    name="codigoFormaPago"
+                    value={objetoPostCanastilla.codigoFormaPago || ""}
+                    onChange={handleChangeFormaPago}
+                  >
+                    <option value=""></option>
+                    {Array.isArray(formasDePago) &&
+                      formasDePago.map((forma) => (
+                        <option key={forma.id} value={forma.id}>
+                          {forma.descripcion}
+                        </option>
+                      ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div className="col-5 center-column columnas">
+      <div className="col-5 center-column columnas custom-style-canastilla">
         <div className="container container-factura my-4">
           <div className=" factura px-2 h-100 texto-canastilla">
             <p>Vendido a: {tercero.nombre} </p>
@@ -323,11 +328,11 @@ const Canastilla = () => {
           </div>
         </div>
       </div>
-      <div className="col-3  right-column columnas">
+      <div className="col-3  right-column columnas custom-style-canastilla">
         <div className="button-container1"></div>
-        <div className="d-flex flex-column align-items-center button-container-canastilla">
+        <div className=" align-items-center button-container-canastilla">
           <button
-            className="botton-green m-3 right-botton "
+            className="botton-green m-3 right-botton right-botton-xs"
             onClick={() => {
               onClickGenerarVenta(objetoPostCanastilla);
             }}
@@ -335,7 +340,7 @@ const Canastilla = () => {
             <span className="">Generar</span> <span>Venta</span>
           </button>
           <button
-            className="botton-medium-blue m-3 right-botton"
+            className="botton-medium-blue m-3 right-botton right-botton-xs"
             onClick={() => {
               resetValues();
             }}
