@@ -29,14 +29,14 @@ const ModalAddTercero = (props) => {
   function formIsValid() {
     const _errores = {};
     if (!nuevoTercero.nombre) _errores.nombre = "Se requiere el nombre";
-    if (!nuevoTercero.telefono) _errores.telefono = "Se requiere el teléfono";
-    if (!nuevoTercero.direccion)
-      _errores.direccion = "Se requiere la dirección";
+    // if (!nuevoTercero.telefono) _errores.telefono = "Se requiere el teléfono";
+    // if (!nuevoTercero.direccion)
+    //   _errores.direccion = "Se requiere la dirección";
     if (!nuevoTercero.identificacion)
       _errores.identificacion = "Se requiere la identificación";
     if (!nuevoTercero.tipoIdentificacion)
       _errores.tipoIdentificacion = "Se requiere el tipo de identificación";
-    if (!nuevoTercero.correo) _errores.correo = "Se requiere el correo";
+    // if (!nuevoTercero.correo) _errores.correo = "Se requiere el correo";
     setErrores(_errores);
     return Object.keys(_errores).length === 0;
   }

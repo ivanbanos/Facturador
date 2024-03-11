@@ -67,16 +67,16 @@ namespace FacturadorAPI.Controllers
         }
 
         [HttpPost]
-        [Route("EnviarFacturaElectronica/{idVenta}")]
+        [Route("EnviarFacturaElectronica/{idVenta}/{TerceroId}/{FormaPago}/{VentaId}")]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
-        public async Task<IActionResult> EnviarFacturaElectronica(int idVenta, CancellationToken cancellationToken)
+        public async Task<IActionResult> EnviarFacturaElectronica(int idVenta, int TerceroId, int FormaPago, int VentaId, string Kilometraje, string Placa, CancellationToken cancellationToken)
         {
-            await _mediator.Send(new EnviarFacturaElectronicaCommand(idVenta), cancellationToken); 
+            await _mediator.Send(new EnviarFacturaElectronicaCommand(idVenta, TerceroId, FormaPago, VentaId, Placa, Kilometraje), cancellationToken); 
             return Ok();
         }
 
         [HttpPost]
-        [Route("Imprimir/{FacturaPOSId}/{TerceroId}/{FormaPago}/{VentaId}/{Placa}/{Kilometraje}")]
+        [Route("Imprimir/{FacturaPOSId}/{TerceroId}/{FormaPago}/{VentaId}")]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> MandarImprimir(int FacturaPOSId, int TerceroId, int FormaPago, int VentaId, string Placa, string Kilometraje, CancellationToken cancellationToken)
         {

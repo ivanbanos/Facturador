@@ -31,13 +31,13 @@ const Terceros = () => {
   function formIsValid() {
     const _errores = {};
     if (!tercero.nombre) _errores.nombre = "Se requiere el nombre";
-    if (!tercero.telefono) _errores.telefono = "Se requiere el teléfono";
-    if (!tercero.direccion) _errores.direccion = "Se requiere la dirección";
+    // if (!tercero.telefono) _errores.telefono = "Se requiere el teléfono";
+    // if (!tercero.direccion) _errores.direccion = "Se requiere la dirección";
     if (!tercero.identificacion)
       _errores.identificacion = "Se requiere la identificación";
     if (!tercero.tipoIdentificacion)
       _errores.tipoIdentificacion = "Se requiere el tipo de identificación";
-    if (!tercero.correo) _errores.correo = "Se requiere el correo";
+    // if (!tercero.correo) _errores.correo = "Se requiere el correo";
     setErrores(_errores);
     return Object.keys(_errores).length === 0;
   }

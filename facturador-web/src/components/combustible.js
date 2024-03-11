@@ -467,7 +467,7 @@ const Combustible = () => {
           {turno && (
             <ModalFidelizarVenta
               handleSetShowAlertError={handleSetShowAlertError}
-              ventaId={ultimaFactura.Mangueras}
+              ventaId={ultimaFactura.ventaId}
               getFacturaInformacion={getFacturaInformacion}
             ></ModalFidelizarVenta>
           )}

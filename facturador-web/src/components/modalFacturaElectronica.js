@@ -4,6 +4,8 @@ import ImprimirFactura from "../Services/getServices/ImprimirFactura";
 import EnviarFacturaElectronica from "../Services/getServices/EnviarFacturaElectronica";
 import { Alert } from "react-bootstrap";
 import "./styles/modal.css";
+import GetUltimaFacturaPorCaraTexto from "../Services/getServices/GetUltimaFacturaPorCaraTexto";
+import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
 const ModalFacturaElectronica = (props) => {
   const handleCloseFacturaElectronica = props.handleCloseFacturaElectronica;
@@ -54,6 +56,9 @@ const ModalFacturaElectronica = (props) => {
 
               handleCloseFacturaElectronica();
               const respuestaImprimir = await ImprimirFactura(ultimaFactura);
+              
+          const text = await GetUltimaFacturaPorCaraTexto(ultimaFactura.cara);
+          await ImprimirNativo(text);
               if (respuestaImprimir === "fail") {
                 props.handleSetShowAlertError(true);
               } else {

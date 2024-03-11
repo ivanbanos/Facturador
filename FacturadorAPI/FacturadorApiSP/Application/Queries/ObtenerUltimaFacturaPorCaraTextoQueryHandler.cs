@@ -1,11 +1,13 @@
 ﻿using FactoradorEstacionesModelo.Objetos;
 using FacturadorAPI.Models;
+using FacturadorAPI.Repository.Repo;
 using MachineUtilizationApi.Repository;
 using MediatR;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Microsoft.SqlServer.Server;
 using System.Text;
+using System.Threading;
 
 namespace FacturadorAPI.Application.Queries
 {
@@ -14,14 +16,17 @@ namespace FacturadorAPI.Application.Queries
         private readonly ILogger<ObtenerUltimaFacturaPorCaraTextoQueryHandler> _logger;
         private readonly IDataBaseHandler _databaseHandler;
         private readonly InfoEstacion _infoEstacion;
+        private readonly IConexionEstacionRemota _conexionEstacionRemota;
 
-        public ObtenerUltimaFacturaPorCaraTextoQueryHandler(ILogger<ObtenerUltimaFacturaPorCaraTextoQueryHandler> logger, 
+        public ObtenerUltimaFacturaPorCaraTextoQueryHandler(ILogger<ObtenerUltimaFacturaPorCaraTextoQueryHandler> logger,
             IDataBaseHandler databaseHandler,
-            IOptions<InfoEstacion> options)
+            IOptions<InfoEstacion> options,
+            IConexionEstacionRemota conexionEstacionRemota)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _databaseHandler = databaseHandler ?? throw new ArgumentNullException(nameof(databaseHandler));
             _infoEstacion = options.Value;
+            _conexionEstacionRemota = conexionEstacionRemota;
         }
 
         public async Task<string> Handle(ObtenerUltimaFacturaPorCaraTextoQuery request, CancellationToken cancellationToken)
@@ -29,44 +34,101 @@ namespace FacturadorAPI.Application.Queries
 
             var factura = await _databaseHandler.getUltimasFacturas((short)request.IdCara);
 
-            return getLineasImprimir(factura);
+            return await getinformacionVenta(factura, cancellationToken);
         }
 
-        private string getLineasImprimir(Factura _factura)
+        private async Task<string> getinformacionVenta(Factura _factura, CancellationToken cancellationToken)
         {
             var _venta = _factura.Venta;
             var _tercero = _factura.Tercero;
             var _mangueras = _factura.Manguera;
             var informacionVenta = new StringBuilder();
-            informacionVenta.Append("------------------------------------------------" + "\n\r");
-            if (_factura.Consecutivo == 0)
+            var guiones = new StringBuilder();
+            guiones.Append('-', 40);
+            informacionVenta.Append(".");
+            informacionVenta.Append(_infoEstacion.Razon);
+            informacionVenta.Append("NIT " + _infoEstacion.NIT);
+            informacionVenta.Append(_infoEstacion.Nombre);
+            informacionVenta.Append(_infoEstacion.Direccion);
+            informacionVenta.Append(_infoEstacion.Telefono);
+            informacionVenta.Append(guiones.ToString());
+            var infoTemp = "";
+                try
+            {
+                var token = await _conexionEstacionRemota.GetToken(cancellationToken);
+                infoTemp = await _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, Guid.Parse(_infoEstacion.EstacionFuente), token);
+
+                }
+                catch (Exception)
+                {
+                    infoTemp = null;
+                }
+            if (!string.IsNullOrEmpty(infoTemp))
+            {
+                infoTemp = infoTemp.Replace("\n\r", " ");
+
+                var facturaElectronica = infoTemp.Split(' ');
+
+                informacionVenta.Append("Factura Electrónica " + facturaElectronica[2]);
+                informacionVenta.Append(facturaElectronica[3]);
+                informacionVenta.Append(facturaElectronica[4].Substring(0, facturaElectronica[4].Length / 2));
+                informacionVenta.Append(facturaElectronica[4].Substring(facturaElectronica[4].Length / 2));
+            }
+            else if (_factura.Consecutivo == 0)
             {
 
-                informacionVenta.Append("Orden de despacho No:" + _venta.CONSECUTIVO + "\n\r");
+                informacionVenta.Append("Orden de despacho No: " + _venta.CONSECUTIVO);
             }
             else
             {
-                informacionVenta.Append("Factura de venta P.O.S No: " + _factura.DescripcionResolucion + "-" + _factura.Consecutivo + "\n\r");
+                informacionVenta.Append("SISTEMA POS No: " + _factura.DescripcionResolucion + "-" + _factura.Consecutivo);
             }
-            informacionVenta.Append("------------------------------------------------" + "\n\r");
+
+            informacionVenta.Append(guiones.ToString());
+            var placa = (!string.IsNullOrEmpty(_factura.Placa) ? _factura.Placa : _venta.PLACA + "").Trim();
             if (_venta.COD_FOR_PAG != 4)
             {
-                informacionVenta.Append("Vendido a : " + _tercero.Nombre + "\n\r");
-                informacionVenta.Append("Nit/C.C. : " + _tercero.identificacion + "\n\r");
-                informacionVenta.Append("Placa : PLACA\n\r");
-                informacionVenta.Append("Kilometraje : KILOMETRAJE\n\r");
-                informacionVenta.Append("Cod Int : " + _venta.COD_INT + "\n\r");
+
+                informacionVenta.Append(formatoTotales("Vendido a : ", _tercero.Nombre == null ? "" : _tercero.Nombre.Trim()));
+                informacionVenta.Append(formatoTotales("Nit/C.C. : ", _tercero.identificacion.Trim()));
+                informacionVenta.Append(formatoTotales("Placa : ", placa));
+                informacionVenta.Append(formatoTotales("Kilometraje : ", (!string.IsNullOrEmpty(_factura.Kilometraje) ? _factura.Kilometraje : _venta.KILOMETRAJE + "").Trim()));
+                var codigoInterno = _factura.Venta.COD_INT != null ? _factura.Venta.COD_INT : "";
+                if (codigoInterno != null)
+                {
+                    informacionVenta.Append(formatoTotales("Cod Int : ", codigoInterno));
+                }
             }
             else
             {
-                informacionVenta.Append("Vendido a : CONSUMIDOR FINAL\n\r");
-                informacionVenta.Append("Nit/C.C. : 222222222222\n\r");
-                informacionVenta.Append("Placa : PLACA\n\r");
-                informacionVenta.Append("Kilometraje : KILOMETRAJE\n\r");
+                if (string.IsNullOrEmpty(_tercero.Nombre))
+                {
+                    informacionVenta.Append(formatoTotales("Vendido a :", " CONSUMIDOR FINAL".Trim()));
+                }
+                else
+                {
+                    informacionVenta.Append(formatoTotales("Vendido a : ", _tercero.Nombre.Trim()) + "");
+                }
+                if (string.IsNullOrEmpty(_tercero.identificacion))
+                {
+                    informacionVenta.Append(formatoTotales("Nit/C.C. : ", "222222222222".Trim()));
+                }
+                else
+                {
+                    informacionVenta.Append(formatoTotales("Nit/C.C. : ", _tercero.identificacion.Trim()));
+                }
+                informacionVenta.Append(formatoTotales("Placa : ", (!string.IsNullOrEmpty(_factura.Placa) ? _factura.Placa : _venta.PLACA + "").Trim()));
+                informacionVenta.Append(formatoTotales("Kilometraje : ", (!string.IsNullOrEmpty(_factura.Kilometraje) ? _factura.Kilometraje : _venta.KILOMETRAJE + "").Trim()));
+                var codigoInterno = _factura.Venta.COD_INT != null ? _factura.Venta.COD_INT : "";
+                if (codigoInterno != null)
+                {
+                    informacionVenta.Append(formatoTotales("Cod Int : ", codigoInterno));
+                }
             }
-            if (_venta.FECH_ULT_ACTU.HasValue && _mangueras.DESCRIPCION.ToLower().Contains("gn"))
+
+            if (_venta.FECH_PRMA.HasValue && (_mangueras.DESCRIPCION.ToLower().Contains("gn") || _mangueras.DESCRIPCION.ToLower().Contains("gas")))
             {
-                informacionVenta.Append("Proximo mantenimiento : " + _venta.FECH_ULT_ACTU.Value.ToString("dd/MM/yyyy") + "\n\r");
+                informacionVenta.Append(formatoTotales("Proximo mantenimiento : ", _venta.FECH_PRMA.Value.ToString("dd/MM/yyyy").Trim()));
             }
             informacionVenta.Append("------------------------------------------------" + "\n\r");
             informacionVenta.Append("Fecha : " + _factura.fecha.ToString("dd/MM/yyyy HH:mm:ss") + "\n\r");
@@ -102,6 +164,20 @@ namespace FacturadorAPI.Application.Queries
 
             return  informacionVenta.ToString();
         }
+
+        private string formatoTotales(string v1, string v2)
+        {
+            var result = v1;
+            var tabs = new StringBuilder();
+            tabs.Append(v1);
+            var whitespaces = 40 - v1.Length - v2.Length;
+            whitespaces = whitespaces < 0 ? 0 : whitespaces;
+            tabs.Append(' ', whitespaces);
+
+            tabs.Append(v2);
+            return tabs.ToString();
+        }
+
         private async Task<string> getPuntos(int ventaId)
         {
             var fidelizado = await  _databaseHandler.GetFidelizado(ventaId);

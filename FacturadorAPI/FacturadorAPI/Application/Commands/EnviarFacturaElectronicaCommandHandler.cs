@@ -26,6 +26,10 @@ namespace FacturadorAPI.Application.Commands
             try
             {
                 var factura = await _databaseHandler.GetFacturaPorIdVenta(request.IdFactura);
+                await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje);
+                factura = await _databaseHandler.GetFacturaPorIdVenta(request.IdFactura);
+
+
                 try
                 {
                     var token = await _conexionEstacionRemota.GetToken(cancellationToken);

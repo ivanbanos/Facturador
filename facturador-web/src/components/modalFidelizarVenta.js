@@ -25,7 +25,7 @@ const ModalFidelizarVenta = (props) => {
       handleCloseModalFidelizarVenta();
       const respuestaFidelizar = await FidelizarVenta(
         identificacionFidelizar,
-        props.manguera
+        props.ventaId
       );
       if (respuestaFidelizar === "fail") {
         props.handleSetShowAlertError(true);
