@@ -3,7 +3,7 @@ using MediatR;
 
 namespace FacturadorAPI.Application.Commands
 {
-    public class AgregarFacturaCanastillaCommand : IRequest
+    public class AgregarFacturaCanastillaCommand : IRequest<string>
     {
         public AgregarFacturaCanastillaCommand(FacturaCanastilla facturaCanastilla)
         {

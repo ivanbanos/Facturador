@@ -17,7 +17,8 @@ namespace MachineUtilizationApi.Repository
         Task ConvertirAFactura(int idFactura);
         Task ConvertirAOrder(int idFactura);
         Task<Tercero> CrearTercero(Tercero tercero);
-        Task GenerarFacturaCanastilla(FacturaCanastilla facturaCanastilla, bool imprimir);
+        Task<int> GenerarFacturaCanastilla(FacturaCanastilla facturaCanastilla, bool imprimir);
+        Task<FacturaCanastilla> BuscarFacturaCanastillaPorConsecutivo(int consecutivo);
         Task<IEnumerable<Canastilla>> GetCanastillas();
         Task<Factura> GetFacturaPorIdVenta(int idFactura);
         Task<IEnumerable<FacturaSiges>> GetFacturasPorFechas(DateTime fechaInicio, DateTime fechaFin);
@@ -42,5 +43,6 @@ namespace MachineUtilizationApi.Repository
         Task<IEnumerable<CaraSiges>> ListarCarasSp(CancellationToken cancellationToken);
         Task<IEnumerable<SurtidorSiges>> ListarSurtidoresSP(CancellationToken cancellationToken);
         Task<Factura> getUltimasFacturas(short cOD_CAR);
+        Task<Factura> ObtenerFacturaPorConsecutivo(string consecutivo);
     }
 }

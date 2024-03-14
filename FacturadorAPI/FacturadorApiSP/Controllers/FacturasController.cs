@@ -91,8 +91,8 @@ namespace FacturadorAPI.Controllers
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> MandarImprimirConsecutivo(string consecutivo, CancellationToken cancellationToken)
         {
-            await _mediator.Send(new MandarImprimirConsecutivoCommand(consecutivo), cancellationToken);
-            return Ok();
+            
+            return Ok(await _mediator.Send(new MandarImprimirConsecutivoCommand(consecutivo), cancellationToken));
         }
 
 

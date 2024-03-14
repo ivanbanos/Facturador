@@ -1,11 +1,132 @@
 ﻿using System.Data;
 using System.Reflection;
+using System.Text;
 
 namespace MachineUtilizationApi.Extensions
 {
     public static class CommonExtensions
     {
 
+
+        public static string getLienaTarifas(string v1, string v2, string v3, string v4, bool after = false)
+        {
+            var spacesInPage = 40 / 4;
+            var tabs = new StringBuilder();
+            if (true)
+            {
+                tabs.Append(v1.Substring(0, v1.Length < 12 ? v1.Length : 12));
+                var whitespaces = 12 - v1.Length;
+                whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                tabs.Append(' ', whitespaces);
+
+
+                if (after)
+                {
+                    whitespaces = 8 - v2.Length;
+                    whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                    tabs.Append(' ', whitespaces);
+                    tabs.Append(v2.Substring(0, v2.Length < 8 ? v2.Length : 8));
+
+                    whitespaces = 8 - v3.Length;
+                    whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                    tabs.Append(' ', whitespaces);
+                    tabs.Append(v3.Substring(0, v3.Length < 8 ? v3.Length : 8));
+
+                    whitespaces = 12 - v4.Length;
+                    whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                    tabs.Append(' ', whitespaces);
+                    tabs.Append(v4.Substring(0, v4.Length < 12 ? v4.Length : 12));
+                }
+                else
+                {
+                    tabs.Append(v2.Substring(0, v2.Length < 8 ? v2.Length : 8));
+                    whitespaces = 8 - v2.Length;
+                    whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                    tabs.Append(' ', whitespaces);
+
+                    tabs.Append(v3.Substring(0, v3.Length < 8 ? v3.Length : 8));
+                    whitespaces = 8 - v3.Length;
+                    whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                    tabs.Append(' ', whitespaces);
+
+                    tabs.Append(v4.Substring(0, v4.Length < 12 ? v4.Length : 12));
+                    whitespaces = 12 - v4.Length;
+                    whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                    tabs.Append(' ', whitespaces);
+
+
+                }
+                return tabs.ToString();
+            }
+            else
+            {
+                tabs.Append(v1.Substring(0, v1.Length < spacesInPage ? v1.Length : spacesInPage));
+                var whitespaces = spacesInPage - v1.Length;
+                whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                tabs.Append(' ', whitespaces);
+
+
+                if (after)
+                {
+                    whitespaces = spacesInPage - v2.Length;
+                    whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                    tabs.Append(' ', whitespaces);
+                    tabs.Append(v2.Substring(0, v2.Length < spacesInPage ? v2.Length : spacesInPage));
+
+                    whitespaces = spacesInPage - v3.Length;
+                    whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                    tabs.Append(' ', whitespaces);
+                    tabs.Append(v3.Substring(0, v3.Length < spacesInPage ? v3.Length : spacesInPage));
+
+                    whitespaces = spacesInPage - v4.Length;
+                    whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                    tabs.Append(' ', whitespaces);
+                    tabs.Append(v4.Substring(0, v4.Length < spacesInPage ? v4.Length : spacesInPage));
+                }
+                else
+                {
+                    tabs.Append(v2.Substring(0, v2.Length < spacesInPage ? v2.Length : spacesInPage));
+                    whitespaces = spacesInPage - v2.Length;
+                    whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                    tabs.Append(' ', whitespaces);
+
+                    tabs.Append(v3.Substring(0, v3.Length < spacesInPage ? v3.Length : spacesInPage));
+                    whitespaces = spacesInPage - v3.Length;
+                    whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                    tabs.Append(' ', whitespaces);
+
+                    tabs.Append(v4.Substring(0, v4.Length < spacesInPage ? v4.Length : spacesInPage));
+                    whitespaces = spacesInPage - v4.Length;
+                    whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                    tabs.Append(' ', whitespaces);
+
+
+                }
+                return tabs.ToString();
+            }
+        }
+
+        public static string Centrar(this string text)
+        {
+                var whitespaces = (40 - text.Length) / 2;
+                var tabs = new StringBuilder();
+                whitespaces = whitespaces < 0 ? 0 : whitespaces;
+                tabs.Append(' ', whitespaces);
+                return tabs.ToString() + text;
+            
+        }
+        public static string formatoTotales(this string linea, string extra)
+        {
+            var result = linea;
+            var tabs = new StringBuilder();
+            tabs.Append(linea);
+            var whitespaces = 49 - linea.Length - extra.Length;
+            whitespaces = whitespaces < 0 ? 0 : whitespaces;
+            tabs.Append(' ', whitespaces);
+
+            tabs.Append(extra);
+            return tabs.ToString();
+        }
         public static DataTable ConvertToDataTable<T>(T[] array)
         {
             PropertyInfo[] properties = array.GetType().GetElementType().GetProperties();

@@ -56,8 +56,8 @@ const ModalFacturaElectronica = (props) => {
 
               handleCloseFacturaElectronica();
               const respuestaImprimir = await ImprimirFactura(ultimaFactura);
-              
-          const text = await GetUltimaFacturaPorCaraTexto(ultimaFactura.cara);
+              console.log(ultimaFactura);
+          const text = await GetUltimaFacturaPorCaraTexto(ultimaFactura.idCara);
           await ImprimirNativo(text);
               if (respuestaImprimir === "fail") {
                 props.handleSetShowAlertError(true);

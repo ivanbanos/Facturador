@@ -472,6 +472,7 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+use Ventas
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'setKilimetrajeVenta')
 	DROP PROCEDURE [dbo].[setKilimetrajeVenta]
 GO
@@ -479,7 +480,8 @@ CREATE procedure [dbo].[setKilimetrajeVenta]
 (
 	@ventaId int,
 	@Kilometraje varchar(50) = null,
-	@placa varchar(9) = null
+	@placa varchar(9) = null,
+	@codigoFormaPago int = null
 
 )
 as
@@ -492,8 +494,12 @@ begin try
 	
 	update VENTAS set KIL_ACT = CONVERT(DECIMAL(14, 2), @kilometrajeNum) 
 	where @kilometrajeNum<100000000000.00 and CONSECUTIVO = @ventaId
-
+	
 	update VENTAS set PLACA = @placa
+	where CONSECUTIVO = @ventaId
+
+	
+	update VENTAS set COD_FOR_PAG = @codigoFormaPago
 	where CONSECUTIVO = @ventaId
 end try
 begin catch
@@ -526,6 +532,42 @@ begin try
 inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
 inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
  where estado != 'C' and ISLAS.COD_ISL = @IdISla
+     
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerTurnoIslaPorVentaId')
+	DROP PROCEDURE [dbo].[ObtenerTurnoIslaPorVenta]
+GO
+CREATE procedure [dbo].[ObtenerTurnoIslaPorVenta]
+(@ventaId int)
+as
+begin try
+    set nocount on;
+	select  TURN_EST.NUM_TUR as Numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(TURN_EST.FECHA) as FechaApertura ,dbo.Finteger(TURN_EST.FECHA) as FechaCierre 
+ from TURN_EST
+inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
+inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
+inner join VENTAS On VENTAS.FECHA_REAL = TURN_EST.FECHA and VENTAS.NUM_TUR = TURN_EST.NUM_TUR and VENTAS.COD_ISL = TURN_EST.COD_ISL
+ where VENTAS.CONSECUTIVO = @ventaId
+
+ select TURN_LEC.COD_MAN as Manguera, TURN_LEC.COD_SUR as Surtidor, LECT_INI1 as Apertura, LECT_FIN1 as Cierre, ARTICULO.Descripcion as  Combustible, TURN_LEC.PRECIO as precioCombustible
+ from TURN_LEC
+inner join VENTAS On VENTAS.FECHA_REAL = TURN_LEC.FECHA and VENTAS.NUM_TUR = TURN_LEC.NUM_TUR
+inner join ARTICULO On ARTICULO.COD_ART = TURN_LEC.COD_ART1
+ where VENTAS.CONSECUTIVO = @ventaId
      
 end try
 begin catch

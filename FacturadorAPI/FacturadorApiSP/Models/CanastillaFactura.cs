@@ -2,6 +2,9 @@
 {
     public class CanastillaFactura
     {
+        internal float subtotal;
+        internal float total;
+
         public int canastillaId { get; set; }
         public Guid canastillaGuid { get; set; }
         public string descripcion { get; set; }
@@ -10,5 +13,6 @@
         public string deleted { get; set; }
         public float cantidad { get; set; }
         public float iva { get; set; }
+        public Canastilla Canastilla { get; set; }
     }
 }

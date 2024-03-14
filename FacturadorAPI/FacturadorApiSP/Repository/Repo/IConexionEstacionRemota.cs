@@ -1,4 +1,5 @@
 ﻿using FacturadorAPI.Models;
+using FacturadorAPI.Models.Externos;
 
 namespace FacturadorAPI.Repository.Repo
 {
@@ -13,5 +14,6 @@ namespace FacturadorAPI.Repository.Repo
         Task<IEnumerable<Canastilla>> RecibirCanastilla(string token, CancellationToken cancellationToken);
 
         Task<string> GetInfoFacturaElectronica(int idVentaLocal, Guid estacionGuid, string token);
+        Task<ResolucionElectronica> GetResolucionElectronica(string token, CancellationToken cancellationToken);
     }
 }

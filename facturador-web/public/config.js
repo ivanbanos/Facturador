@@ -1,4 +1,4 @@
-var SERVER_URL = "http://192.168.1.174:7220";
+var SERVER_URL = "https://localhost:7269";
 var RabbitWebSocket = "ws://192.168.1.174:15674/ws";
 var ConvertirAFactura = false;
 var ConvertirAOrden = false;

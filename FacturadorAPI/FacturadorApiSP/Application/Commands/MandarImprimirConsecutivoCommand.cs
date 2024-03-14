@@ -2,7 +2,7 @@
 
 namespace FacturadorAPI.Application.Commands
 {
-    public class MandarImprimirConsecutivoCommand : IRequest
+    public class MandarImprimirConsecutivoCommand : IRequest<string>
     {
         public MandarImprimirConsecutivoCommand(string consecutivo)
         {

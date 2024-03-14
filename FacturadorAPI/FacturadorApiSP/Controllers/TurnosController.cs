@@ -26,8 +26,8 @@ namespace FacturadorAPI.Controllers
         [ProducesResponseType(typeof(IActionResult), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> AbrirTurno(int isla, string codigo, CancellationToken cancellationToken)
         {
-            await _mediator.Send(new AbrirTurnoCommand(isla, codigo), cancellationToken);
-            return Ok();
+            
+            return Ok(await _mediator.Send(new AbrirTurnoCommand(isla, codigo), cancellationToken));
         }
 
         [HttpPost]

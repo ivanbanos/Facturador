@@ -9,6 +9,7 @@ import AlertTerceroNoExisteCnastilla from "./alertTerceroNoExisteCanastilla";
 import ModalAddTercero from "./modalAddTercero";
 import AlertError from "./alertaError";
 import AlertVentaExitosa from "./AlertVentaExitosa";
+import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
 const Canastilla = () => {
   const [productos, setProductos] = useState([]);
@@ -153,6 +154,8 @@ const Canastilla = () => {
     if (respuesta === "fail") {
       handleSetShowAlertError(true);
     } else {
+      
+      await ImprimirNativo(respuesta);
       handleSetShowAlertVentaExitosa(true);
       resetValues();
     }

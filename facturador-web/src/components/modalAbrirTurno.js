@@ -3,6 +3,7 @@ import { Modal, Button } from "react-bootstrap";
 import AbrirTurno from "../Services/getServices/AbrirTurno";
 import "./styles/home.css";
 import "./styles/modal.css";
+import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
 const ModalAbrirTurno = (props) => {
   const [showModalAbrirTurno, setShowModalAbrirTurno] = useState(false);
@@ -87,6 +88,9 @@ const ModalAbrirTurno = (props) => {
               let respuesta = await AbrirTurno(islaSelect, codigoEmpleado);
               if(respuesta === "fail"){
                 handleSetShowAlertError(true);
+              } else{
+
+                await ImprimirNativo(respuesta);
               }
             }}
           >

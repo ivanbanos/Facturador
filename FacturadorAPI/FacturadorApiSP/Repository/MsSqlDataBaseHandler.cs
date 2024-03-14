@@ -213,7 +213,7 @@ namespace MachineUtilizationApi.Repository
                             });
         }
 
-        public async Task GenerarFacturaCanastilla(FacturaCanastilla facturaCanastilla, bool imprimir)
+        public async Task<int> GenerarFacturaCanastilla(FacturaCanastilla facturaCanastilla, bool imprimir)
         {
             ConnectionString = _settings.Facturacion;
             var ventasIds = new DataTable();
@@ -267,7 +267,7 @@ namespace MachineUtilizationApi.Repository
             };
             DataTable dt = await LoadDataTableFromStoredProcAsync( "CrearFacturaCanastilla",
                          parameters);
-
+            return dt.Rows[0].Field<int>("facturaCanastillaId");
         }
 
         public async Task<Tercero> CrearTercero(Tercero tercero)
@@ -563,6 +563,58 @@ namespace MachineUtilizationApi.Repository
             factura.Manguera = dt.ConvertirManguera().FirstOrDefault();
             factura.Venta = venta;
             return factura;
+        }
+
+        public async Task<Factura> ObtenerFacturaPorConsecutivo(string consecutivo)
+        {
+
+            ConnectionString = _settings.Facturacion;
+            DataTable dt2 = await LoadDataTableFromStoredProcAsync("getFacturaPorConsecutivoORVentaId",
+                         new Dictionary<string, object>{
+
+                    {"@consecutivo", consecutivo }
+                         });
+            var factura = dt2.ConvertirFactura().FirstOrDefault();
+            ConnectionString = _settings.Estacion;
+            DataTable dt = await LoadDataTableFromStoredProcAsync("getVentaPorId",
+                         new Dictionary<string, object>{
+
+                    {"@CONSECUTIVO", factura.ventaId }
+                         });
+
+            var venta = dt.ConvertirVentaSP().FirstOrDefault();
+            factura.Manguera = dt.ConvertirManguera().FirstOrDefault();
+            factura.Venta = venta;
+            return factura;
+        }
+
+
+        public async Task<FacturaCanastilla> BuscarFacturaCanastillaPorConsecutivo(int consecutivo)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@consecutivo",consecutivo }
+            };
+            ConnectionString = _settings.Facturacion;
+            DataTable dt = await LoadDataTableFromStoredProcAsync( "BuscarFacturaCanastillaPorConsecutivo",
+                         parameters);
+            var facturas = dt.ConvertirFacturaCanastilla();
+            List<FacturaCanastilla> facturasEnviar = new List<FacturaCanastilla>();
+            foreach (var factura in facturas)
+            {
+
+
+                var parameters2 = new Dictionary<string, object>
+            {
+                {"@FacturaCanastillaId",factura.FacturasCanastillaId }
+            };
+                DataTable dt2 = await LoadDataTableFromStoredProcAsync("getFacturaCanatillaDetalle",
+                             parameters2);
+
+                factura.canastillas = dt2.ConvertirFacturaCanastillaDEtalle();
+                facturasEnviar.Add(factura);
+            }
+            return facturasEnviar.FirstOrDefault();
         }
     }
 }

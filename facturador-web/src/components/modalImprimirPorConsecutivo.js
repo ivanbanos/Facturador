@@ -4,6 +4,7 @@ import ImprimirPorConsecutivo from "../Services/getServices/ImprimirPorConsecuti
 import "./styles/home.css";
 import "./styles/modal.css";
 import { Alert } from "react-bootstrap";
+import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
 const ModalImprimirPorConsecutivo = (props) => {
   const [showModalImprimirPorConsecutivo, setShowModalImprimirPorConsecutivo] =
@@ -77,6 +78,8 @@ const ModalImprimirPorConsecutivo = (props) => {
               if (respuestaImprimir === "fail") {
                 props.handleSetShowAlertError(true);
               } else {
+                
+                await ImprimirNativo(respuestaImprimir);
                 setConsecutivo("");
                 setShowAlertImpresionExitosa(true);
               }

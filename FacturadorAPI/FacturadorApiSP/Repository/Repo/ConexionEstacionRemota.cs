@@ -253,6 +253,20 @@ namespace FacturadorAPI.Repository.Repo
             }
         }
 
+        public async Task< ResolucionElectronica> GetResolucionElectronica(string token, CancellationToken cancellationToken)
+        {
+            using (var client = new HttpClient())
+            {
+                var path = $"/api/ManejadorInformacionLocal/GetResolucionElectronica";
 
+                client.Timeout = new TimeSpan(0, 0, 0, 5, 0);
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+                var response = client.GetAsync($"{_infoEstacion.Url}{path}").Result;
+                response.EnsureSuccessStatusCode();
+
+                return JsonConvert.DeserializeObject<ResolucionElectronica>(response.Content.ReadAsStringAsync().Result);
+            }
+        }
     }
 }

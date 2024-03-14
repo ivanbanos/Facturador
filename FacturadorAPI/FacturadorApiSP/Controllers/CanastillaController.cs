@@ -33,8 +33,8 @@ namespace FacturadorAPI.Controllers
         [ProducesResponseType(typeof(IActionResult), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> AgregarCanastilla(FacturaCanastilla facturaCanastilla, CancellationToken cancellationToken)
         {
-            await _mediator.Send(new AgregarFacturaCanastillaCommand(facturaCanastilla), cancellationToken);
-            return Ok();
+            
+            return Ok(await _mediator.Send(new AgregarFacturaCanastillaCommand(facturaCanastilla), cancellationToken));
         }
     }
 }
