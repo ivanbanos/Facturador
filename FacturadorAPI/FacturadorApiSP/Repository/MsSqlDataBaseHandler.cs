@@ -3,9 +3,11 @@ using FactoradorEstacionesModelo.Fidelizacion;
 using FactoradorEstacionesModelo.Objetos;
 using FacturadorAPI.Models;
 using FacturadorAPI.Repository;
+using FacturadorApiSP.Models;
 using MachineUtilizationApi.Config;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System;
 using System.Data;
 using System.Runtime;
 
@@ -615,6 +617,68 @@ namespace MachineUtilizationApi.Repository
                 facturasEnviar.Add(factura);
             }
             return facturasEnviar.FirstOrDefault();
+        }
+
+
+        public async Task<TurnoSiges> ObtenerTurnoIslaYFecha(int isla, DateTime fecha, int num)
+        {
+
+            ConnectionString = _settings.Estacion;
+            DataSet ds = await LoadDataSetFromStoredProcAsync("ObtenerTurnoIslaYFecha",
+                         new Dictionary<string, object>{
+
+                    {"@IdIsla", isla },
+                    {"@num_tur", num },
+                    {"@fecha", fecha }
+                         },"Turnos", "Lecturas");
+
+            return ds.ConvertirTurno();
+
+        }
+
+        public async Task<IEnumerable<Factura>> getFacturaPorTurno(int isla, DateTime fecha, int num)
+        {
+
+            ConnectionString = _settings.Estacion;
+            DataTable dt2 = await LoadDataTableFromStoredProcAsync("getFacturaPorTurno",
+                         new Dictionary<string, object>{
+
+                    {"@IdIsla", isla },
+                    {"@num_tur", num },
+                    {"@fecha", fecha }
+                         });
+            var facturas = dt2.ConvertirFactura();
+            foreach(var factura in facturas)
+            {
+
+                ConnectionString = _settings.Estacion;
+                DataTable dt = await LoadDataTableFromStoredProcAsync("getVentaPorId",
+                             new Dictionary<string, object>{
+
+                    {"@CONSECUTIVO", factura.ventaId }
+                             });
+
+                var venta = dt.ConvertirVentaSP().FirstOrDefault();
+                factura.Manguera = dt.ConvertirManguera().FirstOrDefault();
+                factura.Venta = venta;
+            }
+            return facturas;
+
+        }
+
+        public async Task<Bolsa> getBolsa(int isla, DateTime fecha)
+        {
+
+            ConnectionString = _settings.Estacion;
+            var dt = await LoadDataTableFromStoredProcAsync("getBolsa",
+                         new Dictionary<string, object>{
+
+                    {"@IdIsla", isla },
+                    {"@fecha", fecha }
+                         });
+
+            return dt.ConvertirBolsa();
+
         }
     }
 }

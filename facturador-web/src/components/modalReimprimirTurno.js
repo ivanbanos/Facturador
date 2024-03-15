@@ -4,6 +4,7 @@ import ReimprimirTurno from "../Services/getServices/ReimprimirTurno";
 import "./styles/home.css";
 import "./styles/modal.css";
 import { Alert } from "react-bootstrap";
+import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
 const ModalReimprimirTurno = (props) => {
   const [showModalReimpirmirTurno, setShowModalReimprimirTurno] =
@@ -131,6 +132,8 @@ const ModalReimprimirTurno = (props) => {
               if (respuestaReImprimir === "fail") {
                 props.handleSetShowAlertError(true);
               } else {
+                
+                await ImprimirNativo(respuestaReImprimir);
                 setPosicion("");
                 setFechaSelected("");
                 setFechaTurno("");

@@ -9,7 +9,7 @@ using System.Text;
 
 namespace FacturadorAPI.Application.Commands
 {
-    public class AgregarBolsaCommandHandler : IRequestHandler<AgregarBolsaCommand>
+    public class AgregarBolsaCommandHandler : IRequestHandler<AgregarBolsaCommand, string>
     {
         private readonly ILogger<AgregarBolsaCommandHandler> _logger;
         private readonly IDataBaseHandler _databaseHandler;
@@ -27,7 +27,7 @@ namespace FacturadorAPI.Application.Commands
             _infoEstacion = options.Value ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public async Task<Unit> Handle(AgregarBolsaCommand request, CancellationToken cancellationToken)
+        public async Task<string> Handle(AgregarBolsaCommand request, CancellationToken cancellationToken)
         {
             //000178REGBST0181990610;200
             var sum = 141;
@@ -48,7 +48,23 @@ namespace FacturadorAPI.Application.Commands
             {
                 throw new Exception("¡Error abriendo turno!");
             }
-            return Unit.Value;
+            Thread.Sleep(1000);
+            var bolsa = await _databaseHandler.getBolsa(request.Isla, DateTime.Now.Date);
+            if(bolsa.Moneda == double.Parse(request.Moneda) && bolsa.Billete == double.Parse(request.Cantidad))
+            {
+                var sb = new StringBuilder( "BOLSA DE TURNO\n\r");
+                sb.Append($"Fecha: {bolsa.Fecha}\n\r");
+                sb.Append($"Isla: {bolsa.Isla}\n\r");
+                sb.Append($"Empleado: {bolsa.Empleado}\n\r");
+                sb.Append($"Consecutivo: {bolsa.Consecutivo}\n\r");
+                sb.Append($"Moneda: {bolsa.Moneda}\n\r");
+                sb.Append($"Billete: {bolsa.Billete}\n\r");
+                return sb.ToString();
+            }
+            else
+            {
+                throw new Exception("¡Error abriendo turno!");
+            }
 
         }
         public string send_cmd(string szData)

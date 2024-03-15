@@ -35,8 +35,7 @@ namespace FacturadorAPI.Controllers
         [ProducesResponseType(typeof(IActionResult), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> CerrarTurno(int isla, string codigo, CancellationToken cancellationToken)
         {
-            await _mediator.Send(new CerrarTurnoCommand(isla, codigo), cancellationToken);
-            return Ok();
+            return Ok(await _mediator.Send(new CerrarTurnoCommand(isla, codigo), cancellationToken));
         }
 
 
@@ -45,8 +44,7 @@ namespace FacturadorAPI.Controllers
         [ProducesResponseType(typeof(IActionResult), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> ReimprimirTurno(DateTime fecha, int isla, int posicion, CancellationToken cancellationToken)
         {
-            await _mediator.Send(new ReimprimirTurnoCommand(fecha, isla, posicion), cancellationToken);
-            return Ok();
+            return Ok(await _mediator.Send(new ReimprimirTurnoCommand(fecha, isla, posicion), cancellationToken));
         }
 
 
@@ -55,8 +53,7 @@ namespace FacturadorAPI.Controllers
         [ProducesResponseType(typeof(IActionResult), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> AgregarBolsa(int isla, string codigo, string cantidad, string moneda, string numero, CancellationToken cancellationToken)
         {
-            await _mediator.Send(new AgregarBolsaCommand(isla, codigo, cantidad, moneda, numero), cancellationToken);
-            return Ok();
+            return Ok(await _mediator.Send(new AgregarBolsaCommand(isla, codigo, cantidad, moneda, numero), cancellationToken));
         }
 
     }

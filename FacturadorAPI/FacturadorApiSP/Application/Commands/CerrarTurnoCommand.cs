@@ -2,7 +2,7 @@
 
 namespace FacturadorAPI.Application.Commands
 {
-    public class CerrarTurnoCommand : IRequest
+    public class CerrarTurnoCommand : IRequest<string>
     {
         public CerrarTurnoCommand(int isla, string codigo)
         {

@@ -4,6 +4,7 @@ import AgregarBolsa from "../Services/getServices/AgregarBolsa";
 import "./styles/home.css";
 import "./styles/modal.css";
 import { Alert } from "react-bootstrap";
+import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
 const ModalAgregarBolsa = (props) => {
   const [showModalReimpirmirTurno, setShowModalReimprimirTurno] =
@@ -156,6 +157,8 @@ const ModalAgregarBolsa = (props) => {
               if (respuestaReImprimir === "fail") {
                 props.handleSetShowAlertError(true);
               } else {
+                
+      await ImprimirNativo(respuestaReImprimir);
                 setShowAlertImpresionExitosa(true);
               }
             }}

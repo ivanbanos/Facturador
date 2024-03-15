@@ -2,7 +2,7 @@
 
 namespace FacturadorAPI.Application.Commands
 {
-    public class ReimprimirTurnoCommand : IRequest
+    public class ReimprimirTurnoCommand : IRequest<string>
     {
         public ReimprimirTurnoCommand(DateTime fecha, int idIsla, int posicion)
         {

@@ -2,7 +2,7 @@
 
 namespace FacturadorApiSP.Application.Commands
 {
-    public class AgregarBolsaCommand : IRequest
+    public class AgregarBolsaCommand : IRequest<string>
     {
         public AgregarBolsaCommand(int isla, string codigo, string cantidad)
         {

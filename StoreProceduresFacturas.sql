@@ -1,12 +1,12 @@
 GO
- IF NOT EXISTS(SELECT * FROM sys.databases WHERE name = 'EstacionSIGES')
+ IF NOT EXISTS(SELECT * FROM sys.databases WHERE name = 'Facturacion_Electronica')
   BEGIN
-    CREATE DATABASE [EstacionSIGES]
+    CREATE DATABASE Facturacion_Electronica
 
 
     END
     GO
-       USE [EstacionSIGES]
+       USE Facturacion_Electronica
     GO
 
 	IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Resoluciones' and xtype='U')
@@ -210,7 +210,7 @@ IF NOT EXISTS (
 BEGIN
   ALTER TABLE FacturasPOS
 ADD turnoEnviado bit default 0;
-  ALTER TABLE OrdenDeDespacho
+  ALTER TABLE OrdenesDeDespacho
 ADD turnoEnviado bit default 0;
 END;
 GO
@@ -2108,7 +2108,7 @@ begin try
 	
 
 
-	exec Ventas.dbo.setKilimetrajeVenta @ventaId, @Kilometraje, @Placa, @codigoFormaPago
+	exec ZE900NG.dbo.setKilimetrajeVenta @ventaId, @Kilometraje, @Placa, @codigoFormaPago
 
 end try
 begin catch
@@ -2384,10 +2384,10 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorConsecutivo')
-	DROP PROCEDURE [dbo].getFacturaPorConsecutivo
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorConsecutivoORVentaId')
+	DROP PROCEDURE [dbo].getFacturaPorConsecutivoORVentaId
 GO
-CREATE procedure [dbo].[getFacturaPorConsecutivo]
+CREATE procedure [dbo].[getFacturaPorConsecutivoORVentaId]
 (
 	@consecutivo int
 )

@@ -3,6 +3,7 @@ import { Modal, Button } from "react-bootstrap";
 
 import "./styles/home.css";
 import "./styles/modal.css";
+import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
 const ModalCerrarTurno = (props) => {
   const [showModalCerrarTurno, setShowModalCerrarTurno] = useState(false);

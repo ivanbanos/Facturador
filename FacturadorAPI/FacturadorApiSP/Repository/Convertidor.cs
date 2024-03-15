@@ -3,6 +3,7 @@ using FactoradorEstacionesModelo.Fidelizacion;
 using FactoradorEstacionesModelo.Objetos;
 using FacturadorAPI.Models;
 using FacturadorAPI.Models.Externos;
+using FacturadorApiSP.Models;
 using System.Data;
 
 namespace FacturadorAPI.Repository
@@ -663,7 +664,47 @@ namespace FacturadorAPI.Repository
             return response;
         }
 
+        public static Bolsa ConvertirBolsa(this DataTable dt)
+        {
+            var response = new Bolsa();
+            var drBolsa = dt.Rows[0];
+            response.Fecha = drBolsa.Field<DateTime>("Fecha");
+            response.Consecutivo = drBolsa.Field<int>("Consecutivo");
+            response.NumeroTurno = drBolsa.Field<int>("NumeroTurno");
+            response.Isla = drBolsa.Field<string>("Isla");
+            response.Empleado = drBolsa.Field<string>("Empleado");
+            response.Moneda = Convert.ToDouble(drBolsa.Field<decimal>("Moneda"));
+            response.Billete = Convert.ToDouble(drBolsa.Field<decimal>("Billete"));
+            return response;
 
+        }
+
+        public static TurnoSiges ConvertirTurno(this DataSet ds)
+        {
+            var response = new TurnoSiges();
+            var dtTurno = ds.Tables[0];
+            var drTurno = dtTurno.Rows[0];
+           
+            response.Id = drTurno.Field<short>("Id");
+            response.Empleado = drTurno.Field<string>("NOMBRE");
+            response.Isla = drTurno.Field<string>("Isla");
+            response.IdEstado = drTurno.Field<int>("IdEstado");
+            response.FechaApertura = drTurno.Field<DateTime>("FechaApertura");
+            response.FechaCierre = drTurno.Field<DateTime>("FechaApertura");
+            var dtLecturas = ds.Tables[1];
+            response.turnoSurtidores = dtLecturas.AsEnumerable().Select(x => new TurnoSurtidor()
+            {
+                Apertura = Convert.ToDouble(drTurno.Field<decimal>("Apertura")),
+                Cierre = Convert.ToDouble(drTurno.Field<decimal>("Apertura")),
+                Combustible = new Combustible() { Descripcion = drTurno.Field<string>("Combustible"),
+                Precio = Convert.ToDouble(drTurno.Field<decimal>("precioCombustible")),
+                },
+                Manguera = new MangueraSiges() { 
+                    Descripcion = drTurno.Field<string>("Manguera"),
+                },
+            }).ToList();
+            return response;
+        }
         private static long getNumericValue(object dbValue)
         {
             if (dbValue.GetType() == typeof(int))

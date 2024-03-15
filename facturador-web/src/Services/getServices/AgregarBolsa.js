@@ -15,7 +15,9 @@ const AgregarBolsa = async (isla, codigo, cantidad, moneda, numero) => {
         }
       );
       if (response.status === 200) {
-        return "ok";
+        let respuesta = await response.text();
+
+      return respuesta;
       }
       if (response.status === 403) {
         return "fail";

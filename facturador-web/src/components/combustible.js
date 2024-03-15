@@ -21,6 +21,7 @@ import AlertError from "./alertaError";
 import ModalImprimirPorConsecutivo from "./modalImprimirPorConsecutivo";
 import ModalReimprimirTurno from "./modalReimprimirTurno";
 import ModalFidelizarVenta from "./modalFidelizarVenta";
+import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
 const Combustible = () => {
   const [showAlertError, setShowAlertError] = useState(false);
@@ -187,6 +188,9 @@ const Combustible = () => {
     let respuesta = await CerrarTurno(isla, codigo);
     if (respuesta === "fail") {
       handleSetShowAlertError(true);
+    } else {
+      
+      await ImprimirNativo(respuesta);
     }
   };
 

@@ -2,6 +2,7 @@
 using FactoradorEstacionesModelo.Fidelizacion;
 using FactoradorEstacionesModelo.Objetos;
 using FacturadorAPI.Models;
+using FacturadorApiSP.Models;
 
 namespace MachineUtilizationApi.Repository
 {
@@ -44,5 +45,8 @@ namespace MachineUtilizationApi.Repository
         Task<IEnumerable<SurtidorSiges>> ListarSurtidoresSP(CancellationToken cancellationToken);
         Task<Factura> getUltimasFacturas(short cOD_CAR);
         Task<Factura> ObtenerFacturaPorConsecutivo(string consecutivo);
+        Task<Bolsa> getBolsa(int isla, DateTime fecha);
+        Task<IEnumerable<Factura>> getFacturaPorTurno(int isla, DateTime fecha, int num);
+        Task<TurnoSiges> ObtenerTurnoIslaYFecha(int isla, DateTime fecha, int num);
     }
 }
