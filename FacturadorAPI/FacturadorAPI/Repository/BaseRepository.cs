@@ -71,7 +71,8 @@ namespace MachineUtilizationApi.Repository
                 catch (Exception e)
                 {
                     Logger.LogError(e, $"LoadDataTableFromStoredProcAsync: Proc '{procName}' with exception. {e.Message} ");
-                    throw;
+
+                    throw ex;
                 }
             }
 
@@ -363,7 +364,7 @@ namespace MachineUtilizationApi.Repository
 
                 Logger.LogError(ex, logEntry.ToString());
 
-                throw;
+                throw ex;
             }
             finally
             {

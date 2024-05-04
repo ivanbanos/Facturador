@@ -38,7 +38,8 @@ namespace FacturadorAPI.Controllers
                 }
                 else
                 {
-                    throw;
+
+                    throw ex;
                 }
             }
         }

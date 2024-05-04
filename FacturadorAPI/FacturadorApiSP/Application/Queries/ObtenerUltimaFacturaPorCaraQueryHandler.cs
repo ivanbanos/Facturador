@@ -27,6 +27,7 @@ namespace FacturadorAPI.Application.Queries
         {
             return new FacturaSiges()
             {
+                numeroTransaccion = factura.numeroTransaccion,
                 Autorizacion = factura.Autorizacion,
                 Cantidad = (double)factura.Venta.CANTIDAD,
                 Cara = factura.Venta.COD_CAR.ToString(),

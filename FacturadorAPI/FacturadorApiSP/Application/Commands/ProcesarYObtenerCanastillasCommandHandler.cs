@@ -2,6 +2,7 @@
 using FacturadorAPI.Repository.Repo;
 using MachineUtilizationApi.Repository;
 using MediatR;
+using Newtonsoft.Json;
 
 namespace FacturadorAPI.Application.Commands
 {
@@ -26,7 +27,7 @@ namespace FacturadorAPI.Application.Commands
             {
                 var token = await _conexionEstacionRemota.GetToken(cancellationToken);
                 var canastillas = await _conexionEstacionRemota.RecibirCanastilla(token, cancellationToken);
-
+                _logger.LogInformation(JsonConvert.SerializeObject(canastillas));
                 _databaseHandler.ActualizarCanastilla(canastillas);
             }
             catch (Exception ex)

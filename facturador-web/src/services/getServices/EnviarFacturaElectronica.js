@@ -20,7 +20,7 @@ const EnviarFacturaElectronica = async (ultimaFactura) => {
         
         "?Kilometraje="
         +ultimaFactura.kilometraje+"&Placa="+
-        ultimaFactura.placa,
+        ultimaFactura.placa+"&NumeroTransaccion="+ ultimaFactura.numeroTransaccion,
       {
         method: "POST",
         mode: "cors",

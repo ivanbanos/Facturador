@@ -47,5 +47,6 @@ namespace FacturadorAPI.Models
         public int IdCara { get; set; }
         public string IButton { get; set; }
         public DateTime? fechaProximoMantenimiento { get; set; }
+        public string? numeroTransaccion { get; set; }
     }
 }

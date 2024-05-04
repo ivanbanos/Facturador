@@ -44,9 +44,9 @@ const Canastilla = () => {
     nombre: "",
     telefono: "",
     direccion: "",
-    identificacion: "",
+    identificacion: "222222222222",
     correo: "",
-    tipoIdentificacion: 0,
+    tipoIdentificacion: 1,
   };
   const [tercero, setTercero] = useState(valorInicialTercero);
   const [showAlertError, setShowAlertError] = useState(false);
@@ -150,25 +150,40 @@ const Canastilla = () => {
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
   };
   const onClickGenerarVenta = async (canastilla) => {
-    const respuesta = await PostCanastilla(canastilla);
-    if (respuesta === "fail") {
+    if(canastilla.codigoFormaPago == 0){
+      
       handleSetShowAlertError(true);
     } else {
-      
-      await ImprimirNativo(respuesta);
-      handleSetShowAlertVentaExitosa(true);
-      resetValues();
-    }
+      const respuesta = await PostCanastilla(canastilla);
+      if (respuesta === "fail") {
+        handleSetShowAlertError(true);
+      } else {
+        //await ImprimirNativo(respuesta);
+        handleSetShowAlertVentaExitosa(true);
+        resetValues();
+      }}
     // setObjetoPostCanastilla(valorInicialObjetoPostCanastilla)
   };
-  const resetValues = () => {
-    setIdentificacion("");
+  const resetValues = async () => {
     setSubTotal(0);
     setTotalItems(0);
     setObjetoCanastillas(valorInicialObjetoCanastillas);
     setCanastillas([]);
     setObjetoPostCanastilla(valorInicialObjetoPostCanastilla);
-    setTercero(valorInicialTercero);
+
+    setIdentificacion("222222222222");
+    let nuevoTercero = await GetTercero("222222222222");
+    if (nuevoTercero.length > 0) {
+      setTercero();
+      const tempObjetoPostCanastilla = {
+        ...objetoPostCanastilla,
+        terceroId: nuevoTercero[0].terceroId,
+      };
+      setObjetoPostCanastilla(tempObjetoPostCanastilla);
+
+      // setShowTerceroNoExiste(false);
+    } else {
+    }
   };
   useEffect(() => {
     const fetchData = async () => {
@@ -179,6 +194,20 @@ const Canastilla = () => {
         setTiposDeIdentificacion(tiposDeIdentificacion);
         let formasPago = await GetFormasDePago();
         setformasDePago(formasPago);
+        setIdentificacion("222222222222");
+        let nuevoTercero = await GetTercero("222222222222");
+        setTerceroBusqueda(nuevoTercero);
+        if (nuevoTercero.length > 0) {
+          setTercero(nuevoTercero[0]);
+          const tempObjetoPostCanastilla = {
+            ...objetoPostCanastilla,
+            terceroId: nuevoTercero[0].terceroId,
+          };
+          setObjetoPostCanastilla(tempObjetoPostCanastilla);
+
+          // setShowTerceroNoExiste(false);
+        } else {
+        }
       } catch (error) {}
     };
 
@@ -290,10 +319,12 @@ const Canastilla = () => {
                     className="form-select  w-75 altura-select select-white-blue text-select-list"
                     aria-label="Default select example"
                     name="codigoFormaPago"
-                    value={objetoPostCanastilla.codigoFormaPago || ""}
+                    value={objetoPostCanastilla.codigoFormaPago || "0"}
                     onChange={handleChangeFormaPago}
                   >
-                    <option value=""></option>
+                    <option key={0} value={0}>
+                      Selecione forma de pago
+                    </option>
                     {Array.isArray(formasDePago) &&
                       formasDePago.map((forma) => (
                         <option key={forma.id} value={forma.id}>
@@ -310,8 +341,8 @@ const Canastilla = () => {
       <div className="col-5 center-column columnas custom-style-canastilla">
         <div className="container container-factura my-4">
           <div className=" factura px-2 h-100 texto-canastilla">
-            <p>Vendido a: {tercero.nombre} </p>
-            <p>Nit/CC: {tercero.identificacion}</p>
+            <p>Vendido a: {tercero?.nombre} </p>
+            <p>Nit/CC: {tercero?.identificacion}</p>
 
             {objetoPostCanastilla.canastillas.length > 0 && (
               <p>PRODUCTOS AGREGADOS</p>
@@ -344,8 +375,8 @@ const Canastilla = () => {
           </button>
           <button
             className="botton-medium-blue m-3 right-botton right-botton-xs"
-            onClick={() => {
-              resetValues();
+            onClick={async () => {
+              await resetValues();
             }}
           >
             <span>Borrar</span>

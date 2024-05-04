@@ -38,6 +38,25 @@ namespace FacturadorAPI.Application.Commands
             {
                 throw new Exception("¡Error abriendo turno!");
             }
+            var turnoA = await _databaseHandler.ObtenerTurnoPorIsla(request.Isla, cancellationToken);
+            var count = 0;
+            while(turnoA == null)
+            {
+                Thread.Sleep(1000);
+                turnoA = await _databaseHandler.ObtenerTurnoPorIsla(request.Isla, cancellationToken);
+                if(++count == 10)
+                {
+                    break;
+                }
+            }
+            if(turnoA == null)
+            {
+                await _databaseHandler.MandarImprimirObjeto(request.Isla, DateTime.Now.Date, 0, "Apertura");
+            } else
+            {
+
+                await _databaseHandler.MandarImprimirObjeto(request.Isla, DateTime.Now.Date, turnoA.numero, "Apertura");
+            }
             var turno = await _databaseHandler.ObtenerTurnoPorIsla(request.Isla, cancellationToken);
             var informacion = new StringBuilder();
             var guiones = new StringBuilder();

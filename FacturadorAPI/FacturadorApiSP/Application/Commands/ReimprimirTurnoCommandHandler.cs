@@ -49,6 +49,7 @@ namespace FacturadorAPI.Application.Commands
             //    throw new Exception("¡Error abriendo turno!");
             //}
 
+            await _databaseHandler.MandarImprimirObjeto(request.IdIsla, request.Fecha, request.Posicion,"ReimprimirCierre");
             var turno = await _databaseHandler.ObtenerTurnoIslaYFecha(request.IdIsla, request.Fecha, request.Posicion);
             var facturas = await _databaseHandler.getFacturaPorTurno(request.IdIsla, request.Fecha, request.Posicion);
 

@@ -10,10 +10,12 @@ namespace FacturadorAPI.Models
         public Resolucion resolucion { get; set; }
         public int consecutivo { get; set; }
         public string estado { get; set; }
-        public Tercero terceroId { get; set; }
+        public int terceroId { get; set; }
+        public Tercero Tercero { get; set; }
         public int impresa { get; set; }
         public bool enviada { get; set; }
-        public FormasPagos codigoFormaPago { get; set; }
+        public int codigoFormaPago { get; set; }
+        public FormasPagos Forma { get; set; }
         public IEnumerable<CanastillaFactura> canastillas { get; set; }
         public float subtotal { get; set; }
         public float descuento { get; set; }

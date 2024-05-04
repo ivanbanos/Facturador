@@ -5,11 +5,11 @@ namespace FacturadorAPI.Application.Commands
 {
     public class AgregarFacturaCanastillaCommand : IRequest<string>
     {
-        public AgregarFacturaCanastillaCommand(FacturaCanastilla facturaCanastilla)
+        public AgregarFacturaCanastillaCommand(FacturaCanastillaRequest facturaCanastilla)
         {
             FacturaCanastilla = facturaCanastilla;
         }
 
-        public FacturaCanastilla FacturaCanastilla { get; }
+        public FacturaCanastillaRequest FacturaCanastilla { get; }
     }
 }

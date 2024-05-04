@@ -80,8 +80,8 @@ namespace FacturadorAPI.Application.Commands
 
 
                  informacionVenta.Append(guiones.ToString());
-                 informacionVenta.Append(formatoTotales("Vendido a : ", _factura.terceroId.Nombre == null ? "" : _factura.terceroId.Nombre.Trim()));
-                 informacionVenta.Append(formatoTotales("Nit/C.C. : ", _factura.terceroId.identificacion.Trim()));
+                 informacionVenta.Append(formatoTotales("Vendido a : ", _factura.Tercero.Nombre == null ? "" : _factura.Tercero.Nombre.Trim()));
+                 informacionVenta.Append(formatoTotales("Nit/C.C. : ", _factura.Tercero.identificacion.Trim()));
 
 
 
@@ -138,7 +138,7 @@ namespace FacturadorAPI.Application.Commands
                  informacionVenta.Append(formatoTotales("TOTAL : ", String.Format("{0:#,0.00}", _factura.total)));
                 // informacionVenta.Append(guiones.ToString());
 
-                var forma = formas.FirstOrDefault(x => x.Id == _factura.codigoFormaPago.Id);
+                var forma = formas.FirstOrDefault(x => x.Id == _factura.Forma.Id);
                  informacionVenta.Append(formatoTotales("Forma de pago : ", forma?.Descripcion?.Trim()));
 
 
@@ -199,6 +199,7 @@ namespace FacturadorAPI.Application.Commands
             }
             catch (Exception ex)
             {
+                _logger.LogError($"{ex.Message}. {ex.StackTrace}");
             }
 
             return "";

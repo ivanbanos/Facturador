@@ -131,7 +131,7 @@ namespace FacturadorAPI.Repository
             response.AddRange(
                   dt.AsEnumerable().Select(dr => new Canastilla()
                   {
-                      CanastillaId = dr.Field<int>("CanastillaId"),
+                      canastillaId = dr.Field<int>("CanastillaId"),
                       descripcion = dr.Field<string>("descripcion"),
                       precio = Convert.ToSingle(dr.Field<double>("precio")),
                       unidad = dr.Field<string>("unidad"),
@@ -171,6 +171,8 @@ namespace FacturadorAPI.Repository
                     Consecutivo = dr.Field<int>("CONSECUTIVO"),
                     DescripcionResolucion = dr.Field<string>("descripcionRes"),
                     Autorizacion = dr.Field<string>("autorizacion"),
+
+                    numeroTransaccion = dr.Field<string>("numeroTransaccion"),
                     Placa = dr.Field<string>("Placa"),
                     Kilometraje = dr.Field<string>("Kilometraje"),
                     fecha = dr.Field<DateTime>("fecha"),
@@ -220,12 +222,14 @@ namespace FacturadorAPI.Repository
                 response.Add(
                 new TurnoSiges()
                 {
-                    Id = dr.Field<short>("Id"),
-                    Empleado = dr.Field<string>("Nombre"),
-                    Isla = dr.Field<string>("Isla"),
-                    IdEstado = dr.Field<int>("IdEstado"),
+                    Empleado = dr.Field<string>("empleado"),
                     FechaApertura = dr.Field<DateTime>("FechaApertura"),
-                    FechaCierre = dr.Field<DateTime?>("FechaCierre")
+                    FechaCierre = dr.Field<DateTime>("FechaCierre"),
+                    IdEstado = dr.Field<int>("IdEstado"),
+                    Isla = dr.Field<string>("Isla"),
+                    numero = dr.Field<short>("Numero"),
+                    Id = dr.Field<short>("Numero"),
+
                 });
             }
             return response;
@@ -556,25 +560,26 @@ namespace FacturadorAPI.Repository
                     fc.fecha = dr.Field<DateTime>("fecha");
                     fc.impresa = dr.Field<int>("impresa");
                     fc.estado = dr.Field<string>("estado");
-                    fc.codigoFormaPago = new FormasPagos() { Id = dr.Field<int>("codigoFormaPago") };
+                    fc.codigoFormaPago =  dr.Field<int>("codigoFormaPago") ;
+                    fc.Forma = new FormasPagos() { Id = dr.Field<int>("codigoFormaPago") };
                     fc.descuento = Convert.ToSingle(dr.Field<double>("descuento"));
                     fc.subtotal = Convert.ToSingle(dr.Field<double>("subtotal"));
                     fc.total = Convert.ToSingle(dr.Field<double>("total"));
                     fc.iva = Convert.ToSingle(dr.Field<double>("iva"));
                     fc.resolucion = ConvertirResolucion(dt).FirstOrDefault();
                     fc.enviada = dr.Field<bool>("enviada");
-                    fc.terceroId = new Tercero();
+                    fc.Tercero = new Tercero();
 
-                    fc.terceroId.COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI");
-                    fc.terceroId.Direccion = dr.Field<string>("direccion");
-                    fc.terceroId.Nombre = dr.Field<string>("Nombre");
-                    fc.terceroId.Telefono = dr.Field<string>("Telefono");
-                    fc.terceroId.identificacion = dr.Field<string>("identificacion");
+                    fc.Tercero.COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI");
+                    fc.Tercero.Direccion = dr.Field<string>("direccion");
+                    fc.Tercero.Nombre = dr.Field<string>("Nombre");
+                    fc.Tercero.Telefono = dr.Field<string>("Telefono");
+                    fc.Tercero.identificacion = dr.Field<string>("identificacion");
 
-                    fc.terceroId.Correo = dr.Field<string>("correo");
-                    fc.terceroId.terceroId = dr.Field<int>("terceroId");
-                    fc.terceroId.tipoIdentificacion = dr.Field<int?>("tipoIdentificacion");
-                    fc.terceroId.tipoIdentificacionS = dr.Field<string>("descripcion");
+                    fc.Tercero.Correo = dr.Field<string>("correo");
+                    fc.Tercero.terceroId = dr.Field<int>("terceroId");
+                    fc.Tercero.tipoIdentificacion = dr.Field<int?>("tipoIdentificacion");
+                    fc.Tercero.tipoIdentificacionS = dr.Field<string>("descripcion");
 
 
                     return fc;
@@ -598,7 +603,7 @@ namespace FacturadorAPI.Repository
                     Canastilla = new Canastilla()
                     {
                         guid = dr.Field<Guid>("guid"),
-                        CanastillaId = dr.Field<int>("CanastillaId"),
+                        canastillaId = dr.Field<int>("CanastillaId"),
                         descripcion = dr.Field<string>("descripcion"),
                     }
                 })
@@ -645,6 +650,7 @@ namespace FacturadorAPI.Repository
                     impresa = dr.Field<int>("impresa"),
                     Estado = dr.Field<string>("estado"),
                     codigoFormaPago = dr.Field<int>("codigoFormaPago"),
+                    numeroTransaccion = dr.Field<string>("numeroTransaccion"),
 
                     Tercero = new Tercero()
                     {
@@ -685,8 +691,8 @@ namespace FacturadorAPI.Repository
             var dtTurno = ds.Tables[0];
             var drTurno = dtTurno.Rows[0];
            
-            response.Id = drTurno.Field<short>("Id");
-            response.Empleado = drTurno.Field<string>("NOMBRE");
+            response.Id = Convert.ToInt32(drTurno["Numero"]);
+            response.Empleado = drTurno.Field<string>("empleado");
             response.Isla = drTurno.Field<string>("Isla");
             response.IdEstado = drTurno.Field<int>("IdEstado");
             response.FechaApertura = drTurno.Field<DateTime>("FechaApertura");
@@ -694,13 +700,13 @@ namespace FacturadorAPI.Repository
             var dtLecturas = ds.Tables[1];
             response.turnoSurtidores = dtLecturas.AsEnumerable().Select(x => new TurnoSurtidor()
             {
-                Apertura = Convert.ToDouble(drTurno.Field<decimal>("Apertura")),
-                Cierre = Convert.ToDouble(drTurno.Field<decimal>("Apertura")),
-                Combustible = new Combustible() { Descripcion = drTurno.Field<string>("Combustible"),
-                Precio = Convert.ToDouble(drTurno.Field<decimal>("precioCombustible")),
+                Apertura = Convert.ToDouble(x.Field<decimal>("Apertura")),
+                Cierre = Convert.ToDouble(x.Field<decimal>("Cierre")),
+                Combustible = new Combustible() { Descripcion = x.Field<string>("Combustible"),
+                Precio = Convert.ToDouble(x.Field<decimal>("precioCombustible")),
                 },
                 Manguera = new MangueraSiges() { 
-                    Descripcion = drTurno.Field<string>("Manguera"),
+                    Descripcion = x.Field<short>("Manguera").ToString(),
                 },
             }).ToList();
             return response;

@@ -29,6 +29,8 @@ const Combustible = () => {
   const [codigoEmpleado, setCodigoEmpleado] = useState("");
   const handleChangeCodigoEmpleado = (codigo) => setCodigoEmpleado(codigo);
   const [showAddTercero, setShowAddTercero] = useState(false);
+  const [disableNumeroTrans, setDisableNumeroTrans] = useState(false);
+  const [disableForma, setDisableForma] = useState(false);
   const handleShowAddTercero = (show) => setShowAddTercero(show);
 
   const [identificacion, setIdentificacion] = useState("");
@@ -119,6 +121,14 @@ const Combustible = () => {
   );
 
   const handleSetUltimaFactura = (factura) => {
+    if(factura.numeroTransaccion){
+      setDisableNumeroTrans(true)
+      setDisableForma(true)
+    }else{
+      
+      setDisableNumeroTrans(false)
+      setDisableForma(false)
+    }
     setUltimaFactura(factura);
   };
   const getFacturaInformacion = () => {
@@ -160,6 +170,11 @@ const Combustible = () => {
       [event.target.name]: event.target.value,
     };
     setUltimaFactura(tempFactura);
+    if(tempFactura.codigoFormaPago==1 || tempFactura.codigoFormaPago==2 || tempFactura.codigoFormaPago==3){
+      setDisableNumeroTrans(false)
+    } else{
+      setDisableNumeroTrans(true)
+    }
   };
 
   const fetcInicial = async () => {
@@ -200,6 +215,17 @@ const Combustible = () => {
       setUltimaFactura(factura);
       setTercero(factura.tercero);
       setIdentificacion(factura.tercero.identificacion);
+      if(factura.numeroTransaccion){
+        setDisableNumeroTrans(true)
+        setDisableForma(true)
+      }else{
+        if(factura.codigoFormaPago==1 || factura.codigoFormaPago==2 || factura.codigoFormaPago==3){
+          setDisableNumeroTrans(false)
+        } else{
+          setDisableNumeroTrans(true)
+        }
+        setDisableForma(false)
+      }
     }
 
     let facturaTexto = await GetUltimaFacturaPorCaraTexto(idCara);
@@ -371,6 +397,7 @@ const Combustible = () => {
                   className="form-select  w-75 altura-select select-white-blue text-select-list"
                   aria-label="Default select example"
                   name="codigoFormaPago"
+                  disabled={disableForma}
                   value={ultimaFactura.codigoFormaPago || ""}
                   onChange={handleChangeFactura}
                 >
@@ -382,6 +409,17 @@ const Combustible = () => {
                       </option>
                     ))}
                 </select>
+              </div>
+              <div className="div-info-venta ">
+                <label className="label-info-venta ">N. trans</label>
+                <input
+                  type="text"
+                  className="form-control select-white-blue w-75 altura-select text-select-list"
+                  name="numeroTransaccion"
+                  value={ultimaFactura.numeroTransaccion || ""}
+                  disabled={disableNumeroTrans}
+                  onChange={handleChangeFactura}
+                ></input>
               </div>
               <div className="div-info-venta ">
                 <label className="label-info-venta ">Placa</label>

@@ -27,7 +27,7 @@ namespace FacturadorAPI.Application.Commands
             {
                 var factura = await _databaseHandler.GetFacturaPorIdVenta(request.IdFactura);
                 var facturaSIGES = ConvertToFacturaSIGES(factura);
-                await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje);
+                await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, request.NumeroTransaccion == "NP" ? "" : request.NumeroTransaccion);
                 factura = await _databaseHandler.GetFacturaPorIdVenta(request.IdFactura);
 
                 facturaSIGES = ConvertToFacturaSIGES(factura);

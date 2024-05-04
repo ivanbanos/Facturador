@@ -31,7 +31,7 @@ namespace FacturadorAPI.Controllers
 
         [HttpPost]
         [ProducesResponseType(typeof(IActionResult), (int)HttpStatusCode.OK)]
-        public async Task<IActionResult> AgregarCanastilla(FacturaCanastilla facturaCanastilla, CancellationToken cancellationToken)
+        public async Task<IActionResult> AgregarCanastilla(FacturaCanastillaRequest facturaCanastilla, CancellationToken cancellationToken)
         {
             
             return Ok(await _mediator.Send(new AgregarFacturaCanastillaCommand(facturaCanastilla), cancellationToken));

@@ -49,6 +49,8 @@ namespace FacturadorAPI.Application.Commands
                 throw new Exception("¡Error abriendo turno!");
             }
             Thread.Sleep(1000);
+
+            await _databaseHandler.MandarImprimirObjeto(request.Isla, DateTime.Now.Date, int.Parse(request.Numero), "Bolsa");
             var bolsa = await _databaseHandler.getBolsa(request.Isla, DateTime.Now.Date);
             if(bolsa.Moneda == double.Parse(request.Moneda) && bolsa.Billete == double.Parse(request.Cantidad))
             {

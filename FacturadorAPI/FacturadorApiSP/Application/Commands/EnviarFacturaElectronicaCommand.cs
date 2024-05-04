@@ -10,13 +10,14 @@ namespace FacturadorAPI.Application.Commands
             IdFactura = idFactura;
         }
 
-        public EnviarFacturaElectronicaCommand(int idFactura, int terceroId, int formaPago, int ventaId, string placa, string kilometraje) : this(idFactura)
+        public EnviarFacturaElectronicaCommand(int idFactura, int terceroId, int formaPago, int ventaId, string placa, string kilometraje, string numeroTransaccion) : this(idFactura)
         {
             TerceroId = terceroId;
             FormaPago = formaPago;
             VentaId = ventaId;
             Placa = placa;
             Kilometraje = kilometraje;
+            NumeroTransaccion = numeroTransaccion;
         }
 
         public int IdFactura { get; }
@@ -25,5 +26,6 @@ namespace FacturadorAPI.Application.Commands
         public int VentaId { get; }
         public string Placa { get; }
         public string Kilometraje { get; }
+        public string NumeroTransaccion { get; }
     }
 }

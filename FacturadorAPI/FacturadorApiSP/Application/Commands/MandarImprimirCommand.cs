@@ -6,7 +6,7 @@ namespace FacturadorAPI.Application.Commands
     public class MandarImprimirCommand : IRequest
     {
 
-        public MandarImprimirCommand(int facturaPOSId, int terceroId, int formaPago, int ventaId, string placa, string kilometraje)
+        public MandarImprimirCommand(int facturaPOSId, int terceroId, int formaPago, int ventaId, string placa, string kilometraje, string numeroTransaccion)
         {
             FacturaPOSId = facturaPOSId;
             TerceroId = terceroId;
@@ -14,6 +14,7 @@ namespace FacturadorAPI.Application.Commands
             VentaId = ventaId;
             Placa = placa;
             Kilometraje = kilometraje;
+            NumeroTransaccion = numeroTransaccion;
         }
 
         public int FacturaPOSId { get; }
@@ -22,5 +23,6 @@ namespace FacturadorAPI.Application.Commands
         public int VentaId { get; }
         public string Placa { get; }
         public string Kilometraje { get; }
+        public string NumeroTransaccion { get; }
     }
 }

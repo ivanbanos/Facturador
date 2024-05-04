@@ -30,6 +30,7 @@ namespace FacturadorAPI.Application.Commands
 
         public async Task<string> Handle(MandarImprimirConsecutivoCommand request, CancellationToken cancellationToken)
         {
+             await _databaseHandler.MandarImprimirConsecutivo(request.Consecutivo);
             var factura = await _databaseHandler.ObtenerFacturaPorConsecutivo(request.Consecutivo);
 
             return await getinformacionVenta(factura, cancellationToken);

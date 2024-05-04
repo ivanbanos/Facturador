@@ -7,6 +7,9 @@ const ImprimirFactura = async (ultimaFactura) => {
     if(ultimaFactura.placa==""){
       ultimaFactura.placa="NP";
     }
+    if(!ultimaFactura.numeroTransaccion || ultimaFactura.numeroTransaccion==""){
+      ultimaFactura.numeroTransaccion="NA";
+    }
     const response = await fetch(
       window.SERVER_URL +
         "/api/Facturas/Imprimir/" +
@@ -20,7 +23,7 @@ const ImprimirFactura = async (ultimaFactura) => {
         
         "?Kilometraje="
         +ultimaFactura.kilometraje+"&Placa="+
-        ultimaFactura.placa ,
+        ultimaFactura.placa+"&NumeroTransaccion="+ ultimaFactura.numeroTransaccion,
       {
         method: "POST",
         mode: "cors",

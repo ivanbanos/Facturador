@@ -215,7 +215,7 @@ namespace MachineUtilizationApi.Repository
                             });
         }
 
-        public async Task<int> GenerarFacturaCanastilla(FacturaCanastilla facturaCanastilla, bool imprimir)
+        public async Task<int> GenerarFacturaCanastilla(FacturaCanastillaRequest facturaCanastilla, bool imprimir)
         {
             ConnectionString = _settings.Facturacion;
             var ventasIds = new DataTable();
@@ -250,7 +250,7 @@ namespace MachineUtilizationApi.Repository
                 row["descripcion"] = t.descripcion;
                 row["unidad"] = t.unidad;
                 row["precio"] = t.precio;
-                row["deleted"] = t.deleted;
+                row["deleted"] = false;
                 row["iva"] = t.iva;
                 row["cantidad"] = t.cantidad;
                 ventasIds.Rows.Add(row);
@@ -336,7 +336,7 @@ namespace MachineUtilizationApi.Repository
             return dt.ConvertirFacturasSiges();
         }
 
-        public async Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje)
+        public async Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje, string numeroTransaccion)
         {
             ConnectionString = _settings.Facturacion;
             await LoadDataTableFromStoredProcAsync("ActualizarFactura",
@@ -347,7 +347,9 @@ namespace MachineUtilizationApi.Repository
                     {"@Kilometraje", kilometraje },
                     {"@codigoFormaPago", codigoFormaPago },
                     {"@terceroId", terceroId },
-                    {"@ventaId", idVenta }
+                    {"@ventaId", idVenta },
+                    {"@NumeroTransaccion", numeroTransaccion },
+
                             });
         }
 
@@ -512,12 +514,12 @@ namespace MachineUtilizationApi.Repository
         public async Task<TurnoSiges> ObtenerTurnoPorIsla(int idIsla, CancellationToken cancellationToken)
         {
             ConnectionString = _settings.Estacion;
-            DataTable dt = await LoadDataTableFromStoredProcAsync("ObtenerTurnoIsla",
+            DataSet ds = await LoadDataSetFromStoredProcAsync("ObtenerTurnoIsla",
                             new Dictionary<string, object>{
 
                     {"@idIsla", idIsla }
-                            });
-            return dt.ConvertirTurnoSiges().FirstOrDefault();
+                            }, "turnos","surtidores", "bolsas");
+            return ds.Tables["turnos"].ConvertirTurnoSiges().FirstOrDefault();
         }
 
         public async Task<Factura> getUltimasFacturas(short cOD_CAR)
@@ -678,6 +680,20 @@ namespace MachineUtilizationApi.Repository
                          });
 
             return dt.ConvertirBolsa();
+
+        }
+
+        public async Task MandarImprimirObjeto(int idIsla, DateTime fecha, int posicion, string objeto)
+        {
+            ConnectionString = _settings.Facturacion;
+            var dt = await LoadDataTableFromStoredProcAsync("AgregarObjetoImprimir",
+                         new Dictionary<string, object>{
+
+                    {"@Isla", idIsla },
+                    {"@fecha", fecha },
+                    {"@Numero", posicion },
+                    {"@Objeto", objeto }
+                         });
 
         }
     }

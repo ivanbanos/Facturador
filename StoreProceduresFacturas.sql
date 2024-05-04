@@ -220,6 +220,20 @@ IF NOT EXISTS (
   FROM
     INFORMATION_SCHEMA.COLUMNS
   WHERE
+    TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'numeroTransaccion')
+BEGIN
+  ALTER TABLE FacturasPOS
+ADD numeroTransaccion varchar(50) default null;
+  ALTER TABLE OrdenesDeDespacho
+ADD numeroTransaccion varchar(50) default null;
+END;
+GO
+IF NOT EXISTS (
+  SELECT
+    *
+  FROM
+    INFORMATION_SCHEMA.COLUMNS
+  WHERE
     TABLE_NAME = 'Terceros' AND COLUMN_NAME = 'enviada')
 BEGIN
   ALTER TABLE Terceros
@@ -667,6 +681,7 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
+      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from FacturasPOS
@@ -694,6 +709,7 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from OrdenesDeDespacho
@@ -1145,6 +1161,7 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
+      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -1173,6 +1190,7 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho
@@ -1225,6 +1243,7 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
+      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -1253,6 +1272,7 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho
@@ -1303,6 +1323,7 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
+      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -1329,6 +1350,7 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho
@@ -1445,6 +1467,7 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
+      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -1470,6 +1493,7 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho
@@ -1583,6 +1607,7 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
+      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from FacturasPOS
@@ -1609,6 +1634,7 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from OrdenesDeDespacho
@@ -1834,6 +1860,7 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
+      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -1859,6 +1886,7 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho
@@ -2074,6 +2102,7 @@ CREATE procedure [dbo].[ActualizarFactura]
 ( 
     @facturaPOSId int,
 	@Placa varchar(50) = null,
+	@NumeroTransaccion varchar(50) = null,
 	@Kilometraje varchar(50) = null,
 	@codigoFormaPago int = null,
 	@terceroId int = null,
@@ -2090,6 +2119,7 @@ begin try
 	impresa = impresa+1,
     enviada = 0,
     codigoFormaPago = @codigoFormaPago,
+	numeroTransaccion = @NumeroTransaccion,
 	terceroId = isnull(@terceroId, terceroId)
 	Where @facturaPOSId = facturaPOSId
 	and ventaId = @ventaID
@@ -2101,6 +2131,7 @@ begin try
 	impresa = impresa+1,
     enviada = 0,
     codigoFormaPago = @codigoFormaPago,
+	numeroTransaccion = @NumeroTransaccion,
 	terceroId = isnull(@terceroId, terceroId)
 	Where @facturaPOSId = facturaPOSId
 	and ventaId = @ventaID
@@ -2220,6 +2251,7 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
+      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -2245,6 +2277,7 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho
@@ -2335,6 +2368,7 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
+      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from FacturasPOS
@@ -2362,6 +2396,7 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from OrdenesDeDespacho
@@ -2411,6 +2446,7 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
+      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -2436,6 +2472,7 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho

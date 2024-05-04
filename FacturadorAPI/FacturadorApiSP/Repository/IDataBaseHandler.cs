@@ -10,7 +10,7 @@ namespace MachineUtilizationApi.Repository
     {
         Task AbrirTurno(int isla, string codigo);
         Task ActualizarCanastilla(IEnumerable<Canastilla> canastillas);
-        Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje);
+        Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje, string numeroTransaccion);
         Task ActualizarFacturaFidelizada(string identificacion, int ventaId);
         Task ActuralizarFacturasEnviados(List<int> list);
         Task AddFidelizado(string documento, float v);
@@ -18,7 +18,7 @@ namespace MachineUtilizationApi.Repository
         Task ConvertirAFactura(int idFactura);
         Task ConvertirAOrder(int idFactura);
         Task<Tercero> CrearTercero(Tercero tercero);
-        Task<int> GenerarFacturaCanastilla(FacturaCanastilla facturaCanastilla, bool imprimir);
+        Task<int> GenerarFacturaCanastilla(FacturaCanastillaRequest facturaCanastilla, bool imprimir);
         Task<FacturaCanastilla> BuscarFacturaCanastillaPorConsecutivo(int consecutivo);
         Task<IEnumerable<Canastilla>> GetCanastillas();
         Task<Factura> GetFacturaPorIdVenta(int idFactura);
@@ -48,5 +48,6 @@ namespace MachineUtilizationApi.Repository
         Task<Bolsa> getBolsa(int isla, DateTime fecha);
         Task<IEnumerable<Factura>> getFacturaPorTurno(int isla, DateTime fecha, int num);
         Task<TurnoSiges> ObtenerTurnoIslaYFecha(int isla, DateTime fecha, int num);
+        Task MandarImprimirObjeto(int idIsla, DateTime fecha, int posicion, string v);
     }
 }

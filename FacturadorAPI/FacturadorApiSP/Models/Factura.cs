@@ -7,6 +7,8 @@ namespace FactoradorEstacionesModelo.Objetos
 {
     public class Factura
     {
+        public string? numeroTransaccion { get; set; }
+
         public int ventaId { get; set; }
 
         public int impresa { get; set; }

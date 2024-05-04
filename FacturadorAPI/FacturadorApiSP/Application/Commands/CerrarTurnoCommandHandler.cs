@@ -43,6 +43,7 @@ namespace FacturadorAPI.Application.Commands
 
             var formas = await _databaseHandler.ListarFormasPagoSP(cancellationToken);
 
+            await _databaseHandler.MandarImprimirObjeto(request.Isla, DateTime.Now.Date, 0, "Cierre");
             var informacion = new StringBuilder();
             var guiones = new StringBuilder();
             guiones.Append('-', _infoEstacion.CaracteresPorPagina);

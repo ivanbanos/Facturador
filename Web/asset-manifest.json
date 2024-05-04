@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.3f579cb2.css",
-    "main.js": "/static/js/main.7eab8960.js",
+    "main.js": "/static/js/main.74032576.js",
     "static/media/FactVista1-Fondo.png": "/static/media/FactVista1-Fondo.010625cf52bf19441c46.png",
     "static/media/icono.png": "/static/media/icono.898aa817c6f72570cf8f.png",
     "static/media/orkney-bold.otf": "/static/media/orkney-bold.c268a4d85e4bff25b1d3.otf",
@@ -11,10 +11,10 @@
     "index.html": "/index.html",
     "static/media/circle.svg": "/static/media/circle.c5d57a8f67e23d4ec2466554aa31d8a3.svg",
     "main.3f579cb2.css.map": "/static/css/main.3f579cb2.css.map",
-    "main.7eab8960.js.map": "/static/js/main.7eab8960.js.map"
+    "main.74032576.js.map": "/static/js/main.74032576.js.map"
   },
   "entrypoints": [
     "static/css/main.3f579cb2.css",
-    "static/js/main.7eab8960.js"
+    "static/js/main.74032576.js"
   ]
 }
