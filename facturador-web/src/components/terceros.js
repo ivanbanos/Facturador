@@ -120,7 +120,7 @@ const Terceros = () => {
                     </label>
                     <div className="col-sm-8">
                       <input
-                        type="text"
+                        type="number"
                         className={`form-control tercero-input ${
                           errores.identificacion ? "is-invalid" : ""
                         }`}
@@ -130,6 +130,7 @@ const Terceros = () => {
                         onBlur={handleOnBlurIdentificacion}
                         required
                         placeholder={errores.identificacion || "Identificación"}
+                        onkeydown="return /[a-zA-Z0-9]/i.test(event.key)"
                       ></input>
                     </div>
                   </div>
@@ -143,6 +144,7 @@ const Terceros = () => {
                         className="form-select w-80 h-50 tercero-input"
                         name="tipoIdentificacion"
                         value={tercero.tipoIdentificacion || ""}
+                        onkeydown="return /[a-zA-Z0-9]/i.test(event.key)"
                         onChange={handleChangeTercero}
                         required
                       >
@@ -216,7 +218,7 @@ const Terceros = () => {
                     <label className="col-sm-4 col-form-label">Correo</label>
                     <div className="col-sm-8">
                       <input
-                        type="text"
+                        type="email"
                         className={`form-control tercero-input ${
                           errores.correo ? "is-invalid" : ""
                         }`}

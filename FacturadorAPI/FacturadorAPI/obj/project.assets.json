@@ -1351,19 +1351,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Ivan\\.nuget\\packages\\": {}
+    "C:\\Users\\ivana\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Ivan\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
+      "projectUniqueName": "C:\\Users\\ivana\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
       "projectName": "FacturadorAPI",
-      "projectPath": "C:\\Users\\Ivan\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
-      "packagesPath": "C:\\Users\\Ivan\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Ivan\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\obj\\",
+      "projectPath": "C:\\Users\\ivana\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\FacturadorAPI.csproj",
+      "packagesPath": "C:\\Users\\ivana\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\ivana\\Documents\\GitHub\\Facturador\\FacturadorAPI\\FacturadorAPI\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\Ivan\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\ivana\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -1383,6 +1383,11 @@
         "warnAsError": [
           "NU1605"
         ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
       }
     },
     "frameworks": {
@@ -1445,8 +1450,40 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.402\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204\\RuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'System.Data.SqlClient' 4.8.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-8g2p-5pqh-5jmc",
+      "libraryId": "System.Data.SqlClient",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    },
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'System.Data.SqlClient' 4.8.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-98g6-xh36-x2p7",
+      "libraryId": "System.Data.SqlClient",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'System.IdentityModel.Tokens.Jwt' 6.22.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-59j7-ghrg-fj52",
+      "libraryId": "System.IdentityModel.Tokens.Jwt",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    }
+  ]
 }

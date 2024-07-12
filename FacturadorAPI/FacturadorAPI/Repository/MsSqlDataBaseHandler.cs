@@ -185,7 +185,7 @@ namespace MachineUtilizationApi.Repository
             {
                 {"@facturas",ventasIds }
             };
-            await LoadDataTableFromStoredProcAsync("SetFacturaCanastillaEnviada",
+            await LoadDataTableFromStoredProcAsync("CambiarEstadoFactursEnviada",
                          parameters);
         }
 

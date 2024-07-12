@@ -1,14 +1,16 @@
-
-const ImprimirFactura = async (ultimaFactura) => {
+const ImprimirFactura = async (ultimaFactura, inpresiones) => {
   try {
-    if(ultimaFactura.kilometraje==""){
-      ultimaFactura.kilometraje="NP";
+    if (ultimaFactura.kilometraje == "") {
+      ultimaFactura.kilometraje = "NP";
     }
-    if(ultimaFactura.placa==""){
-      ultimaFactura.placa="NP";
+    if (ultimaFactura.placa == "") {
+      ultimaFactura.placa = "NP";
     }
-    if(!ultimaFactura.numeroTransaccion || ultimaFactura.numeroTransaccion==""){
-      ultimaFactura.numeroTransaccion="NA";
+    if (
+      !ultimaFactura.numeroTransaccion ||
+      ultimaFactura.numeroTransaccion == ""
+    ) {
+      ultimaFactura.numeroTransaccion = "NA";
     }
     const response = await fetch(
       window.SERVER_URL +
@@ -20,10 +22,14 @@ const ImprimirFactura = async (ultimaFactura) => {
         ultimaFactura.codigoFormaPago +
         "/" +
         ultimaFactura.ventaId +
-        
-        "?Kilometraje="
-        +ultimaFactura.kilometraje+"&Placa="+
-        ultimaFactura.placa+"&NumeroTransaccion="+ ultimaFactura.numeroTransaccion,
+        "?Kilometraje=" +
+        ultimaFactura.kilometraje +
+        "&Placa=" +
+        ultimaFactura.placa +
+        "&NumeroTransaccion=" +
+        ultimaFactura.numeroTransaccion +
+        "&impresiones=" +
+        inpresiones,
       {
         method: "POST",
         mode: "cors",

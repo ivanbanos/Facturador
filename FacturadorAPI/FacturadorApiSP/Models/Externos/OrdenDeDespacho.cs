@@ -46,7 +46,7 @@ namespace FacturadorAPI.Models.Externos
             Kilometraje = x.Kilometraje;
             Surtidor = x.Surtidor + "";
             Cara = x.Cara + "";
-            Manguera = x.Manguera + "";
+            Manguera = x.Manguera.Id + "";
             FormaDePago = forma;
             Fecha = x.fecha;
             Tercero = new TerceroExterno(x.Tercero);

@@ -12,8 +12,18 @@ const ModalFacturaElectronica = (props) => {
   const ultimaFactura = props.ultimaFactura;
   const [showAlertImpresionExitosa, setShowAlertImpresionExitosa] =
     useState(false);
+    const [enviando, setEnviando] =
+      useState(false);
+  const [cantidad, setCantidad] = useState(2);
 
+  const [
+    showAlertImpresionExitosaSinFacturacion,
+    setShowAlertImpresionExitosaSinFacturacion,
+  ] = useState(false);
 
+  const handleChangeCantidad = async (event) => {
+    setCantidad(event.target.value);
+  };
   return (
     <>
       <Modal
@@ -28,43 +38,68 @@ const ModalFacturaElectronica = (props) => {
         <Modal.Header className="header-modal" closeButton>
           <Modal.Title>Enviar Factura Electrónica</Modal.Title>
         </Modal.Header>
-        <Modal.Body>Desea enviar la factura electrónica?</Modal.Body>
+        <Modal.Body>
+          Desea enviar la factura electrónica?
+          <br />
+          Cantidad a imprimir{" "}
+          <input
+            type="number"
+            className="form-control dark-blue-input w-100 input-identificacion "
+            placeholder="Cantidad"
+            name="cantidad"
+            value={cantidad || ""}
+            onkeydown="return /[a-zA-Z0-9]/i.test(event.key)"
+            onChange={handleChangeCantidad}
+          ></input>
+        </Modal.Body>
         <Modal.Footer>
           <Button
             className="botton-light-blue-modal"
+            
+            disabled={enviando}
             onClick={async () => {
-              handleCloseFacturaElectronica();
-              
+              setEnviando(true)
               const respuestaEnviar = await EnviarFacturaElectronica(
-                ultimaFactura
+                ultimaFactura,
+                cantidad
               );
               if (respuestaEnviar === "fail") {
                 props.handleSetShowAlertError(true);
               } else {
                 setShowAlertImpresionExitosa(true);
 
+                handleCloseFacturaElectronica();
                 props.getFacturaInformacion();
               }
+              setEnviando(false)
             }}
           >
             Enviar e Imprimir
           </Button>
           <Button
             className="botton-medium-blue-modal"
+            disabled={enviando}
             onClick={async () => {
               
-
-              handleCloseFacturaElectronica();
-              const respuestaImprimir = await ImprimirFactura(ultimaFactura);
+              setEnviando(true)
+              const respuestaImprimir = await ImprimirFactura(
+                ultimaFactura,
+                cantidad
+              );
               console.log(ultimaFactura);
-          const text = await GetUltimaFacturaPorCaraTexto(ultimaFactura.idCara);
-          await ImprimirNativo(text);
+              const text = await GetUltimaFacturaPorCaraTexto(
+                ultimaFactura.idCara
+              );
+              await ImprimirNativo(text);
               if (respuestaImprimir === "fail") {
                 props.handleSetShowAlertError(true);
               } else {
                 props.getFacturaInformacion();
                 setShowAlertImpresionExitosa(true);
+                handleCloseFacturaElectronica();
               }
+              
+              setEnviando(false)
             }}
           >
             No Enviar e Imprimir
@@ -79,10 +114,27 @@ const ModalFacturaElectronica = (props) => {
         <Alert
           variant="info"
           show={showAlertImpresionExitosa}
-          onClose={() => setShowAlertImpresionExitosa(false)}
+          onClose={() => {
+            setShowAlertImpresionExitosa(false);
+            handleCloseFacturaElectronica();
+          }}
           dismissible
         >
           <Alert.Heading>Fatura impresa de forma exitosa</Alert.Heading>
+        </Alert>
+        <Alert
+          variant="info"
+          show={showAlertImpresionExitosaSinFacturacion}
+          onClose={() => {
+            setShowAlertImpresionExitosaSinFacturacion(false);
+            handleCloseFacturaElectronica();
+          }}
+          dismissible
+        >
+          <Alert.Heading>
+            Fatura impresa de forma exitosa. Sin envio a DIAN. Tercero no
+            actualizado
+          </Alert.Heading>
         </Alert>
       </div>
     </>

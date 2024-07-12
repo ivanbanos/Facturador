@@ -651,7 +651,8 @@ namespace FacturadorAPI.Repository
                     Estado = dr.Field<string>("estado"),
                     codigoFormaPago = dr.Field<int>("codigoFormaPago"),
                     numeroTransaccion = dr.Field<string>("numeroTransaccion"),
-
+                    enviadaFacturacion = dr.Field<bool>("enviadaFacturacion"),
+                    enviada = dr.Field<bool>("enviada"),
                     Tercero = new Tercero()
                     {
                         COD_CLI = dr.Field<string>("COD_CLI"),

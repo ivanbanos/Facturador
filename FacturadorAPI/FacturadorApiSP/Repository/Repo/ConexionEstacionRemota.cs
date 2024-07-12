@@ -91,33 +91,33 @@ namespace FacturadorAPI.Repository.Repo
         }
         public async Task CrearFacturaOrdenesDeDespacho(string guid, string token)
         {
-            List<FacturasEntity> guids = new List<FacturasEntity>() { new FacturasEntity() { Guid = Guid.Parse(guid) } };
+    //        List<FacturasEntity> guids = new List<FacturasEntity>() { new FacturasEntity() { Guid = Guid.Parse(guid) } };
 
 
-            using (var client = new HttpClient())
-            {
-                client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
-                client.DefaultRequestHeaders.Authorization =
-    new AuthenticationHeaderValue("Bearer", token);
-                var path = $"/api/OrdenesDeDespacho/EnviarFacturacion/{guid}";
-                var response = await client.GetAsync($"{_infoEstacion.Url}{path}");
-                string responseBody = await response.Content.ReadAsStringAsync();
-            }
+    //        using (var client = new HttpClient())
+    //        {
+    //            client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
+    //            client.DefaultRequestHeaders.Authorization =
+    //new AuthenticationHeaderValue("Bearer", token);
+    //            var path = $"/api/OrdenesDeDespacho/EnviarFacturacion/{guid}";
+    //            var response = await client.GetAsync($"{_infoEstacion.Url}{path}");
+    //            string responseBody = await response.Content.ReadAsStringAsync();
+    //        }
         }
 
         public async Task CrearFacturaFacturas(string guid, string token)
         {
-            List<FacturasEntity> guids = new List<FacturasEntity>() { new FacturasEntity() { Guid = Guid.Parse(guid) } };
+    //        List<FacturasEntity> guids = new List<FacturasEntity>() { new FacturasEntity() { Guid = Guid.Parse(guid) } };
 
-            using (var client = new HttpClient())
-            {
-                client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
-                client.DefaultRequestHeaders.Authorization =
-    new AuthenticationHeaderValue("Bearer", token);
-                var path = $"/api/Factura/EnviarFacturacion/{guid}";
-                var response = await client.GetAsync($"{_infoEstacion.Url}{path}");
-                //string responseBody = response.Content.ReadAsStringAsync().Result;
-            }
+    //        using (var client = new HttpClient())
+    //        {
+    //            client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
+    //            client.DefaultRequestHeaders.Authorization =
+    //new AuthenticationHeaderValue("Bearer", token);
+    //            var path = $"/api/Factura/EnviarFacturacion/{guid}";
+    //            var response = await client.GetAsync($"{_infoEstacion.Url}{path}");
+    //            //string responseBody = response.Content.ReadAsStringAsync().Result;
+    //        }
         }
         public class FacturasEntity
         {
@@ -227,8 +227,8 @@ namespace FacturadorAPI.Repository.Repo
         public async Task EnviarFacturas(List<FacturaSiges> facturaSiges, IEnumerable<FormaPagoSiges> formas, string token)
         {
             RequestEnviarFacturas request = new RequestEnviarFacturas();
-            request.facturas = facturaSiges.Where(x => x.Consecutivo != 0).Select(x => new FacturaExterna(x, formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).Single()));
-            request.ordenDeDespachos = facturaSiges.Where(x => x.Consecutivo == 0).Select(x => new OrdenDeDespacho(x, formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).Single()));
+            request.facturas = new List<FacturaExterna>();
+            request.ordenDeDespachos = facturaSiges.Select(x => new OrdenDeDespacho(x, formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).Single()));
             request.Estacion = Guid.Parse(_infoEstacion.EstacionFuente);
             using (var client = new HttpClient())
             {
@@ -267,6 +267,30 @@ namespace FacturadorAPI.Repository.Repo
 
                 return JsonConvert.DeserializeObject<ResolucionElectronica>(response.Content.ReadAsStringAsync().Result);
             }
+        }
+
+        public async Task CrearFacturaOrdenesDeDespachoByVenta(int ventaId, string token)
+        {
+    //        using (var client = new HttpClient())
+    //        {
+    //            client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
+    //            client.DefaultRequestHeaders.Authorization =
+    //new AuthenticationHeaderValue("Bearer", token);
+    //            var path = $"/api/OrdenesDeDespacho/EnviarFacturacion/{ventaId}/{_infoEstacion.EstacionFuente}";
+    //            var response = await client.GetAsync($"{_infoEstacion.Url}{path}");
+    //        }
+        }
+
+        public async Task CrearFacturaFacturasByVenta(int ventaId, string token)
+        {
+    //        using (var client = new HttpClient())
+    //        {
+    //            client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
+    //            client.DefaultRequestHeaders.Authorization =
+    //new AuthenticationHeaderValue("Bearer", token);
+    //            var path = $"/api/Factura/EnviarFacturacion/{ventaId}/{_infoEstacion.EstacionFuente}";
+    //            var response = await client.GetAsync($"{_infoEstacion.Url}{path}");
+    //        }
         }
     }
 }

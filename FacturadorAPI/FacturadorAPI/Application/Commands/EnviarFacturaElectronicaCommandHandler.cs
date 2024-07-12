@@ -34,22 +34,9 @@ namespace FacturadorAPI.Application.Commands
                 {
                     var token = await _conexionEstacionRemota.GetToken(cancellationToken);
                     var formas = await _databaseHandler.ListarFormasPagoSiges(cancellationToken);
+                    await _databaseHandler.ActuralizarFacturasEnviados(new List<int>() { factura.ventaId });
                     await _conexionEstacionRemota.EnviarFacturas(new List<FacturaSiges>() { factura }, formas, token);
 
-                    if (factura.Consecutivo == 0)
-                    {
-                        var guid = await _conexionEstacionRemota.ObtenerOrdenDespachoPorIdVentaLocal(factura.ventaId, token);
-                        await _conexionEstacionRemota.CrearFacturaOrdenesDeDespacho(guid.ToString(), token);
-                        await _databaseHandler.ActuralizarFacturasEnviados(new List<int>() { factura.ventaId });
-                        
-                    }
-                    else
-                    {
-                        var guid = await _conexionEstacionRemota.ObtenerFacturaPorIdVentaLocal(factura.ventaId, token);
-                        await _conexionEstacionRemota.CrearFacturaFacturas(guid.ToString(), token);
-                        await _databaseHandler.ActuralizarFacturasEnviados(new List<int>() { factura.ventaId });
-                        
-                    }
                 }
                 catch (Exception)
                 {

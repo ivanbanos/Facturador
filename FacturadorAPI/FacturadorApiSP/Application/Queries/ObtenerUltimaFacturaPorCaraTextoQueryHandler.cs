@@ -72,7 +72,7 @@ namespace FacturadorAPI.Application.Queries
 
                 var facturaElectronica = infoTemp.Split(' ');
 
-                informacionVenta.Append(("Factura Electrónica " + facturaElectronica[2]).Centrar() + "\n\r");
+                informacionVenta.Append(("Factura de Venta Electrónica " + facturaElectronica[2]).Centrar() + "\n\r");
                 informacionVenta.Append(facturaElectronica[3].Centrar() + "\n\r");
                 informacionVenta.Append(facturaElectronica[4].Substring(0, facturaElectronica[4].Length / 2).Centrar() + "\n\r");
                 informacionVenta.Append(facturaElectronica[4].Substring(facturaElectronica[4].Length / 2).Centrar() + "\n\r");
@@ -84,7 +84,7 @@ namespace FacturadorAPI.Application.Queries
             }
             else
             {
-                informacionVenta.Append(("SISTEMA POS No: " + _factura.DescripcionResolucion + "-" + _factura.Consecutivo).Centrar() + "\n\r");
+                informacionVenta.Append(("Orden de Servicio Temporal: " + _venta.CONSECUTIVO).Centrar() + "\n\r");
             }
 
             informacionVenta.Append(guiones.ToString() + "\n\r");
@@ -193,22 +193,7 @@ namespace FacturadorAPI.Application.Queries
 
             }
 
-            else if (_factura.Consecutivo != 0)
-            {
-
-
-                informacionVenta.Append(guiones.ToString()+ "\n\r");
-                informacionVenta.Append("Resolucion de Facturacion No. "+ "\n\r");
-                informacionVenta.Append(_factura.Autorizacion + " de " + _factura.FechaInicioResolucion.ToString("dd/MM/yyyy") + " "+ "\n\r");
-                var numeracion = "Numeracion Autorizada por la DIAN";
-                if (_factura.habilitada)
-                {
-                    numeracion = "Numeracion Habilitada por la DIAN";
-                }
-                informacionVenta.Append(numeracion + " "+ "\n\r");
-                informacionVenta.Append("Del " + _factura.DescripcionResolucion + "-" + _factura.Inicio + " al " + _factura.DescripcionResolucion + "-" + _factura.Final + ""+ "\n\r");
-
-            }
+            
             if (!String.IsNullOrEmpty(_infoEstacion.Linea1))
             {
                 informacionVenta.Append(_infoEstacion.Linea1+ "\n\r");

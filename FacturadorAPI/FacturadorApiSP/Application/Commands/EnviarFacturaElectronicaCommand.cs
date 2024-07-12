@@ -2,7 +2,7 @@
 
 namespace FacturadorAPI.Application.Commands
 {
-    public class EnviarFacturaElectronicaCommand : IRequest
+    public class EnviarFacturaElectronicaCommand : IRequest<string>
     {
 
         public EnviarFacturaElectronicaCommand(int idFactura)

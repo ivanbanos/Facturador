@@ -3,10 +3,10 @@ using MediatR;
 
 namespace FacturadorAPI.Application.Commands
 {
-    public class MandarImprimirCommand : IRequest
+    public class MandarImprimirCommand : IRequest<string>
     {
 
-        public MandarImprimirCommand(int facturaPOSId, int terceroId, int formaPago, int ventaId, string placa, string kilometraje, string numeroTransaccion)
+        public MandarImprimirCommand(int facturaPOSId, int terceroId, int formaPago, int ventaId, string placa, string kilometraje, string numeroTransaccion, int impresiones)
         {
             FacturaPOSId = facturaPOSId;
             TerceroId = terceroId;
@@ -15,6 +15,7 @@ namespace FacturadorAPI.Application.Commands
             Placa = placa;
             Kilometraje = kilometraje;
             NumeroTransaccion = numeroTransaccion;
+            Impresiones = impresiones;
         }
 
         public int FacturaPOSId { get; }
@@ -24,5 +25,6 @@ namespace FacturadorAPI.Application.Commands
         public string Placa { get; }
         public string Kilometraje { get; }
         public string NumeroTransaccion { get; }
+        public int Impresiones { get; }
     }
 }

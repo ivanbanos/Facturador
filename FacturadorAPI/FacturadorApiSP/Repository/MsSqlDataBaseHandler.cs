@@ -171,6 +171,7 @@ namespace MachineUtilizationApi.Repository
                     {"@idVenta", idFactura }
                             });
             var factura = dt.ConvertirFactura().FirstOrDefault();
+
             ConnectionString = _settings.Estacion;
             DataTable dt2 = await LoadDataTableFromStoredProcAsync("getVentaPorId",
                            new Dictionary<string, object>{
@@ -201,17 +202,17 @@ namespace MachineUtilizationApi.Repository
             {
                 {"@facturas",ventasIds }
             };
-            await LoadDataTableFromStoredProcAsync("SetFacturaCanastillaEnviada",
+            await LoadDataTableFromStoredProcAsync("CambiarEstadoFactursEnviada",
                          parameters);
         }
 
-        public async Task MandarImprimir(int idVenta)
+        public async Task MandarImprimir(int idVenta, int veces)
         {
             ConnectionString = _settings.Facturacion;
             await LoadDataTableFromStoredProcAsync("MandarImprimir",
                             new Dictionary<string, object>{
 
-                    {"@ventaId", idVenta }
+                    {"@ventaId", idVenta },{"@veces", veces}
                             });
         }
 
@@ -281,10 +282,10 @@ namespace MachineUtilizationApi.Repository
                     {"@terceroId", tercero.terceroId },
                     {"@tipoIdentificacion", tercero.tipoIdentificacion??1 },
                     {"@identificacion", tercero.identificacion },
-                    {"@nombre", tercero.Nombre },
+                    {"@nombre", tercero.Nombre.ToUpper() },
                     {"@telefono", tercero.Telefono },
                     {"@correo", tercero.Correo },
-                    {"@direccion", tercero.Direccion },
+                    {"@direccion", tercero.Direccion.ToUpper() },
                     {"@estado", "AC" },
                     {"@COD_CLI", tercero.COD_CLI },
                       });

@@ -176,16 +176,17 @@ begin try
 	@cantidadCanastillas INT, @verificarConsecutivo int, @mismaResolucion VARCHAR (50), @subtotal float = 0, @iva float, @total float;
 	declare @ivaCanastila INT = 0, @ivaPorcentaje bit = 0;
 	
-	
-	select @ivaPorcentaje = case  when c.iva = 20 then 1 else 
+	if @COD_FOR_PAG=0
+	begin set @COD_FOR_PAG = 4 end 
+	select @ivaPorcentaje = case  when c.iva < 20 then 1 else 
 	0 end
 	from @canastillaIds c
 	if @ivaPorcentaje = 1
 	begin
-	select @ivaCanastila+= (c.precio*c.iva/100.0) * c.cantidad
+	select @ivaCanastila+= (c.precio*c.iva/(100.0+c.iva)) * c.cantidad
 	from @canastillaIds c
 	
-	select @subtotal+=cids.cantidad* (Canastilla.precio*((100.0-cids.iva)/100.0)) from @canastillaIds cids
+	select @subtotal+=cids.cantidad* (Canastilla.precio*((100.0)/(100.0+cids.iva))) from @canastillaIds cids
 	inner join Canastilla on  cids.canastillaId = Canastilla.canastillaId
 	end
 	else 
@@ -234,7 +235,7 @@ begin try
 	begin
 	
 					insert into FacturasCanastillaDetalle (FacturasCanastillaId,canastillaId,cantidad,precio,subtotal,iva,total)
-					select @facturaCanastillaId, cids.canastillaId, cids.cantidad, cids.precio, (cids.precio*((100.0-cids.iva)/100.0))*cids.cantidad,(cids.precio*cids.iva/100.0)*cids.cantidad,cids.precio*cids.cantidad 
+					select @facturaCanastillaId, cids.canastillaId, cids.cantidad, cids.precio, (cids.precio*((100.0)/(100.0+cids.iva)))*cids.cantidad,(cids.precio*cids.iva/(100.0+cids.iva))*cids.cantidad,cids.precio*cids.cantidad 
 					from @canastillaIds cids
 					inner join Canastilla on  cids.canastillaId = Canastilla.canastillaId 
 	end

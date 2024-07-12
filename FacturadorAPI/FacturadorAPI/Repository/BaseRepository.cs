@@ -72,7 +72,7 @@ namespace MachineUtilizationApi.Repository
                 {
                     Logger.LogError(e, $"LoadDataTableFromStoredProcAsync: Proc '{procName}' with exception. {e.Message} ");
 
-                    throw ex;
+                    throw e;
                 }
             }
 

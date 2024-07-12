@@ -31,8 +31,9 @@ namespace FactoradorEstacionesModelo.Objetos
         public Manguera Manguera { get; set; }
         public string Estado { get; set; }
         public IEnumerable<Venta> Ventas { get; set; }
-        public bool habilitada { get; internal set; }
+        public bool habilitada { get; set; }
         public int codigoFormaPago { get; set; }
-
+        public bool enviadaFacturacion { get; set; }
+        public bool enviada { get; set; }
     }
 }

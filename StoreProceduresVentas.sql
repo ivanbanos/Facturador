@@ -74,7 +74,7 @@ CREATE procedure [dbo].[ObtenerVentaPorCara]
 as
 begin try
     set nocount on;
-	select top(1)EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, MANGUERA.COD_SUR, MANGUERA.COD_CAR, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
+	select top(1)dbo.finteger(v.FECHA_REAL) FechaReporte, EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, MANGUERA.COD_SUR, MANGUERA.COD_CAR, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
 	v.*, CLIENTES.*, IMPRESOR.*,dbo.Finteger(AUTOMOTO.FECH_PRMA) as MANTENIMIENTO,AUTOMOTO.*
 	
 	from dbo.VENTAS v
@@ -117,7 +117,7 @@ as
 begin try
     set nocount on; 
 
-	select top(1)EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, MANGUERA.COD_SUR, MANGUERA.COD_CAR, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
+	select top(1)dbo.finteger(v.FECHA_REAL) FechaReporte, EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, MANGUERA.COD_SUR, MANGUERA.COD_CAR, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
 	v.*, CLIENTES.*, IMPRESOR.*,dbo.Finteger(AUTOMOTO.FECH_PRMA) as MANTENIMIENTO,AUTOMOTO.*
 	
 	from dbo.VENTAS v
@@ -175,7 +175,7 @@ CREATE procedure [dbo].[ObtenerVentasPorIds]
 as
 begin try
     set nocount on;
-	select EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
+	select dbo.finteger(v.FECHA_REAL) FechaReporte, EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
 	v.*, CLIENTES.*, IMPRESOR.*
 	
 	from dbo.VENTAS v
@@ -372,7 +372,10 @@ begin try
 			exec [AgregarFacturaPorIdVenta] @ventaMin
 		end
 
-
+Use Estacion
+update OrdenesDeDespacho set Fecha = dbo.Finteger(i.FECHA_REAL) + dbo.HINTEGER(i.hora) 
+from Facturacion_Electronica.dbo.OrdenesDeDespacho 
+inner join VENTAS i on OrdenesDeDespacho.ventaId = i.CONSECUTIVO
 	END
 	
 		select 'OK'
@@ -419,7 +422,7 @@ CREATE procedure [dbo].[BuscarFechasReportesNoEnviadas]
 as
 begin try
     set nocount on;
-	select top(50) v.CONSECUTIVO as IdVentaLocal, dbo.finteger(v.FECHA) FechaReporte from VENTAS v
+	select top(50) v.CONSECUTIVO as IdVentaLocal, dbo.finteger(v.FECHA_REAL) FechaReporte from VENTAS v
 	left JOIN  Facturacion_Electronica.dbo.FacturasPOS f ON f.ventaId = v.CONSECUTIVO
 	left JOIN  Facturacion_Electronica.dbo.ORdenesdedespacho o ON o.ventaId = v.CONSECUTIVO
 	
@@ -630,6 +633,7 @@ inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
 inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
 inner join VENTAS On VENTAS.FECHA_REAL = TURN_EST.FECHA and VENTAS.NUM_TUR = TURN_EST.NUM_TUR and VENTAS.COD_ISL = TURN_EST.COD_ISL
  where VENTAS.CONSECUTIVO = @ventaId
+ and TURN_EST.ESTADO = 'C'
 
  select TURN_LEC.COD_MAN as Manguera, TURN_LEC.COD_SUR as Surtidor, LECT_INI1 as Apertura, LECT_FIN1 as Cierre, ARTICULO.Descripcion as  Combustible, TURN_LEC.PRECIO as precioCombustible
  from TURN_LEC

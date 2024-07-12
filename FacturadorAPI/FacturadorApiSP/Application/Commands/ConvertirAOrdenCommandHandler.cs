@@ -22,7 +22,7 @@ namespace FacturadorAPI.Application.Commands
         public async Task<Unit> Handle(ConvertirAOrdenCommand request, CancellationToken cancellationToken)
         {
 
-            await _databaseHandler.ConvertirAOrder(request.IdFactura);
+           // await _databaseHandler.ConvertirAOrder(request.IdFactura);
 
             return Unit.Value;
 

@@ -3,52 +3,57 @@ using FacturadorAPI.Models;
 using FacturadorAPI.Repository.Repo;
 using MachineUtilizationApi.Repository;
 using MediatR;
+using Microsoft.Extensions.Options;
 
 namespace FacturadorAPI.Application.Commands
 {
-    public class EnviarFacturaElectronicaCommandHandler : IRequestHandler<EnviarFacturaElectronicaCommand>
+    public class EnviarFacturaElectronicaCommandHandler : IRequestHandler<EnviarFacturaElectronicaCommand, string>
     {
         private readonly ILogger<EnviarFacturaElectronicaCommandHandler> _logger;
         private readonly IDataBaseHandler _databaseHandler;
         private readonly IConexionEstacionRemota _conexionEstacionRemota;
+        private readonly InfoEstacion _infoEstacion;
 
         public EnviarFacturaElectronicaCommandHandler(ILogger<EnviarFacturaElectronicaCommandHandler> logger,
             IDataBaseHandler databaseHandler,
-            IConexionEstacionRemota conexionEstacionRemota)
+            IConexionEstacionRemota conexionEstacionRemota,
+            IOptions<InfoEstacion> infoEstacion)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _databaseHandler = databaseHandler ?? throw new ArgumentNullException(nameof(databaseHandler));
             _conexionEstacionRemota = conexionEstacionRemota ?? throw new ArgumentNullException(nameof(conexionEstacionRemota));
+            _infoEstacion = infoEstacion.Value;
         }
 
-        public async Task<Unit> Handle(EnviarFacturaElectronicaCommand request, CancellationToken cancellationToken)
+        public async Task<string> Handle(EnviarFacturaElectronicaCommand request, CancellationToken cancellationToken)
         {
             try
             {
-                var factura = await _databaseHandler.GetFacturaPorIdVenta(request.IdFactura);
-                var facturaSIGES = ConvertToFacturaSIGES(factura);
-                await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, request.NumeroTransaccion == "NP" ? "" : request.NumeroTransaccion);
-                factura = await _databaseHandler.GetFacturaPorIdVenta(request.IdFactura);
+                var token = await _conexionEstacionRemota.GetToken(cancellationToken); 
+                var factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
+                if (factura.codigoFormaPago == 6)
+                {
+                    await _databaseHandler.ActualizarFactura(factura.facturaPOSId, factura.Tercero.terceroId, factura.codigoFormaPago, factura.ventaId, factura.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, factura.numeroTransaccion == null ? "" : factura.numeroTransaccion);
+                    await _databaseHandler.MandarImprimir(request.VentaId,1);
+                    return "Ok";
+                }
+                var infoTemp = await _conexionEstacionRemota.GetInfoFacturaElectronica(request.VentaId, Guid.Parse(_infoEstacion.EstacionFuente), token);
+                if (string.IsNullOrEmpty(infoTemp))
+                {
+                    await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, request.NumeroTransaccion == "NP" ? "" : request.NumeroTransaccion);
 
-                facturaSIGES = ConvertToFacturaSIGES(factura);
+                    factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
+
+
+                }
+                var facturaSIGES = ConvertToFacturaSIGES(factura);
                 try
                 {
-                    var token = await _conexionEstacionRemota.GetToken(cancellationToken);
                     var formas = await _databaseHandler.ListarFormasPagoSP(cancellationToken);
                     await _conexionEstacionRemota.EnviarFacturas(new List<FacturaSiges>() { facturaSIGES }, formas, token);
 
-                    if (factura.Consecutivo == 0)
-                    {
-                        var guid = await _conexionEstacionRemota.ObtenerOrdenDespachoPorIdVentaLocal(factura.ventaId, token);
-                        await _conexionEstacionRemota.CrearFacturaOrdenesDeDespacho(guid.ToString(), token);
-                        
-                    }
-                    else
-                    {
-                        var guid = await _conexionEstacionRemota.ObtenerFacturaPorIdVentaLocal(factura.ventaId, token);
-                        await _conexionEstacionRemota.CrearFacturaFacturas(guid.ToString(), token);
-                        
-                    }
+                    await _databaseHandler.ActuralizarFacturasEnviados(new List<int>() { request.VentaId });
+
                 }
                 catch (Exception ex)
                 {
@@ -57,7 +62,16 @@ namespace FacturadorAPI.Application.Commands
                     Console.WriteLine($"Error {ex.StackTrace}");
 
                 }
-                await _databaseHandler.MandarImprimir(request.VentaId);
+
+                await _databaseHandler.MandarImprimir(request.VentaId, 1);
+                if (infoTemp != null)
+                {
+                    return "NoChange";
+                }
+                else
+                {
+                    return "Ok";
+                }
             }
             catch (Exception ex)
             {
@@ -65,7 +79,7 @@ namespace FacturadorAPI.Application.Commands
                 Console.WriteLine($"Error {ex.StackTrace}");
             }
 
-            return Unit.Value;
+            return "NoChange";
 
         }
 

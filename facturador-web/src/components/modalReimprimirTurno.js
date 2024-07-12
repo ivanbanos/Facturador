@@ -132,7 +132,6 @@ const ModalReimprimirTurno = (props) => {
               if (respuestaReImprimir === "fail") {
                 props.handleSetShowAlertError(true);
               } else {
-                
                 await ImprimirNativo(respuestaReImprimir);
                 setPosicion("");
                 setFechaSelected("");

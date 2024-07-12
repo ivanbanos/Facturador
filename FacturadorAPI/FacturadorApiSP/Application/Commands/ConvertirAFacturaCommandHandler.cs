@@ -23,7 +23,7 @@ namespace FacturadorAPI.Application.Commands
         public async Task<Unit> Handle(ConvertirAFacturaCommand request, CancellationToken cancellationToken)
         {
 
-            await _databaseHandler.ConvertirAFactura(request.IdFactura);
+           // await _databaseHandler.ConvertirAFactura(request.IdFactura);
 
             return Unit.Value;
 

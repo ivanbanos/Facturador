@@ -13,5 +13,7 @@ namespace FacturadorAPI.Repository.Repo
         Task<IEnumerable<Canastilla>> RecibirCanastilla(string token, CancellationToken cancellationToken);
 
         Task<string> GetInfoFacturaElectronica(int idVentaLocal, Guid estacionGuid, string token);
+        Task CrearFacturaOrdenesDeDespachoByVenta(int ventaId, string token);
+        Task CrearFacturaFacturasByVenta(int ventaId, string token);
     }
 }

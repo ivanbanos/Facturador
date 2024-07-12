@@ -34,6 +34,7 @@ const Combustible = () => {
   const handleShowAddTercero = (show) => setShowAddTercero(show);
 
   const [identificacion, setIdentificacion] = useState("");
+  const [bloqueado, setUsuarioBloqueado] = useState(false);
   const [showFacturaElectronica, setShowFacturaElectronica] = useState(false);
 
   const handleCloseFacturaElectronica = () => setShowFacturaElectronica(false);
@@ -93,11 +94,23 @@ const Combustible = () => {
     correo: "",
     tipoIdentificacion: 0,
   });
-  function handleSetTerceroModalAddTercero(newTercero) {
-    setTercero(newTercero);
+  async function handleSetTerceroModalAddTercero(newTercero) {
+    setIdentificacion(newTercero.identificacion);
     const tempFactura = { ...ultimaFactura, tercero: newTercero };
     setUltimaFactura(tempFactura);
-    setIdentificacion(newTercero.identificacion);
+    let nuevoTercero = await GetTercero(newTercero.identificacion);
+
+    setTerceroBusqueda(nuevoTercero);
+
+    if (nuevoTercero.length > 0) {
+      setTercero(nuevoTercero[0]);
+      const tempFactura = { ...ultimaFactura, tercero: nuevoTercero[0] };
+      setUltimaFactura(tempFactura);
+      // setIdentificacion(nuevoTercero[0].identificacion);
+      setShowTerceroNoExiste(false);
+    } else {
+      // Actualiza identificacion aquí
+    }
   }
   const ultimaFacturaEstadoInicial = {
     placa: "",
@@ -121,13 +134,17 @@ const Combustible = () => {
   );
 
   const handleSetUltimaFactura = (factura) => {
-    if(factura.numeroTransaccion){
-      setDisableNumeroTrans(true)
-      setDisableForma(true)
-    }else{
-      
-      setDisableNumeroTrans(false)
-      setDisableForma(false)
+    if (factura.numeroTransaccion) {
+      setDisableNumeroTrans(true);
+      setDisableForma(true);
+    } else {
+      setDisableNumeroTrans(false);
+      setDisableForma(false);
+    }
+    if (factura.codigoFormaPago == 6) {
+      setUsuarioBloqueado(true);
+    } else {
+      setUsuarioBloqueado(false);
     }
     setUltimaFactura(factura);
   };
@@ -170,10 +187,14 @@ const Combustible = () => {
       [event.target.name]: event.target.value,
     };
     setUltimaFactura(tempFactura);
-    if(tempFactura.codigoFormaPago==1 || tempFactura.codigoFormaPago==2 || tempFactura.codigoFormaPago==3){
-      setDisableNumeroTrans(false)
-    } else{
-      setDisableNumeroTrans(true)
+    if (
+      tempFactura.codigoFormaPago == 1 ||
+      tempFactura.codigoFormaPago == 2 ||
+      tempFactura.codigoFormaPago == 3
+    ) {
+      setDisableNumeroTrans(false);
+    } else {
+      setDisableNumeroTrans(true);
     }
   };
 
@@ -204,7 +225,6 @@ const Combustible = () => {
     if (respuesta === "fail") {
       handleSetShowAlertError(true);
     } else {
-      
       await ImprimirNativo(respuesta);
     }
   };
@@ -215,16 +235,25 @@ const Combustible = () => {
       setUltimaFactura(factura);
       setTercero(factura.tercero);
       setIdentificacion(factura.tercero.identificacion);
-      if(factura.numeroTransaccion){
-        setDisableNumeroTrans(true)
-        setDisableForma(true)
-      }else{
-        if(factura.codigoFormaPago==1 || factura.codigoFormaPago==2 || factura.codigoFormaPago==3){
-          setDisableNumeroTrans(false)
-        } else{
-          setDisableNumeroTrans(true)
+      if (factura.numeroTransaccion) {
+        setDisableNumeroTrans(true);
+        setDisableForma(true);
+      } else {
+        if (
+          factura.codigoFormaPago == 1 ||
+          factura.codigoFormaPago == 2 ||
+          factura.codigoFormaPago == 3
+        ) {
+          setDisableNumeroTrans(false);
+        } else {
+          setDisableNumeroTrans(true);
         }
-        setDisableForma(false)
+        setDisableForma(false);
+      }
+      if (factura.codigoFormaPago == 6) {
+        setUsuarioBloqueado(true);
+      } else {
+        setUsuarioBloqueado(false);
       }
     }
 
@@ -327,6 +356,8 @@ const Combustible = () => {
                 name="tipoIdentificacion"
                 value={ultimaFactura.tercero.tipoIdentificacion || ""}
                 onChange={handleChangeTercero}
+                disabled={bloqueado}
+                onkeydown="return /[a-zA-Z0-9]/i.test(event.key)"
               >
                 <option value="">Selecciona tipo identificación</option>
                 {Array.isArray(tiposDeIdentificacion) &&
@@ -346,8 +377,10 @@ const Combustible = () => {
                   placeholder="Identificación"
                   name="identificacion"
                   value={identificacion || ""}
+                  onkeydown="return /[a-zA-Z0-9]/i.test(event.key)"
                   onChange={handleChangeIdentificacion}
                   onBlur={onBlurTercero}
+                  disabled={bloqueado}
                 ></input>
                 <AlertTercero
                   showTerceroNoExiste={showTerceroNoExiste}
@@ -397,7 +430,7 @@ const Combustible = () => {
                   className="form-select  w-75 altura-select select-white-blue text-select-list"
                   aria-label="Default select example"
                   name="codigoFormaPago"
-                  disabled={disableForma}
+                  disabled={disableForma || bloqueado}
                   value={ultimaFactura.codigoFormaPago || ""}
                   onChange={handleChangeFactura}
                 >
@@ -417,7 +450,7 @@ const Combustible = () => {
                   className="form-control select-white-blue w-75 altura-select text-select-list"
                   name="numeroTransaccion"
                   value={ultimaFactura.numeroTransaccion || ""}
-                  disabled={disableNumeroTrans}
+                  disabled={disableNumeroTrans || bloqueado}
                   onChange={handleChangeFactura}
                 ></input>
               </div>
@@ -427,6 +460,7 @@ const Combustible = () => {
                   type="text"
                   className="form-control select-white-blue w-75 altura-select text-select-list"
                   name="placa"
+                  disabled={bloqueado}
                   value={ultimaFactura.placa || ""}
                   onChange={handleChangeFactura}
                 ></input>

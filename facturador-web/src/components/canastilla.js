@@ -150,8 +150,7 @@ const Canastilla = () => {
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
   };
   const onClickGenerarVenta = async (canastilla) => {
-    if(canastilla.codigoFormaPago == 0){
-      
+    if (canastilla.codigoFormaPago == 0) {
       handleSetShowAlertError(true);
     } else {
       const respuesta = await PostCanastilla(canastilla);
@@ -161,7 +160,8 @@ const Canastilla = () => {
         //await ImprimirNativo(respuesta);
         handleSetShowAlertVentaExitosa(true);
         resetValues();
-      }}
+      }
+    }
     // setObjetoPostCanastilla(valorInicialObjetoPostCanastilla)
   };
   const resetValues = async () => {
@@ -229,7 +229,7 @@ const Canastilla = () => {
                 const selectedProductId = event.target.value;
                 const selectedProduct = productos.find(
                   (product) =>
-                    product.canastillaId === parseInt(selectedProductId, 10)
+                    product.canastillaId === parseFloat(selectedProductId, 10)
                 );
                 setProductoSeleccionado(selectedProduct);
               }}
@@ -254,10 +254,7 @@ const Canastilla = () => {
               <input
                 value={cantidadSeleccionada || ""}
                 onChange={(event) => {
-                  const newCantidad = parseInt(event.target.value, 10);
-                  if (!isNaN(newCantidad) || event.target.value === "") {
-                    setCantidadSeleccionada(newCantidad);
-                  }
+                  setCantidadSeleccionada(event.target.value);
                 }}
                 className="form-control altura-select select-white-blue text-select-list select-cantidad"
               />
@@ -286,6 +283,7 @@ const Canastilla = () => {
                   value={identificacion || ""}
                   onChange={handleChangeIdentificacion}
                   onBlur={onBlurTercero}
+                  onkeydown="return /[a-zA-Z0-9]/i.test(event.key)"
                 ></input>
                 <AlertTerceroNoExisteCnastilla
                   showTerceroNoExiste={showTerceroNoExiste}

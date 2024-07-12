@@ -5,22 +5,32 @@ VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FacturadorAPI", "FacturadorAPI\FacturadorAPI.csproj", "{F30F73EC-8617-45A4-8D5F-449564003BB9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacturadorApiSP", "FacturadorApiSP\FacturadorApiSP.csproj", "{BAC6CBD7-CF7A-40D6-8478-A7D0F847FA38}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FacturadorApiSP", "FacturadorApiSP\FacturadorApiSP.csproj", "{BAC6CBD7-CF7A-40D6-8478-A7D0F847FA38}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{F30F73EC-8617-45A4-8D5F-449564003BB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F30F73EC-8617-45A4-8D5F-449564003BB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F30F73EC-8617-45A4-8D5F-449564003BB9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F30F73EC-8617-45A4-8D5F-449564003BB9}.Debug|x86.Build.0 = Debug|Any CPU
 		{F30F73EC-8617-45A4-8D5F-449564003BB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F30F73EC-8617-45A4-8D5F-449564003BB9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F30F73EC-8617-45A4-8D5F-449564003BB9}.Release|x86.ActiveCfg = Release|Any CPU
+		{F30F73EC-8617-45A4-8D5F-449564003BB9}.Release|x86.Build.0 = Release|Any CPU
 		{BAC6CBD7-CF7A-40D6-8478-A7D0F847FA38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BAC6CBD7-CF7A-40D6-8478-A7D0F847FA38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAC6CBD7-CF7A-40D6-8478-A7D0F847FA38}.Debug|x86.ActiveCfg = Debug|x86
+		{BAC6CBD7-CF7A-40D6-8478-A7D0F847FA38}.Debug|x86.Build.0 = Debug|x86
 		{BAC6CBD7-CF7A-40D6-8478-A7D0F847FA38}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BAC6CBD7-CF7A-40D6-8478-A7D0F847FA38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAC6CBD7-CF7A-40D6-8478-A7D0F847FA38}.Release|x86.ActiveCfg = Release|x86
+		{BAC6CBD7-CF7A-40D6-8478-A7D0F847FA38}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -80,9 +80,9 @@ namespace FacturadorAPI.Controllers
         [HttpPost]
         [Route("Imprimir/{FacturaPOSId}/{TerceroId}/{FormaPago}/{VentaId}")]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
-        public async Task<IActionResult> MandarImprimir(int FacturaPOSId, int TerceroId, int FormaPago, int VentaId, string Kilometraje, string Placa, string NumeroTransaccion,  CancellationToken cancellationToken)
+        public async Task<IActionResult> MandarImprimir(int FacturaPOSId, int TerceroId, int FormaPago, int VentaId, string Kilometraje, string Placa, string NumeroTransaccion, int impresiones,  CancellationToken cancellationToken)
         {
-            await _mediator.Send(new MandarImprimirCommand(FacturaPOSId, TerceroId, FormaPago, VentaId, Placa, Kilometraje, NumeroTransaccion), cancellationToken);
+            await _mediator.Send(new MandarImprimirCommand(FacturaPOSId, TerceroId, FormaPago, VentaId, Placa, Kilometraje, NumeroTransaccion, impresiones), cancellationToken);
             return Ok();
         }
 

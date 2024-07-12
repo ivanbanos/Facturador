@@ -26,10 +26,26 @@ const ModalImprimir = (props) => {
 
   const [showAlertImpresionExitosa, setShowAlertImpresionExitosa] =
     useState(false);
+  const [
+    showAlertImpresionExitosaSinFacturacion,
+    setShowAlertImpresionExitosaSinFacturacion,
+  ] = useState(false);
   const handleClose = () => setShow(false);
-  const handleShow = () => {if(!window.ConvertirAOrden){props.handleShowFacturaElectrónica();} else{setShow(true);}}
+  const handleShow = () => {
+    if (!window.ConvertirAOrden) {
+      props.handleShowFacturaElectrónica();
+    } else {
+      setShow(true);
+    }
+  };
   const handleCloseConvertirAFactura = () => setShowConvertirAFactura(false);
-  const handleShowConvertirAFactura = () => {if(!window.ConvertirAFactura){props.handleShowFacturaElectrónica();} else{setShowConvertirAFactura(true);}}
+  const handleShowConvertirAFactura = () => {
+    if (!window.ConvertirAFactura) {
+      props.handleShowFacturaElectrónica();
+    } else {
+      setShowConvertirAFactura(true);
+    }
+  };
 
   async function onClickConvertirAOrden() {
     handleClose();
@@ -38,20 +54,23 @@ const ModalImprimir = (props) => {
     if (respuesta === "fail") {
       props.handleSetShowAlertError(true);
     } else {
-      if(!window.GenerarFacturaelectronica){
+      if (!window.GenerarFacturaelectronica) {
         const respuestaImprimir = await ImprimirFactura(ultimaFactura);
         if (respuestaImprimir === "fail") {
           props.handleSetShowAlertError(true);
         } else {
           props.getFacturaInformacion();
-          
-              console.log(ultimaFactura);
+
+          console.log(ultimaFactura);
           const text = await GetUltimaFacturaPorCaraTexto(ultimaFactura.cara);
           await ImprimirNativo(text);
-          setShowAlertImpresionExitosa(true);
+          if (respuestaImprimir == "Ok") {
+            setShowAlertImpresionExitosa(true);
+          }
         }
-      }else{
-          props.handleShowFacturaElectrónica();}
+      } else {
+        props.handleShowFacturaElectrónica();
+      }
     }
   }
   async function onClickConvertirAFactura() {
@@ -77,7 +96,6 @@ const ModalImprimir = (props) => {
       <Button
         className="print-button-modal botton-light-blue-modal"
         onClick={() => {
-          
           ultimaFactura.consecutivo === 0
             ? handleShowConvertirAFactura()
             : handleShow();
@@ -157,13 +175,24 @@ const ModalImprimir = (props) => {
         </Modal.Footer>
       </Modal>
       <Alert
-          variant="info"
-          show={showAlertImpresionExitosa}
-          onClose={() => setShowAlertImpresionExitosa(false)}
-          dismissible
-        >
-          <Alert.Heading>Fatura impresa de forma exitosa</Alert.Heading>
-        </Alert>
+        variant="info"
+        show={showAlertImpresionExitosa}
+        onClose={() => setShowAlertImpresionExitosa(false)}
+        dismissible
+      >
+        <Alert.Heading>Fatura impresa de forma exitosa</Alert.Heading>
+      </Alert>
+      <Alert
+        variant="info"
+        show={showAlertImpresionExitosaSinFacturacion}
+        onClose={() => setShowAlertImpresionExitosaSinFacturacion(false)}
+        dismissible
+      >
+        <Alert.Heading>
+          Fatura impresa de forma exitosa. Sin envio a DIAN. Tercero no
+          actualizado
+        </Alert.Heading>
+      </Alert>
     </>
   );
 };

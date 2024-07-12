@@ -1,5 +1,5 @@
 
-const EnviarFacturaElectronica = async (ultimaFactura) => {
+const EnviarFacturaElectronica = async (ultimaFactura, inpresiones) => {
   try {
     if(ultimaFactura.kilometraje==""){
     ultimaFactura.kilometraje="NP";
@@ -7,20 +7,27 @@ const EnviarFacturaElectronica = async (ultimaFactura) => {
   if(ultimaFactura.placa==""){
     ultimaFactura.placa="NP";
   }
+  if(!ultimaFactura.numeroTransaccion || ultimaFactura.numeroTransaccion==""){
+    ultimaFactura.numeroTransaccion="NA";
+  }
     const response = await fetch(
       window.SERVER_URL +
-        "/api/Facturas/EnviarFacturaElectronica/" +
-        ultimaFactura.ventaId +
-        "/" +
-        ultimaFactura.tercero.terceroId +
-        "/" +
-        ultimaFactura.codigoFormaPago +
-        "/" +
-        ultimaFactura.ventaId +
-        
-        "?Kilometraje="
-        +ultimaFactura.kilometraje+"&Placa="+
-        ultimaFactura.placa+"&NumeroTransaccion="+ ultimaFactura.numeroTransaccion,
+      "/api/Facturas/Imprimir/" +
+      ultimaFactura.facturaPOSId +
+      "/" +
+      ultimaFactura.tercero.terceroId +
+      "/" +
+      ultimaFactura.codigoFormaPago +
+      "/" +
+      ultimaFactura.ventaId +
+      "?Kilometraje=" +
+      ultimaFactura.kilometraje +
+      "&Placa=" +
+      ultimaFactura.placa +
+      "&NumeroTransaccion=" +
+      ultimaFactura.numeroTransaccion +
+      "&impresiones=" +
+      inpresiones,
       {
         method: "POST",
         mode: "cors",

@@ -252,7 +252,29 @@ namespace FacturadorAPI.Repository.Repo
                 
             }
         }
+        public async Task CrearFacturaOrdenesDeDespachoByVenta(int ventaId, string token)
+        {
+            using (var client = new HttpClient())
+            {
+                client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
+                client.DefaultRequestHeaders.Authorization =
+    new AuthenticationHeaderValue("Bearer", token);
+                var path = $"/api/OrdenesDeDespacho/EnviarFacturacion/{ventaId}/{_infoEstacion.EstacionFuente}";
+                var response = await client.GetAsync($"{_infoEstacion.Url}{path}");
+            }
+        }
 
+        public async Task CrearFacturaFacturasByVenta(int ventaId, string token)
+        {
+            using (var client = new HttpClient())
+            {
+                client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
+                client.DefaultRequestHeaders.Authorization =
+    new AuthenticationHeaderValue("Bearer", token);
+                var path = $"/api/Factura/EnviarFacturacion/{ventaId}/{_infoEstacion.EstacionFuente}";
+                var response = await client.GetAsync($"{_infoEstacion.Url}{path}");
+            }
+        }
 
     }
 }

@@ -485,6 +485,9 @@ GO
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'SetFacturaCanastillaEnviada')
 	DROP PROCEDURE [dbo].[SetFacturaCanastillaEnviada]
 GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ActuralizarTurnoEnviadas')
+	DROP PROCEDURE [dbo].[ActuralizarTurnoEnviadas]
+GO
 IF type_id('[dbo].[ventasIds]') IS NOT NULL
         DROP TYPE [dbo].[ventasIds];
 GO
@@ -627,16 +630,18 @@ begin try
 
     insert into @facturasTemp (id)
 	select 
-	top(100)ventaId
+	top(20)ventaId
 	from FacturasPOS
-    where enviada = 0 or enviada is null
+    where (enviada = 0 or enviada is null)
+    and fecha < DATEADD(minute, -10, GETDATE())
 	order by ventaId desc
 
 	insert into @facturasTemp (id)
 	select 
-	top(100)ventaId
+	top(20)ventaId
 	from OrdenesDeDespacho
-    where enviada = 0 or enviada is null
+    where (enviada = 0 or enviada is null)
+    and fecha < DATEADD(minute, -10, GETDATE())
 	order by ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
@@ -1048,8 +1053,11 @@ begin try
 	
 	select @mismaResolucion=valor from configuracionEstacion where descripcion = 'mismaResolucion'
 	if @Fecha is null
-	begin
+    
 		select @Fecha = GETDATE()
+	begin
+    
+	select @Fecha = GETDATE()
 	END
 
 	if @facturaPOSId is not null 
@@ -1090,26 +1098,12 @@ begin try
 			end
 			else
 			begin
-			while @facturaPOSId is null
-			begin
-				select @verificarConsecutivo = null
-				select @verificarConsecutivo = consecutivo from FacturasPOS  where  consecutivo = @consecutivoActual
-				if (@verificarConsecutivo is not null )
-				begin 
-					update Resoluciones set consecutivoActual = consecutivoActual+1 WHERE esPos = 'S' and estado = 'AC'  and (@mismaResolucion = 'SI' or tipo = 0)
-					select @consecutivoActual=consecutivoActual from Resoluciones where esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-				end
-				else
-				begin
-					insert into FacturasPOS (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago)
-					select @Fecha, @ResolucionId, @consecutivoActual, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @COD_FOR_PAG
-					from Resoluciones WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
+			    insert into OrdenesDeDespacho (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago)
+				values(@Fecha, @ResolucionId, -1, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @COD_FOR_PAG)
 			
-					select @facturaPOSId = SCOPE_IDENTITY()
+				select @facturaPOSId = SCOPE_IDENTITY()
 
-					update Resoluciones set consecutivoActual = @consecutivoActual+1 WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-				end
-			end
+				select @facturaPOSId as facturaPOSId
 			--exec MandarImprimir @ventaId=@ventaId
 				select @facturaPOSId as facturaPOSId
 			end
@@ -1556,12 +1550,14 @@ begin try
 	top(100)ventaId
 	from FacturasPOS
     where enviadaFacturacion = 0 or enviadaFacturacion is null
+    and fecha < DATEADD(mi, -10, getdate())
 	order by fecha desc
 	insert into @facturasTemp (id)
 	select 
 	top(100)ventaId
 	from OrdenesDeDespacho
     where enviadaFacturacion = 0 or enviadaFacturacion is null
+    and fecha < DATEADD(mi, -10, getdate())
 	order by ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
@@ -2316,14 +2312,20 @@ begin try
 	select 
 	top(100)ventaId
 	from FacturasPOS
-    where turnoEnviado = 0 or turnoEnviado is null
+    inner join ventas.dbo.VENTAS On FacturasPOS.ventaId = VENTAS.CONSECUTIVO
+	inner join ventas.dbo.TURN_EST On VENTAS.FECHA_REAL = TURN_EST.FECHA and VENTAS.NUM_TUR = TURN_EST.NUM_TUR and VENTAS.COD_ISL = TURN_EST.COD_ISL
+    where (turnoEnviado = 0 or turnoEnviado is null)
+    and TURN_EST.ESTADO like 'C'
 	order by ventaId desc
 
 	insert into @facturasTemp (id)
 	select 
 	top(100)ventaId
 	from OrdenesDeDespacho
-    where turnoEnviado = 0 or turnoEnviado is null
+    inner join ventas.dbo.VENTAS On OrdenesDeDespacho.ventaId = VENTAS.CONSECUTIVO
+	inner join ventas.dbo.TURN_EST On VENTAS.FECHA_REAL = TURN_EST.FECHA and VENTAS.NUM_TUR = TURN_EST.NUM_TUR and VENTAS.COD_ISL = TURN_EST.COD_ISL
+    where (turnoEnviado = 0 or turnoEnviado is null)
+    and TURN_EST.ESTADO like 'C'
 	order by ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
