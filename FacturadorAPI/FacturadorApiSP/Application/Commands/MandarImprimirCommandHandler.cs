@@ -32,6 +32,16 @@ namespace FacturadorAPI.Application.Commands
             {
                 var token = await _conexionEstacionRemota.GetToken(cancellationToken);
                 var factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
+                if (token ==null)
+                {
+                    if (factura.codigoFormaPago == 6)
+                    {
+                        await _databaseHandler.ActualizarFactura(factura.facturaPOSId, factura.Tercero.terceroId, factura.codigoFormaPago, factura.ventaId, factura.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, factura.numeroTransaccion == null ? "" : factura.numeroTransaccion);
+
+                        await _databaseHandler.MandarImprimir(request.VentaId, request.Impresiones);
+                        return "Ok";
+                    }
+                }
 
                 if (factura.codigoFormaPago == 6)
                 {
@@ -77,13 +87,18 @@ namespace FacturadorAPI.Application.Commands
             }
             catch (Exception ex)
             {
+                var factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
+
+                if (factura.codigoFormaPago == 6)
+                {
+                    await _databaseHandler.ActualizarFactura(factura.facturaPOSId, factura.Tercero.terceroId, factura.codigoFormaPago, factura.ventaId, factura.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, factura.numeroTransaccion == null ? "" : factura.numeroTransaccion);
+
+                    await _databaseHandler.MandarImprimir(request.VentaId, request.Impresiones);
+                    return "Ok";
+                }
                 Console.WriteLine($"Error {ex.Message}");
                 Console.WriteLine($"Error {ex.StackTrace}");
             }
-            await _databaseHandler.MandarImprimir(request.VentaId, request.Impresiones);
-
-            return "NoChange";
-
         }
         private FacturaSiges ConvertToFacturaSIGES(Factura factura)
         {

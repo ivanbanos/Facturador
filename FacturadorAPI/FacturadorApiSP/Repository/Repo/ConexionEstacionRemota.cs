@@ -197,15 +197,22 @@ namespace FacturadorAPI.Repository.Repo
 
         public async Task<string> GetToken(CancellationToken cancellationToken)
         {
-            using (var client = new HttpClient())
+            try
             {
-                var path = $"/api/Usuarios/{_infoEstacion.User}/{_infoEstacion.Password}";
-                Console.WriteLine($"{_infoEstacion.Url}{path}");
-                var response = await client.GetAsync($"{_infoEstacion.Url}{path}");
-                response.EnsureSuccessStatusCode();
-                string responseBody = await response.Content.ReadAsStringAsync();
-                JObject token = JObject.Parse(responseBody);
-                return token.Value<string>("token");
+
+                using (var client = new HttpClient())
+                {
+                    var path = $"/api/Usuarios/{_infoEstacion.User}/{_infoEstacion.Password}";
+                    Console.WriteLine($"{_infoEstacion.Url}{path}");
+                    var response = await client.GetAsync($"{_infoEstacion.Url}{path}");
+                    response.EnsureSuccessStatusCode();
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    JObject token = JObject.Parse(responseBody);
+                    return token.Value<string>("token");
+                }
+            } catch(Exception ex)
+            {
+                return null;
             }
         }
 

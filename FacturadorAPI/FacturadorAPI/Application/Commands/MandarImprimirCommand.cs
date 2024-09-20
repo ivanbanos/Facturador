@@ -3,7 +3,7 @@ using MediatR;
 
 namespace FacturadorAPI.Application.Commands
 {
-    public class MandarImprimirCommand : IRequest
+    public class MandarImprimirCommand : IRequest<string>
     {
 
         public MandarImprimirCommand(int facturaPOSId, int terceroId, int formaPago, int ventaId, string placa, string kilometraje)

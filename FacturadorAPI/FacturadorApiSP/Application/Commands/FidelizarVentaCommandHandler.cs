@@ -29,22 +29,44 @@ namespace FacturadorAPI.Application.Commands
 
         public async Task<Unit> Handle(FidelizarVentaCommand request, CancellationToken cancellationToken)
         {
+            var factura = await _databaseHandler.GetFacturaPorIdVenta(request.IdCara);
+            var puntos = await _databaseHandler.GetVentaFidelizarAutomaticaPorVenta(factura.ventaId);
+
+
+
+            var ok = await _fidelizacion.SubirPuntops((float)puntos.ValorVenta, request.Identificacion, puntos.Factura);
+            if (ok)
+            {
+                await _databaseHandler.ActualizarFacturaFidelizada(request.Identificacion, factura.ventaId);
+
+                var fidelizados = await _fidelizacion.GetFidelizados(request.Identificacion);
+                foreach (var fidelizado in fidelizados)
+                {
+                    await _databaseHandler.AddFidelizado(fidelizado.Documento, fidelizado.Puntos ?? 0);
+                }
+                await _databaseHandler.MandarImprimir(factura.ventaId,1);
+                return Unit.Value;
+            }
+            else
+            {
+                throw new Exception("Venta fidelizada");
+            }
             //000170FIDELI019099599
-            var sum = 119;
-            var characters = $"0{request.IdCara}{request.Identificacion}";
-            foreach (var character in characters)
-            {
-                sum += int.Parse(character.ToString());
-            }
-            var trama = new StringBuilder("").Append('0', 6 - sum.ToString().Length).Append(sum).Append("FIDELI").Append(characters).Append("*");
-            var respuesta = send_cmd(trama.ToString()).Trim();
+            //var sum = 119;
+            //var characters = $"0{request.IdCara}{request.Identificacion}";
+            //foreach (var character in characters)
+            //{
+            //    sum += int.Parse(character.ToString());
+            //}
+            //var trama = new StringBuilder("").Append('0', 6 - sum.ToString().Length).Append(sum).Append("FIDELI").Append(characters).Append("*");
+            //var respuesta = send_cmd(trama.ToString()).Trim();
 
 
-            if (!respuesta.Contains("FIDELIA"))
-            {
-                throw new Exception("¡Error abriendo turno!");
-            }
-            return Unit.Value;
+            //if (!respuesta.Contains("FIDELIA"))
+            //{
+            //    throw new Exception("¡Error abriendo turno!");
+            //}
+            //return Unit.Value;
         }
 
 
