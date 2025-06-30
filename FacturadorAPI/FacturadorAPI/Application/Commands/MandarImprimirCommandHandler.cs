@@ -22,18 +22,30 @@ namespace FacturadorAPI.Application.Commands
 
         public async Task<string> Handle(MandarImprimirCommand request, CancellationToken cancellationToken)
         {
+
             try
             {
                 var token = await _conexionEstacionRemota.GetToken(cancellationToken);
-                var factura = await _databaseHandler.GetFacturaPorIdVenta(request.FacturaPOSId);
+                var factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
+                if (token == null)
+                {
+                    if (factura.codigoFormaPago == 2)
+                    {
+                        await _databaseHandler.ActualizarFactura(factura.facturaPOSId, factura.Tercero.terceroId, factura.codigoFormaPago, factura.ventaId, factura.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje);
+
+                        await _databaseHandler.MandarImprimir(request.VentaId);
+                        return "Ok";
+                    }
+                }
 
                 if (factura.codigoFormaPago == 2)
                 {
                     await _databaseHandler.ActualizarFactura(factura.facturaPOSId, factura.Tercero.terceroId, factura.codigoFormaPago, factura.ventaId, factura.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje);
 
+                    await _databaseHandler.MandarImprimir(request.VentaId);
                     return "Ok";
                 }
-                else
+                if (!factura.enviada)
                 {
                     await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje);
 
@@ -43,10 +55,10 @@ namespace FacturadorAPI.Application.Commands
 
                 try
                 {
-
                     var formas = await _databaseHandler.ListarFormasPagoSiges(cancellationToken);
-                    await _databaseHandler.ActuralizarFacturasEnviados(new List<int>() { factura.ventaId });
                     await _conexionEstacionRemota.EnviarFacturas(new List<FacturaSiges>() { factura }, formas, token);
+
+                    await _databaseHandler.ActuralizarFacturasEnviados(new List<int>() { request.VentaId });
 
                 }
                 catch (Exception ex)
@@ -56,18 +68,40 @@ namespace FacturadorAPI.Application.Commands
                     Console.WriteLine($"Error {ex.StackTrace}");
 
                 }
-
-                await _databaseHandler.MandarImprimir(request.VentaId);
-                return "Ok";
+                if (!factura.enviada)
+                {
+                    await _databaseHandler.MandarImprimir(request.VentaId);
+                    return "NoChange";
+                }
+                else
+                {
+                    await _databaseHandler.MandarImprimir(request.VentaId);
+                    return "Ok";
+                }
             }
             catch (Exception ex)
             {
+                var factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
+
+                if (factura.codigoFormaPago == 2)
+                {
+                    await _databaseHandler.ActualizarFactura(factura.facturaPOSId, factura.Tercero.terceroId, factura.codigoFormaPago, factura.ventaId, factura.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje);
+
+                    await _databaseHandler.MandarImprimir(request.VentaId);
+                    return "Ok";
+                }
+                if (!factura.enviada)
+                {
+                    await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje);
+
+                    factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
+
+                }
                 Console.WriteLine($"Error {ex.Message}");
                 Console.WriteLine($"Error {ex.StackTrace}");
+                await _databaseHandler.MandarImprimir(request.VentaId);
+                return "Error";
             }
-            await _databaseHandler.MandarImprimir(request.VentaId);
-
-            return "NoChange";
 
         }
 

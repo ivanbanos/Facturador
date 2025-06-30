@@ -3,6 +3,7 @@ import "./styles/home.css";
 import GetCanastilla from "../Services/getServices/GetCanastilla";
 import GetTercero from "../Services/getServices/GetTercero";
 import PostCanastilla from "../Services/getServices/PostCanastilla";
+import PostImprimirTurnoCanastilla from "../Services/getServices/PostImprimirTurnoCanastilla";
 import GetTiposDeIdentificacion from "../Services/getServices/GetTiposDeIdentificacion";
 import GetFormasDePago from "../Services/getServices/GetFormasDePago";
 import AlertTerceroNoExisteCnastilla from "./alertTerceroNoExisteCanastilla";
@@ -17,6 +18,8 @@ const Canastilla = () => {
     terceroId: 0,
     codigoFormaPago: 0,
     descuento: 0,
+    vendedor: 0,
+    isla: 0,
     canastillas: [],
   };
   const [objetoPostCanastilla, setObjetoPostCanastilla] = useState(
@@ -149,15 +152,25 @@ const Canastilla = () => {
     };
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
   };
+  const onClickImprimirTurno = async () => {
+    const respuesta = await PostImprimirTurnoCanastilla(localStorage.getItem("islaSelect"));
+    if (respuesta === "fail") {
+      handleSetShowAlertError(true);
+    } else {
+      handleSetShowAlertVentaExitosa(true);
+    }
+  }
   const onClickGenerarVenta = async (canastilla) => {
     if (canastilla.codigoFormaPago == 0) {
       handleSetShowAlertError(true);
     } else {
+      canastilla.isla = localStorage.getItem("islaSelect");
+      canastilla.empleado = localStorage.getItem("empleado");
       const respuesta = await PostCanastilla(canastilla);
       if (respuesta === "fail") {
         handleSetShowAlertError(true);
       } else {
-        //await ImprimirNativo(respuesta);
+        await ImprimirNativo(respuesta);
         handleSetShowAlertVentaExitosa(true);
         resetValues();
       }
@@ -378,6 +391,14 @@ const Canastilla = () => {
             }}
           >
             <span>Borrar</span>
+          </button>
+          <button
+            className="botton-green m-3 right-botton right-botton-xs"
+            onClick={() => {
+              onClickImprimirTurno();
+            }}
+          >
+            <span className="">Imprimir ultimo</span> <span>turno</span>
           </button>
         </div>
         <ModalAddTercero

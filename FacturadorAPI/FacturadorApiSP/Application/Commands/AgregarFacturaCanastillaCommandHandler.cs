@@ -55,15 +55,16 @@ namespace FacturadorAPI.Application.Commands
                 var infoTemp = "";
                 //if (generaFacturaElectronica)
                 //{
-                //    try
-                //    {
-                //        infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
+                try
+                {
+                    var token = await _conexionEstacionRemota.GetToken(cancellationToken);
+                    infoTemp = await _conexionEstacionRemota.GetInfoFacturaElectronicaCanastilla(_factura.FacturasCanastillaId, _infoEstacion.EstacionFuente, token);
 
-                //    }
-                //    catch (Exception)
-                //    {
-                //        infoTemp = null;
-                //    }
+                }
+                catch (Exception)
+                {
+                    infoTemp = null;
+                }
                 //}
                 if (!string.IsNullOrEmpty(infoTemp))
                 {
@@ -196,6 +197,7 @@ namespace FacturadorAPI.Application.Commands
                 firstMacAddress = firstMacAddress ?? "Mac Unknown";
                 informacionVenta.Append(formatoTotales("SERIAL MAQUINA: ", firstMacAddress));
                  informacionVenta.Append(".");
+                return informacionVenta.ToString();
             }
             catch (Exception ex)
             {

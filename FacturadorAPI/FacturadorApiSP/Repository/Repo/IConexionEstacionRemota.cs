@@ -17,5 +17,6 @@ namespace FacturadorAPI.Repository.Repo
         Task<ResolucionElectronica> GetResolucionElectronica(string token, CancellationToken cancellationToken);
         Task CrearFacturaOrdenesDeDespachoByVenta(int ventaId, string token);
         Task CrearFacturaFacturasByVenta(int ventaId, string token);
+        Task<string> GetInfoFacturaElectronicaCanastilla(int facturasCanastillaId, string estacionFuente, string token);
     }
 }

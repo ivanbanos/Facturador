@@ -1,6 +1,7 @@
 ﻿using FacturadorAPI.Application.Commands;
 using FacturadorAPI.Application.Queries;
 using FacturadorAPI.Models;
+using FacturadorApiSP.Application.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -35,6 +36,15 @@ namespace FacturadorAPI.Controllers
         {
             
             return Ok(await _mediator.Send(new AgregarFacturaCanastillaCommand(facturaCanastilla), cancellationToken));
+        }
+
+
+        [HttpPost]
+        [Route("CerrarTurno/{isla}")]
+        [ProducesResponseType(typeof(IActionResult), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> CerrarTurno(int isla, CancellationToken cancellationToken)
+        {
+            return Ok(await _mediator.Send(new MandarImprimirTurnoCanastillaCommand(isla), cancellationToken));
         }
     }
 }

@@ -191,6 +191,7 @@ namespace FacturadorAPI.Repository
                     Descuento = dr.Field<double>("descuento"),
                     Empleado = dr.Field<string>("Empleado"),
                     fechaProximoMantenimiento = dr.Field<DateTime?>("fechaProximoMantenimiento"),
+                    enviada = dr.Field<bool>("enviada"),
 
                     Tercero = new Tercero()
                     {

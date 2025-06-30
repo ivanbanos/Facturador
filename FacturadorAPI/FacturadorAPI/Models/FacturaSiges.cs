@@ -15,7 +15,7 @@ namespace FacturadorAPI.Models
         public string DescripcionResolucion { get; set; }
         public string Autorizacion { get; set; }
         public string Placa { get; set; }
-        public string Kilometraje { get; set; }
+        public string Kilometraje { get; set; } 
         public DateTime FechaInicioResolucion { get; set; }
         public DateTime FechaFinalResolucion { get; set; }
         public int Inicio { get; set; }
@@ -47,5 +47,6 @@ namespace FacturadorAPI.Models
         public int IdCara { get; set; }
         public string IButton { get; set; }
         public DateTime? fechaProximoMantenimiento { get; set; }
+        public bool enviada { get; set; }
     }
 }

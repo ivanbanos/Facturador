@@ -22,8 +22,9 @@ namespace FacturadorAPI.Application.Commands
 
         public async Task<Tercero> Handle(CrearTerceroCommand request, CancellationToken cancellationToken)
         {
-           
 
+            request.Tercero.Nombre = request.Tercero.Nombre.ToUpper();
+            request.Tercero.Direccion = request.Tercero.Direccion.ToUpper();
             return await _databaseHandler.CrearTercero(request.Tercero);
 
         }

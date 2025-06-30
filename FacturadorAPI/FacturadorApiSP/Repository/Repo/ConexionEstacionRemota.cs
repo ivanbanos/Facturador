@@ -299,5 +299,21 @@ namespace FacturadorAPI.Repository.Repo
     //            var response = await client.GetAsync($"{_infoEstacion.Url}{path}");
     //        }
         }
+
+        public async Task<string> GetInfoFacturaElectronicaCanastilla(int facturasCanastillaId, string estacionFuente, string token)
+        {
+            using (var client = new HttpClient())
+            {
+                var path = $"/api/ManejadorInformacionLocal/GetInfoFacturaElectronicaCanastilla/{facturasCanastillaId}/estacion/{estacionFuente}";
+
+                client.Timeout = new TimeSpan(0, 0, 0, 5, 0);
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+                var response = await client.GetAsync($"{_infoEstacion.Url}{path}");
+                response.EnsureSuccessStatusCode();
+
+                return await response.Content.ReadAsStringAsync();
+            }
+        }
     }
 }

@@ -133,19 +133,8 @@ const Combustible = () => {
     ultimaFacturaEstadoInicial
   );
 
-  const handleSetUltimaFactura = (factura) => {
-    if (factura.numeroTransaccion) {
-      setDisableNumeroTrans(true);
-      setDisableForma(true);
-    } else {
-      setDisableNumeroTrans(false);
-      setDisableForma(false);
-    }
-    if (factura.codigoFormaPago == 6) {
-      setUsuarioBloqueado(true);
-    } else {
-      setUsuarioBloqueado(false);
-    }
+  const handleSetUltimaFactura = async (factura) => {
+    await handleEstadoFactura(factura);
     setUltimaFactura(factura);
   };
   const getFacturaInformacion = () => {
@@ -181,60 +170,22 @@ const Combustible = () => {
     }
   };
 
-  const handleChangeFactura = (event) => {
-    const tempFactura = {
-      ...ultimaFactura,
-      [event.target.name]: event.target.value,
-    };
-    setUltimaFactura(tempFactura);
-    if (
-      tempFactura.codigoFormaPago == 1 ||
-      tempFactura.codigoFormaPago == 2 ||
-      tempFactura.codigoFormaPago == 3
-    ) {
-      setDisableNumeroTrans(false);
-    } else {
-      setDisableNumeroTrans(true);
-    }
-  };
 
-  const fetcInicial = async () => {
-    let islas = await GetIslas();
-    setIslas(islas);
+  const handleEstadoFactura = async (factura) =>{
 
-    let tiposDeIdentificacion = await GetTiposDeIdentificacion();
-    setTiposDeIdentificacion(tiposDeIdentificacion);
+    
+    console.log(window.FormasPagos);
+      console.log(window.FormasPagos.includes(factura.codigoFormaPago));
+      if (window.FormasPagos.includes(factura.codigoFormaPago)) {
+        let formasPago = await GetFormasDePago();
+        setformasDePago(
+          formasPago.filter((f) => window.FormasPagos.includes(f.id))
+        );
+      } else {
+        let formasPago = await GetFormasDePago();
+        setformasDePago(formasPago);
+      }
 
-    let formasPago = await GetFormasDePago();
-    setformasDePago(formasPago);
-    GetLocalStorage();
-  };
-
-  const fetcTurnoYCaras = async (idIsla) => {
-    let turno = await GetTurnoIsla(idIsla);
-    setTurno(turno);
-
-    localStorage.setItem("turno", JSON.stringify(turno));
-    let caras = await GetCarasPorIsla(idIsla);
-    setCaras(caras);
-    localStorage.setItem("caras", JSON.stringify(caras));
-  };
-
-  const cerrarTurno = async (isla, codigo) => {
-    let respuesta = await CerrarTurno(isla, codigo);
-    if (respuesta === "fail") {
-      handleSetShowAlertError(true);
-    } else {
-      await ImprimirNativo(respuesta);
-    }
-  };
-
-  const fetchInformacionCliente = async (idCara) => {
-    let factura = await GetUltimaFacturaPorCara(idCara);
-    if (factura) {
-      setUltimaFactura(factura);
-      setTercero(factura.tercero);
-      setIdentificacion(factura.tercero.identificacion);
       if (factura.numeroTransaccion) {
         setDisableNumeroTrans(true);
         setDisableForma(true);
@@ -255,6 +206,61 @@ const Combustible = () => {
       } else {
         setUsuarioBloqueado(false);
       }
+  }
+
+  const handleChangeFactura = async (event) => {
+    if (
+      event.target.name != "codigoFormaPago" ||
+      !window.DesabilitaFormasNoCredito
+    ) {
+      const tempFactura = {
+        ...ultimaFactura,
+        [event.target.name]: event.target.value,
+      };
+      setUltimaFactura(tempFactura);
+      await handleEstadoFactura(tempFactura)
+    } 
+  };
+
+  const fetcInicial = async () => {
+    let islas = await GetIslas();
+    setIslas(islas);
+
+    let tiposDeIdentificacion = await GetTiposDeIdentificacion();
+    setTiposDeIdentificacion(tiposDeIdentificacion);
+
+    await handleEstadoFactura(ultimaFactura);
+    GetLocalStorage();
+  };
+
+  const fetcTurnoYCaras = async (idIsla) => {
+    let turno = await GetTurnoIsla(idIsla);
+    setTurno(turno);
+
+    localStorage.setItem("turno", JSON.stringify(turno));
+    localStorage.setItem("empleado", JSON.stringify(turno.empleado));
+    let caras = await GetCarasPorIsla(idIsla);
+    setCaras(caras);
+    localStorage.setItem("caras", JSON.stringify(caras));
+  };
+
+  const cerrarTurno = async (isla, codigo) => {
+    let respuesta = await CerrarTurno(isla, codigo);
+    if (respuesta === "fail") {
+      handleSetShowAlertError(true);
+    } else {
+      await ImprimirNativo(respuesta);
+    }
+  };
+
+  const fetchInformacionCliente = async (idCara) => {
+    let factura = await GetUltimaFacturaPorCara(idCara);
+    if (factura) {
+      setUltimaFactura(factura);
+      setTercero(factura.tercero);
+      setIdentificacion(factura.tercero.identificacion);
+       
+      await handleEstadoFactura(factura)
     }
 
     let facturaTexto = await GetUltimaFacturaPorCaraTexto(idCara);
@@ -434,7 +440,6 @@ const Combustible = () => {
                   value={ultimaFactura.codigoFormaPago || ""}
                   onChange={handleChangeFactura}
                 >
-                  <option value=""></option>
                   {Array.isArray(formasDePago) &&
                     formasDePago.map((forma) => (
                       <option key={forma.id} value={forma.id}>

@@ -96,8 +96,17 @@ namespace FacturadorAPI.Application.Commands
                     await _databaseHandler.MandarImprimir(request.VentaId, request.Impresiones);
                     return "Ok";
                 }
+                if (!factura.enviada)
+                {
+                    await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, request.NumeroTransaccion == "NP" ? "" : request.NumeroTransaccion);
+
+                    factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
+
+                }
                 Console.WriteLine($"Error {ex.Message}");
                 Console.WriteLine($"Error {ex.StackTrace}");
+                await _databaseHandler.MandarImprimir(request.VentaId, request.Impresiones); 
+                return "Error";
             }
         }
         private FacturaSiges ConvertToFacturaSIGES(Factura factura)

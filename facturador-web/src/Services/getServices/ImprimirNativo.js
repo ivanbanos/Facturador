@@ -1,22 +1,34 @@
+function ImprimirNativo(content) {
+    // Open a new blank window
+    const printWindow = window.open('', '_blank');
 
-const ImprimirNativo = async (content) => {
-// var pri = window.open('','', 'height=2200,width=400');
+    if (printWindow) {
+        // Write the content into the new window
+        printWindow.document.open();
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Print</title>
+                    <style>
+                        /* Add any custom styles for the printed content */
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 20px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${content}
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
 
+        // Trigger the print dialog
+        printWindow.print();
+    } else {
+        console.error('Failed to open a new window for printing.');
+    }
+}
 
-// pri.document.write('<html><head>');
-// pri.document.write('</head>');
-// pri.document.write('<body ><p style={font-size: 8px;font-family: Consolas;}></p>');
-
-// const myArray = content.split("\n");
-// for (const element of myArray) { 
-    
-// pri.document.write('<p style={font-size: 8px;font-family: Consolas;margin:0px;}>'+element+'</p>');
-//     }
-// pri.document.write('</body></html>');
-// pri.document.close(); 
-// //pri.focus();
-// //setTimeout(function(){pri.print(); pri.close();},1000);
-// pri.print(); pri.close();
-};
-  
 export default ImprimirNativo;

@@ -1,12 +1,12 @@
-﻿
-using FactoradorEstacionesModelo.Objetos;
-
-namespace FacturadorAPI.Models
+﻿namespace FacturadorAPI.Models
 {
     public class FacturaCanastillaRequest
     {
         public int terceroId { get; set; }
         public int codigoFormaPago { get; set; }
+        public int isla { get; set; }
+        public string empleado { get; set; }
+        public int vendedor { get; set; }
         public IEnumerable<CanastillaFacturaRequest> canastillas { get; set; }
         public float descuento { get; set; }
 
