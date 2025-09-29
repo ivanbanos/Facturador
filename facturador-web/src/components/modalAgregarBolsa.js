@@ -157,8 +157,10 @@ const ModalAgregarBolsa = (props) => {
               if (respuestaReImprimir === "fail") {
                 props.handleSetShowAlertError(true);
               } else {
-                
-      await ImprimirNativo(respuestaReImprimir);
+                if(window.imprimirNativo){
+
+          await ImprimirNativo(respuestaReImprimir);
+        }
                 setShowAlertImpresionExitosa(true);
               }
             }}

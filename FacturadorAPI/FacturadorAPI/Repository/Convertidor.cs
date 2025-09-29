@@ -129,7 +129,7 @@ namespace FacturadorAPI.Repository
             response.AddRange(
                   dt.AsEnumerable().Select(dr => new Canastilla()
                   {
-                      CanastillaId = dr.Field<int>("CanastillaId"),
+                      canastillaId = dr.Field<int>("CanastillaId"),
                       descripcion = dr.Field<string>("descripcion"),
                       precio = Convert.ToSingle(dr.Field<double>("precio")),
                       unidad = dr.Field<string>("unidad"),

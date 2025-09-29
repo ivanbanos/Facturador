@@ -5,6 +5,7 @@ using MachineUtilizationApi.Extensions;
 using MachineUtilizationApi.Repository;
 using MediatR;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
 
@@ -30,11 +31,81 @@ namespace FacturadorAPI.Application.Commands
 
         public async Task<string> Handle(MandarImprimirConsecutivoCommand request, CancellationToken cancellationToken)
         {
-             await _databaseHandler.MandarImprimirConsecutivo(request.Consecutivo);
+            var token = await _conexionEstacionRemota.GetToken(cancellationToken);
             var factura = await _databaseHandler.ObtenerFacturaPorConsecutivo(request.Consecutivo);
 
+            if (!factura.enviada)
+            {
+
+                var facturaSIGES = ConvertToFacturaSIGES(factura);
+                try
+                {
+                    var formas = await _databaseHandler.ListarFormasPagoSP(cancellationToken);
+                    await _conexionEstacionRemota.EnviarFacturas(new List<FacturaSiges>() { facturaSIGES }, formas, token);
+
+                    await _databaseHandler.ActuralizarFacturasEnviados(new List<int>() { factura.ventaId });
+
+                }
+                catch (Exception ex)
+                {
+
+                    Console.WriteLine($"Error {ex.Message}");
+                    Console.WriteLine($"Error {ex.StackTrace}");
+
+                }
+            }
+
+
+            await _databaseHandler.MandarImprimirConsecutivo(request.Consecutivo);
             return await getinformacionVenta(factura, cancellationToken);
         }
+
+
+        private MangueraSiges ConvertirMangueraSiges(Manguera manguera)
+        {
+            return new MangueraSiges() { Id = manguera.COD_MAN, Descripcion = manguera.DESCRIPCION };
+        }
+        private FacturaSiges ConvertToFacturaSIGES(Factura factura)
+        {
+            return new FacturaSiges()
+            {
+                Autorizacion = factura.Autorizacion,
+                Cantidad = (double)factura.Venta.CANTIDAD,
+                Cara = factura.Venta.COD_CAR.ToString(),
+                codigoFormaPago = factura.codigoFormaPago,
+                CodigoInterno = factura.Venta.COD_INT,
+                Combustible = factura.Venta.Combustible,
+                Consecutivo = factura.Consecutivo,
+                Manguera = ConvertirMangueraSiges(factura.Manguera),
+                DescripcionResolucion = factura.DescripcionResolucion,
+                facturaPOSId = factura.facturaPOSId,
+                fecha = factura.fecha,
+                FechaFinalResolucion = factura.FechaFinalResolucion,
+                FechaInicioResolucion = factura.FechaInicioResolucion,
+                Final = factura.Final,
+                Inicio = factura.Inicio,
+                habilitada = factura.habilitada,
+                Estado = factura.Estado,
+                impresa = factura.impresa,
+                Kilometraje = factura.Kilometraje,
+                Placa = factura.Placa,
+                ventaId = factura.ventaId,
+                vecesImpresa = factura.vecesImpresa,
+
+                Surtidor = factura.Venta.COD_SUR.ToString(),
+                Mangueras = factura.Manguera.COD_MAN.ToString(),
+                Precio = (double)factura.Venta.PRECIO_UNI,
+                Total = (double)factura.Venta.TOTAL,
+                Subtotal = (double)factura.Venta.SUBTOTAL,
+                Descuento = (double)factura.Venta.Descuento,
+                Empleado = factura.Venta.EMPLEADO,
+                fechaProximoMantenimiento = factura.Venta.FECH_PRMA,
+
+                Tercero = factura.Tercero
+            };
+
+        }
+
 
         private async Task<string> getinformacionVenta(Factura _factura, CancellationToken cancellationToken)
         {

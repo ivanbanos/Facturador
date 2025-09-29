@@ -39,7 +39,7 @@ namespace FacturadorAPI.Application.Commands
                 {
                     await _databaseHandler.AddFidelizado(fidelizado.Documento, fidelizado.Puntos ?? 0);
                 }
-                await _databaseHandler.MandarImprimir(request.IdVenta);
+                //await _databaseHandler.MandarImprimir(request.IdVenta);
                 return Unit.Value;
             }
             else

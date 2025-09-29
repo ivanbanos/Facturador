@@ -32,24 +32,7 @@ namespace FacturadorAPI.Application.Commands
             {
                 var token = await _conexionEstacionRemota.GetToken(cancellationToken);
                 var factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
-                if (token ==null)
-                {
-                    if (factura.codigoFormaPago == 6)
-                    {
-                        await _databaseHandler.ActualizarFactura(factura.facturaPOSId, factura.Tercero.terceroId, factura.codigoFormaPago, factura.ventaId, factura.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, factura.numeroTransaccion == null ? "" : factura.numeroTransaccion);
-
-                        await _databaseHandler.MandarImprimir(request.VentaId, request.Impresiones);
-                        return "Ok";
-                    }
-                }
-
-                if (factura.codigoFormaPago == 6)
-                {
-                    await _databaseHandler.ActualizarFactura(factura.facturaPOSId, factura.Tercero.terceroId, factura.codigoFormaPago, factura.ventaId, factura.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, factura.numeroTransaccion == null ? "" : factura.numeroTransaccion);
-
-                    await _databaseHandler.MandarImprimir(request.VentaId, request.Impresiones);
-                    return "Ok";
-                }
+                
                 if (!factura.enviada)
                 {
                     await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, request.NumeroTransaccion == "NP" ? "" : request.NumeroTransaccion);
@@ -89,13 +72,6 @@ namespace FacturadorAPI.Application.Commands
             {
                 var factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
 
-                if (factura.codigoFormaPago == 6)
-                {
-                    await _databaseHandler.ActualizarFactura(factura.facturaPOSId, factura.Tercero.terceroId, factura.codigoFormaPago, factura.ventaId, factura.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, factura.numeroTransaccion == null ? "" : factura.numeroTransaccion);
-
-                    await _databaseHandler.MandarImprimir(request.VentaId, request.Impresiones);
-                    return "Ok";
-                }
                 if (!factura.enviada)
                 {
                     await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, request.NumeroTransaccion == "NP" ? "" : request.NumeroTransaccion);

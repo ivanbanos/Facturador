@@ -20,23 +20,52 @@ const ModalAddTercero = (props) => {
   const [nuevoTercero, setNuevoTercero] = useState(terceroInicial);
 
   const handleChangeTercero = (event) => {
+    let value = event.target.value;
+    // Forzar mayúsculas en todos los campos excepto identificacion, telefono y correo
+    if (["nombre", "direccion", "coD_CLI"].includes(event.target.name)) {
+      value = value.toUpperCase();
+    }
+    // Teléfono solo números
+    if (event.target.name === "telefono") {
+      value = value.replace(/[^0-9]/g, "");
+    }
+    // Identificación solo números
+    if (event.target.name === "identificacion") {
+      value = value.replace(/[^0-9]/g, "");
+    }
+    // Correo a mayúsculas (opcional, si lo quieres en mayúsculas)
+    if (event.target.name === "correo") {
+      value = value.toUpperCase();
+    }
     const tempTercero = {
       ...nuevoTercero,
-      [event.target.name]: event.target.value,
+      [event.target.name]: value,
     };
     setNuevoTercero(tempTercero);
   };
   function formIsValid() {
     const _errores = {};
     if (!nuevoTercero.nombre) _errores.nombre = "Se requiere el nombre";
-    // if (!nuevoTercero.telefono) _errores.telefono = "Se requiere el teléfono";
-    // if (!nuevoTercero.direccion)
-    //   _errores.direccion = "Se requiere la dirección";
-    if (!nuevoTercero.identificacion)
+    if (!nuevoTercero.telefono) {
+      _errores.telefono = "Se requiere el teléfono";
+    } else if (!/^\d{7,}$/.test(nuevoTercero.telefono)) {
+      _errores.telefono = "Teléfono inválido (mínimo 7 dígitos)";
+    }
+    if (!nuevoTercero.direccion) {
+      _errores.direccion = "Se requiere la dirección";
+    }
+    if (!nuevoTercero.identificacion) {
       _errores.identificacion = "Se requiere la identificación";
+    } else if (!/^\d+$/.test(nuevoTercero.identificacion)) {
+      _errores.identificacion = "Identificación inválida";
+    }
     if (!nuevoTercero.tipoIdentificacion)
       _errores.tipoIdentificacion = "Se requiere el tipo de identificación";
-    // if (!nuevoTercero.correo) _errores.correo = "Se requiere el correo";
+    if (!nuevoTercero.correo) {
+      _errores.correo = "Se requiere el correo";
+    } else if (!/^([A-Z0-9_\.-]+)@([A-Z0-9\.-]+)\.([A-Z]{2,})$/i.test(nuevoTercero.correo)) {
+      _errores.correo = "Correo inválido";
+    }
     setErrores(_errores);
     return Object.keys(_errores).length === 0;
   }
@@ -108,7 +137,7 @@ const ModalAddTercero = (props) => {
                 </label>
                 <div className="col-sm-8">
                   <input
-                    type="number"
+                    type="text"
                     className={`form-control modal-tercero-input ${
                       errores.identificacion ? "is-invalid" : ""
                     }`}
@@ -116,8 +145,8 @@ const ModalAddTercero = (props) => {
                     value={nuevoTercero.identificacion}
                     onChange={handleChangeTercero}
                     placeholder={errores.identificacion || "Identificación"}
-                    onkeydown="return /[a-zA-Z0-9]/i.test(event.key)"
-                  ></input>
+                    maxLength={15}
+                  />
                 </div>
               </div>
 
@@ -163,7 +192,8 @@ const ModalAddTercero = (props) => {
                     value={nuevoTercero.telefono}
                     onChange={handleChangeTercero}
                     placeholder={errores.telefono || "Teléfono"}
-                  ></input>
+                    maxLength={15}
+                  />
                 </div>
               </div>
               <div className="row mb-3">
@@ -178,7 +208,8 @@ const ModalAddTercero = (props) => {
                     value={nuevoTercero.correo}
                     onChange={handleChangeTercero}
                     placeholder={errores.correo || "Correo"}
-                  ></input>
+                    style={{ textTransform: "uppercase" }}
+                  />
                 </div>
               </div>
             </form>

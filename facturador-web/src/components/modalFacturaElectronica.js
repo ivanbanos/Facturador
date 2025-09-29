@@ -89,8 +89,10 @@ const ModalFacturaElectronica = (props) => {
               console.log(ultimaFactura);
               const text = await GetUltimaFacturaPorCaraTexto(
                 ultimaFactura.idCara
-              );
-              await ImprimirNativo(text);
+              );if(window.imprimirNativo){
+
+          await ImprimirNativo(text);
+        }
               if (respuestaImprimir === "fail") {
                 props.handleSetShowAlertError(true);
               } else {

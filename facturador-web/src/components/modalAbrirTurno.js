@@ -89,8 +89,10 @@ const ModalAbrirTurno = (props) => {
               if(respuesta === "fail"){
                 handleSetShowAlertError(true);
               } else{
+if(window.imprimirNativo){
 
-                await ImprimirNativo(respuesta);
+          await ImprimirNativo(respuesta);
+        }
               }
             }}
           >

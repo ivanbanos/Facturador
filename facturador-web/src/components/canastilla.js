@@ -13,7 +13,12 @@ import AlertVentaExitosa from "./AlertVentaExitosa";
 import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
 const Canastilla = () => {
+  // Estado para turno y empleado
+  const [turno, setTurno] = useState(null);
+
   const [productos, setProductos] = useState([]);
+  const [filtroProducto, setFiltroProducto] = useState(""); // Estado para el filtro
+  const [productosFiltrados, setProductosFiltrados] = useState([]); // Productos filtrados
   const valorInicialObjetoPostCanastilla = {
     terceroId: 0,
     codigoFormaPago: 0,
@@ -104,6 +109,33 @@ const Canastilla = () => {
   }
   const [totalItems, setTotalItems] = useState(0);
   const [subTotal, setSubTotal] = useState(0);
+
+  // Función para filtrar productos por descripción
+  const handleFiltroProducto = (event) => {
+    const filtro = event.target.value;
+    setFiltroProducto(filtro);
+
+    if (filtro === "") {
+      setProductosFiltrados(productos);
+    } else {
+      const productosFiltrados = productos.filter((producto) =>
+        producto.descripcion.toLowerCase().includes(filtro.toLowerCase())
+      );
+      setProductosFiltrados(productosFiltrados);
+    }
+    
+    // Limpiar selección si el producto seleccionado ya no está en la lista filtrada
+    if (productoSeleccionado && filtro !== "") {
+      const productoEnFiltro = productos.filter((producto) =>
+        producto.descripcion.toLowerCase().includes(filtro.toLowerCase())
+      ).find(p => p.canastillaId === productoSeleccionado.canastillaId);
+      
+      if (!productoEnFiltro) {
+        setProductoSeleccionado(null);
+      }
+    }
+  };
+
   function onClickAgregarProducto() {
     if (productoSeleccionado) {
       let tempObjetoCanastillas = {
@@ -135,6 +167,10 @@ const Canastilla = () => {
 
       setCantidadSeleccionada(0);
       setProductoSeleccionado(null);
+      // Limpiar filtro después de agregar producto
+      setFiltroProducto("");
+      setProductosFiltrados(productos);
+      
       let counterTotalItems = 0;
       let counterSubTotal = 0;
       for (let item of tempCanastillas) {
@@ -153,13 +189,15 @@ const Canastilla = () => {
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
   };
   const onClickImprimirTurno = async () => {
-    const respuesta = await PostImprimirTurnoCanastilla(localStorage.getItem("islaSelect"));
+    const respuesta = await PostImprimirTurnoCanastilla(
+      localStorage.getItem("islaSelect")
+    );
     if (respuesta === "fail") {
       handleSetShowAlertError(true);
     } else {
       handleSetShowAlertVentaExitosa(true);
     }
-  }
+  };
   const onClickGenerarVenta = async (canastilla) => {
     if (canastilla.codigoFormaPago == 0) {
       handleSetShowAlertError(true);
@@ -170,7 +208,10 @@ const Canastilla = () => {
       if (respuesta === "fail") {
         handleSetShowAlertError(true);
       } else {
-        await ImprimirNativo(respuesta);
+        if(window.imprimirNativo){
+
+          await ImprimirNativo(respuesta);
+        }
         handleSetShowAlertVentaExitosa(true);
         resetValues();
       }
@@ -203,6 +244,7 @@ const Canastilla = () => {
       try {
         let productos = await GetCanastilla();
         setProductos(productos);
+        setProductosFiltrados(productos); // Inicializar productos filtrados
         let tiposDeIdentificacion = await GetTiposDeIdentificacion();
         setTiposDeIdentificacion(tiposDeIdentificacion);
         let formasPago = await GetFormasDePago();
@@ -217,39 +259,74 @@ const Canastilla = () => {
             terceroId: nuevoTercero[0].terceroId,
           };
           setObjetoPostCanastilla(tempObjetoPostCanastilla);
-
-          // setShowTerceroNoExiste(false);
-        } else {
         }
       } catch (error) {}
     };
-
     fetchData();
+    // Obtener turno y empleado desde localStorage
+    const turnoLocal = JSON.parse(localStorage.getItem("turno"));
+    setTurno(turnoLocal);
   }, []);
   return (
     <div className="div-canastilla row">
+      {/* Información de turno y empleado */}
+      <div className="w-100">
+        <div className="text-white info-isla-div">
+          <div className="row info-turno-div pt-2">
+            <div className="col-4 turno-xs">
+              <p className="text-end texto-turno">Turno: </p>
+              <p className="text-end texto-turno">Empleado:</p>
+            </div>
+            <div className="col-7 turno-xs-info">
+              <p className="texto-turno">
+                {turno === null || turno === "" ? "N/A" : turno.fechaApertura}
+              </p>
+              <p className="texto-turno">
+                {turno === null || turno === "" ? "N/A" : turno.empleado}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="col-4 pt-4 pb-4 left-column columnas custom-style-canastilla">
         <div className="info-div ">
           <div className="text-white">
             <label className="titulo-informacion text-white py-1 ms-2">
               AGREGAR PRODUCTO
             </label>
+            <input
+              type="text"
+              className="form-control dark-blue-input my-2"
+              placeholder="Buscar producto por descripción..."
+              value={filtroProducto}
+              onChange={handleFiltroProducto}
+            />
             <select
               className="form-select d-inline w-80 altura-select select-white-blue text-select-list my-2 select-producto-xs"
               aria-label="Default select example"
               value={productoSeleccionado?.canastillaId || ""}
               onChange={(event) => {
                 const selectedProductId = event.target.value;
-                const selectedProduct = productos.find(
+                // Buscar en la lista filtrada primero, luego en la lista completa
+                let selectedProduct = productosFiltrados.find(
                   (product) =>
                     product.canastillaId === parseFloat(selectedProductId, 10)
                 );
+                
+                // Si no se encuentra en filtrados, buscar en la lista completa
+                if (!selectedProduct) {
+                  selectedProduct = productos.find(
+                    (product) =>
+                      product.canastillaId === parseFloat(selectedProductId, 10)
+                  );
+                }
+                
                 setProductoSeleccionado(selectedProduct);
               }}
             >
               <option value="">Selecciona el producto</option>
-              {Array.isArray(productos) &&
-                productos.map((elemento) => (
+              {Array.isArray(productosFiltrados) &&
+                productosFiltrados.map((elemento) => (
                   <option
                     key={elemento.canastillaId}
                     value={elemento.canastillaId}

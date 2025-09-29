@@ -24,6 +24,11 @@ import ModalFidelizarVenta from "./modalFidelizarVenta";
 import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
 const Combustible = () => {
+  // Opciones permitidas para placa
+  
+
+  // Estado para modo de placa: "PLACA" o "PALABRA"
+  const [modoPlaca, setModoPlaca] = useState("PLACA");
   const [showAlertError, setShowAlertError] = useState(false);
   const handleSetShowAlertError = (show) => setShowAlertError(show);
   const [codigoEmpleado, setCodigoEmpleado] = useState("");
@@ -173,10 +178,7 @@ const Combustible = () => {
 
   const handleEstadoFactura = async (factura) =>{
 
-    
-    console.log(window.FormasPagos);
-      console.log(window.FormasPagos.includes(factura.codigoFormaPago));
-      if (window.FormasPagos.includes(factura.codigoFormaPago)) {
+      if (window.ValidaFormasDePago && window.FormasPagos && window.FormasPagos.includes(factura.codigoFormaPago)) {
         let formasPago = await GetFormasDePago();
         setformasDePago(
           formasPago.filter((f) => window.FormasPagos.includes(f.id))
@@ -186,7 +188,8 @@ const Combustible = () => {
         setformasDePago(formasPago);
       }
 
-      if (factura.numeroTransaccion) {
+      // Solo bloquear si la transacción existe Y está finalizada
+      if (factura.numeroTransaccion && factura.estadoTransaccion === 'finalizada') {
         setDisableNumeroTrans(true);
         setDisableForma(true);
       } else {
@@ -201,15 +204,68 @@ const Combustible = () => {
         }
         setDisableForma(false);
       }
-      if (factura.codigoFormaPago == 6) {
+      if (window.BloqueaCredito && factura.codigoFormaPago == 6) {
         setUsuarioBloqueado(true);
       } else {
         setUsuarioBloqueado(false);
       }
   }
 
+  // Función para verificar el estado de la transacción
+  const verificarEstadoTransaccion = async (numeroTransaccion) => {
+    // Implementa tu lógica aquí para determinar si la transacción está finalizada
+    // Ejemplo: verificar por longitud o formato
+    if (numeroTransaccion && numeroTransaccion.length >= 8) {
+      return true; // Considera finalizada si tiene 8+ caracteres
+    }
+    
+    // Aquí puedes agregar más lógica según tus criterios:
+    // - Consultar una API
+    // - Verificar contra una lista predefinida
+    // - Verificar por patrón específico
+    
+    return false; // Por defecto no está finalizada
+  };
+
+  // Función específica para manejar el número de transacción
+  const handleBlurNumeroTransaccion = async (event) => {
+    const numeroTransaccion = event.target.value;
+    
+    // Actualizar la factura con el nuevo número de transacción
+    const tempFactura = {
+      ...ultimaFactura,
+      numeroTransaccion: numeroTransaccion
+    };
+    
+    // Si hay número de transacción, verificar si está finalizada
+    if (numeroTransaccion && numeroTransaccion.trim() !== '') {
+      const estaFinalizada = await verificarEstadoTransaccion(numeroTransaccion);
+      tempFactura.estadoTransaccion = estaFinalizada ? 'finalizada' : 'pendiente';
+    } else {
+      tempFactura.estadoTransaccion = null;
+    }
+    
+    setUltimaFactura(tempFactura);
+    await handleEstadoFactura(tempFactura);
+  };
+
   const handleChangeFactura = async (event) => {
-    if (
+    if (event.target.name === "placa" && modoPlaca === "PLACA") {
+      // Validar formato placa: 3 letras mayúsculas + 3 números
+      const value = event.target.value.toUpperCase();
+      const regex = /^[A-Z]{3}[0-9]{3}$/;
+      if (value === "" || regex.test(value)) {
+        const tempFactura = { ...ultimaFactura, placa: value };
+        setUltimaFactura(tempFactura);
+      }
+    } else if (event.target.name === "placa" && modoPlaca === "PALABRA") {
+      // Solo permitir palabras de la lista
+      const value = event.target.value;
+      if (window.palabrasPermitidas.includes(value)) {
+        const tempFactura = { ...ultimaFactura, placa: value };
+        setUltimaFactura(tempFactura);
+      }
+    } else if (
       event.target.name != "codigoFormaPago" ||
       !window.DesabilitaFormasNoCredito
     ) {
@@ -219,7 +275,7 @@ const Combustible = () => {
       };
       setUltimaFactura(tempFactura);
       await handleEstadoFactura(tempFactura)
-    } 
+    }
   };
 
   const fetcInicial = async () => {
@@ -249,7 +305,10 @@ const Combustible = () => {
     if (respuesta === "fail") {
       handleSetShowAlertError(true);
     } else {
-      await ImprimirNativo(respuesta);
+      if(window.imprimirNativo){
+
+          await ImprimirNativo(respuesta);
+        }
     }
   };
 
@@ -456,19 +515,55 @@ const Combustible = () => {
                   name="numeroTransaccion"
                   value={ultimaFactura.numeroTransaccion || ""}
                   disabled={disableNumeroTrans || bloqueado}
-                  onChange={handleChangeFactura}
+                  onChange={(event) => {
+                    // Solo actualizar el valor sin validaciones
+                    const tempFactura = {
+                      ...ultimaFactura,
+                      numeroTransaccion: event.target.value
+                    };
+                    setUltimaFactura(tempFactura);
+                  }}
+                  onBlur={handleBlurNumeroTransaccion}
+                  placeholder="Ingrese número de transacción"
                 ></input>
               </div>
               <div className="div-info-venta ">
                 <label className="label-info-venta ">Placa</label>
-                <input
-                  type="text"
-                  className="form-control select-white-blue w-75 altura-select text-select-list"
-                  name="placa"
-                  disabled={bloqueado}
-                  value={ultimaFactura.placa || ""}
-                  onChange={handleChangeFactura}
-                ></input>
+                <div className="d-flex flex-row align-items-center">
+                  <select
+                    className="form-select w-25 me-2"
+                    value={modoPlaca}
+                    onChange={e => setModoPlaca(e.target.value)}
+                  >
+                    <option value="PLACA">PLACA</option>
+                    <option value="PALABRA">PALABRA</option>
+                  </select>
+                  {modoPlaca === "PLACA" ? (
+                    <input
+                      type="text"
+                      className="form-control select-white-blue w-50 altura-select text-select-list"
+                      name="placa"
+                      disabled={bloqueado}
+                      value={ultimaFactura.placa || ""}
+                      maxLength={6}
+                      placeholder="ABC123"
+                      onChange={handleChangeFactura}
+                    />
+                  ) : (
+                    <select
+                      className="form-select select-white-blue w-50 altura-select text-select-list"
+                      name="placa"
+                      disabled={bloqueado}
+                      value={window.palabrasPermitidas.includes(ultimaFactura.placa) ? ultimaFactura.placa : ""}
+                      onChange={handleChangeFactura}
+                    >
+                      <option value="">Seleccione palabra</option>
+                      {window.palabrasPermitidas.map(palabra => (
+                        <option key={palabra} value={palabra}>{palabra}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
               </div>
               <div className="div-info-venta ">
                 <label className="label-info-venta ">Kilometraje</label>

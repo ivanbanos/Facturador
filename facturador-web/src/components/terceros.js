@@ -22,22 +22,53 @@ const Terceros = () => {
   const [tiposDeIdentificacion, setTiposDeIdentificacion] = useState([]);
   const [identificacion, setIdentificacion] = useState("");
   const handleChangeTercero = (event) => {
+    let value = event.target.value;
+    // Forzar mayúsculas en nombre, dirección y coD_CLI
+    if (["nombre", "direccion", "coD_CLI"].includes(event.target.name)) {
+      value = value.toUpperCase();
+    }
+    // Teléfono solo números
+    if (event.target.name === "telefono") {
+      value = value.replace(/[^0-9]/g, "");
+    }
+    // Identificación solo números
+    if (event.target.name === "identificacion") {
+      value = value.replace(/[^0-9]/g, "");
+    }
+    // Correo a mayúsculas
+    if (event.target.name === "correo") {
+      value = value.toUpperCase();
+    }
     const tempTercero = {
       ...tercero,
-      [event.target.name]: event.target.value,
+      [event.target.name]: value,
     };
     setTercero(tempTercero);
   };
   function formIsValid() {
     const _errores = {};
     if (!tercero.nombre) _errores.nombre = "Se requiere el nombre";
-    // if (!tercero.telefono) _errores.telefono = "Se requiere el teléfono";
-    // if (!tercero.direccion) _errores.direccion = "Se requiere la dirección";
-    if (!tercero.identificacion)
+    if (!tercero.telefono) {
+      _errores.telefono = "Se requiere el teléfono";
+    } else if (!/^\d{7,}$/.test(tercero.telefono)) {
+      _errores.telefono = "Teléfono inválido (mínimo 7 dígitos)";
+    }
+    if (!tercero.direccion) {
+      _errores.direccion = "Se requiere la dirección";
+    }
+    if (!tercero.identificacion) {
       _errores.identificacion = "Se requiere la identificación";
+    } else if (!/^\d+$/.test(tercero.identificacion)) {
+      _errores.identificacion = "Identificación inválida";
+    }
     if (!tercero.tipoIdentificacion)
       _errores.tipoIdentificacion = "Se requiere el tipo de identificación";
-    // if (!tercero.correo) _errores.correo = "Se requiere el correo";
+    if (!tercero.correo) {
+      _errores.correo = "Se requiere el correo";
+    } else if (!/^([A-Z0-9_\.-]+)@([A-Z0-9\.-]+)\.([A-Z]{2,})$/i.test(tercero.correo)) {
+      _errores.correo = "Correo inválido";
+    }
+    
     setErrores(_errores);
     return Object.keys(_errores).length === 0;
   }
@@ -59,7 +90,19 @@ const Terceros = () => {
   };
   const handleChangeIdentificacion = async (event) => {
     const nuevaIdentificacion = event.target.value;
-    setIdentificacion(nuevaIdentificacion);
+    // Solo permitir números
+    if (/^\d*$/.test(nuevaIdentificacion)) {
+      setIdentificacion(nuevaIdentificacion);
+    }
+  };
+
+  // Función para validar entrada de identificación en tiempo real
+  const handleKeyPressIdentificacion = (event) => {
+    // Solo permitir números (0-9), backspace, delete, tab, enter
+    if (!/[0-9]/.test(event.key) && 
+        !['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+      event.preventDefault();
+    }
   };
 
   const [showAlertError, setShowAlertError] = useState(false);
@@ -120,7 +163,7 @@ const Terceros = () => {
                     </label>
                     <div className="col-sm-8">
                       <input
-                        type="number"
+                        type="text"
                         className={`form-control tercero-input ${
                           errores.identificacion ? "is-invalid" : ""
                         }`}
@@ -128,10 +171,15 @@ const Terceros = () => {
                         value={identificacion}
                         onChange={handleChangeIdentificacion}
                         onBlur={handleOnBlurIdentificacion}
+                        onKeyPress={handleKeyPressIdentificacion}
                         required
                         placeholder={errores.identificacion || "Identificación"}
-                        onkeydown="return /[0-9]/i.test(event.key)"
                       ></input>
+                      {errores.identificacion && (
+                        <div className="alert alert-danger error-container">
+                          {errores.identificacion}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -202,17 +250,17 @@ const Terceros = () => {
                     <label className="col-sm-4 col-form-label">Teléfono</label>
                     <div className="col-sm-8">
                       <input
-                        type="number"
+                        type="text"
                         className={`form-control tercero-input ${
                           errores.telefono ? "is-invalid" : ""
                         }`}
                         name="telefono"
                         value={tercero.telefono}
                         onChange={handleChangeTercero}
-                        onkeydown="return /[0-9]/i.test(event.key)"
+                        maxLength={15}
                         required
                         placeholder={errores.telefono || "Teléfono"}
-                      ></input>
+                      />
                     </div>
                   </div>
                   <div className="row mb-3">
@@ -228,7 +276,13 @@ const Terceros = () => {
                         onChange={handleChangeTercero}
                         required
                         placeholder={errores.correo || "Correo"}
-                      ></input>
+                        style={{ textTransform: "uppercase" }}
+                      />
+                      {errores.correo && (
+                        <div className="alert alert-danger error-container">
+                          {errores.correo}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </form>

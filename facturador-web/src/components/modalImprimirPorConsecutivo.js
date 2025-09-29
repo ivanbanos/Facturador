@@ -78,8 +78,10 @@ const ModalImprimirPorConsecutivo = (props) => {
               if (respuestaImprimir === "fail") {
                 props.handleSetShowAlertError(true);
               } else {
-                
-                await ImprimirNativo(respuestaImprimir);
+                if(window.imprimirNativo){
+
+          await ImprimirNativo(respuestaImprimir);
+        }
                 setConsecutivo("");
                 setShowAlertImpresionExitosa(true);
               }

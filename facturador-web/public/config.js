@@ -5,3 +5,14 @@ var ConvertirAOrden = false;
 var GenerarFacturaelectronica = true;
 var DesabilitaFormasNoCredito=true;
 var FormasPagos = [1,4,98];
+var palabrasPermitidas = [
+    "PIMPINAS",
+    "CANECAS",
+    "BIDONES",
+    "PLANTA",
+    "MÁQUINA",
+    "PRUEBA",
+    "AIRE",
+    "TANQUE",
+    "BALDE"
+  ];

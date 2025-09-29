@@ -63,7 +63,11 @@ const ModalImprimir = (props) => {
 
           console.log(ultimaFactura);
           const text = await GetUltimaFacturaPorCaraTexto(ultimaFactura.cara);
+          if(window.imprimirNativo){
+
           await ImprimirNativo(text);
+        }
+          
           if (respuestaImprimir == "Ok") {
             setShowAlertImpresionExitosa(true);
           }

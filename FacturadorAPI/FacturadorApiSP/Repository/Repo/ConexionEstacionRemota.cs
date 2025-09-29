@@ -169,7 +169,7 @@ namespace FacturadorAPI.Repository.Repo
         {
             using (var client = new HttpClient())
             {
-                var path = $"/api/Canastilla";
+                var path = $"/api/Canastilla?estacion={_infoEstacion.EstacionFuente}";
 
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", token);
@@ -220,7 +220,7 @@ namespace FacturadorAPI.Repository.Repo
         {
             using (var client = new HttpClient())
             {
-                var path = $"/api/Canastilla";
+                var path = $"/api/Canastilla?estacion={_infoEstacion.EstacionFuente}";
 
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", token);
