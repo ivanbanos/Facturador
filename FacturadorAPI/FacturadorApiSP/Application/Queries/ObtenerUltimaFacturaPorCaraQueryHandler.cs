@@ -60,7 +60,8 @@ namespace FacturadorAPI.Application.Queries
                 Empleado = factura.Venta.EMPLEADO,
                 fechaProximoMantenimiento = factura.Venta.FECH_PRMA,
                 IdCara = factura.Venta.COD_CAR,
-                Tercero = factura.Tercero
+                Tercero = factura.Tercero,
+                Enviada = factura.enviada,
             };
 
         }

@@ -48,5 +48,6 @@ namespace FacturadorAPI.Models
         public string IButton { get; set; }
         public DateTime? fechaProximoMantenimiento { get; set; }
         public string? numeroTransaccion { get; set; }
+        public bool? Enviada { get; set; }
     }
 }

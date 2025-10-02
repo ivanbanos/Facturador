@@ -24,8 +24,9 @@ import ModalFidelizarVenta from "./modalFidelizarVenta";
 import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
 const Combustible = () => {
+  // Estado para mostrar error de placa
+  const [placaError, setPlacaError] = useState("");
   // Opciones permitidas para placa
-  
 
   // Estado para modo de placa: "PLACA" o "PALABRA"
   const [modoPlaca, setModoPlaca] = useState("PLACA");
@@ -175,41 +176,45 @@ const Combustible = () => {
     }
   };
 
+  const handleEstadoFactura = async (factura) => {
+    if (
+      window.ValidaFormasDePago &&
+      window.FormasPagos &&
+      window.FormasPagos.includes(factura.codigoFormaPago)
+    ) {
+      let formasPago = await GetFormasDePago();
+      setformasDePago(
+        formasPago.filter((f) => window.FormasPagos.includes(f.id))
+      );
+    } else {
+      let formasPago = await GetFormasDePago();
+      setformasDePago(formasPago);
+    }
 
-  const handleEstadoFactura = async (factura) =>{
-
-      if (window.ValidaFormasDePago && window.FormasPagos && window.FormasPagos.includes(factura.codigoFormaPago)) {
-        let formasPago = await GetFormasDePago();
-        setformasDePago(
-          formasPago.filter((f) => window.FormasPagos.includes(f.id))
-        );
+    // Solo bloquear si la transacción existe Y está finalizada
+    if (
+      factura.estadoTransaccion === "finalizada"
+    ) {
+      setDisableNumeroTrans(true);
+      setDisableForma(true);
+    } else {
+      if (
+        factura.codigoFormaPago == 1 ||
+        factura.codigoFormaPago == 2 ||
+        factura.codigoFormaPago == 3
+      ) {
+        setDisableNumeroTrans(false);
       } else {
-        let formasPago = await GetFormasDePago();
-        setformasDePago(formasPago);
-      }
-
-      // Solo bloquear si la transacción existe Y está finalizada
-      if (factura.numeroTransaccion && factura.estadoTransaccion === 'finalizada') {
         setDisableNumeroTrans(true);
-        setDisableForma(true);
-      } else {
-        if (
-          factura.codigoFormaPago == 1 ||
-          factura.codigoFormaPago == 2 ||
-          factura.codigoFormaPago == 3
-        ) {
-          setDisableNumeroTrans(false);
-        } else {
-          setDisableNumeroTrans(true);
-        }
-        setDisableForma(false);
       }
-      if (window.BloqueaCredito && factura.codigoFormaPago == 6) {
-        setUsuarioBloqueado(true);
-      } else {
-        setUsuarioBloqueado(false);
-      }
-  }
+      setDisableForma(false);
+    }
+    if ((window.BloqueaCredito && factura.codigoFormaPago == 6) || factura.Enviada) {
+      setUsuarioBloqueado(true);
+    } else {
+      setUsuarioBloqueado(false);
+    }
+  };
 
   // Función para verificar el estado de la transacción
   const verificarEstadoTransaccion = async (numeroTransaccion) => {
@@ -218,45 +223,53 @@ const Combustible = () => {
     if (numeroTransaccion && numeroTransaccion.length >= 8) {
       return true; // Considera finalizada si tiene 8+ caracteres
     }
-    
+
     // Aquí puedes agregar más lógica según tus criterios:
     // - Consultar una API
     // - Verificar contra una lista predefinida
     // - Verificar por patrón específico
-    
+
     return false; // Por defecto no está finalizada
   };
 
   // Función específica para manejar el número de transacción
   const handleBlurNumeroTransaccion = async (event) => {
     const numeroTransaccion = event.target.value;
-    
+
     // Actualizar la factura con el nuevo número de transacción
     const tempFactura = {
       ...ultimaFactura,
-      numeroTransaccion: numeroTransaccion
+      numeroTransaccion: numeroTransaccion,
     };
-    
+
     // Si hay número de transacción, verificar si está finalizada
-    if (numeroTransaccion && numeroTransaccion.trim() !== '') {
-      const estaFinalizada = await verificarEstadoTransaccion(numeroTransaccion);
-      tempFactura.estadoTransaccion = estaFinalizada ? 'finalizada' : 'pendiente';
+    if (numeroTransaccion && numeroTransaccion.trim() !== "") {
+      const estaFinalizada = await verificarEstadoTransaccion(
+        numeroTransaccion
+      );
+      tempFactura.estadoTransaccion = estaFinalizada
+        ? "finalizada"
+        : "pendiente";
     } else {
       tempFactura.estadoTransaccion = null;
     }
-    
+
     setUltimaFactura(tempFactura);
     await handleEstadoFactura(tempFactura);
   };
 
   const handleChangeFactura = async (event) => {
     if (event.target.name === "placa" && modoPlaca === "PLACA") {
-      // Validar formato placa: 3 letras mayúsculas + 3 números
+      // Permitir que el input se actualice siempre, validando solo al guardar
       const value = event.target.value.toUpperCase();
+      const tempFactura = { ...ultimaFactura, placa: value };
+      setUltimaFactura(tempFactura);
+      // Validar formato y mostrar error visual
       const regex = /^[A-Z]{3}[0-9]{3}$/;
-      if (value === "" || regex.test(value)) {
-        const tempFactura = { ...ultimaFactura, placa: value };
-        setUltimaFactura(tempFactura);
+      if (value.length === 6 && !regex.test(value)) {
+        setPlacaError("Formato inválido. Ejemplo: ABC123");
+      } else {
+        setPlacaError("");
       }
     } else if (event.target.name === "placa" && modoPlaca === "PALABRA") {
       // Solo permitir palabras de la lista
@@ -274,7 +287,7 @@ const Combustible = () => {
         [event.target.name]: event.target.value,
       };
       setUltimaFactura(tempFactura);
-      await handleEstadoFactura(tempFactura)
+      await handleEstadoFactura(tempFactura);
     }
   };
 
@@ -305,10 +318,9 @@ const Combustible = () => {
     if (respuesta === "fail") {
       handleSetShowAlertError(true);
     } else {
-      if(window.imprimirNativo){
-
-          await ImprimirNativo(respuesta);
-        }
+      if (window.imprimirNativo) {
+        await ImprimirNativo(respuesta);
+      }
     }
   };
 
@@ -318,8 +330,8 @@ const Combustible = () => {
       setUltimaFactura(factura);
       setTercero(factura.tercero);
       setIdentificacion(factura.tercero.identificacion);
-       
-      await handleEstadoFactura(factura)
+
+      await handleEstadoFactura(factura);
     }
 
     let facturaTexto = await GetUltimaFacturaPorCaraTexto(idCara);
@@ -519,7 +531,7 @@ const Combustible = () => {
                     // Solo actualizar el valor sin validaciones
                     const tempFactura = {
                       ...ultimaFactura,
-                      numeroTransaccion: event.target.value
+                      numeroTransaccion: event.target.value,
                     };
                     setUltimaFactura(tempFactura);
                   }}
@@ -533,33 +545,51 @@ const Combustible = () => {
                   <select
                     className="form-select w-25 me-2"
                     value={modoPlaca}
-                    onChange={e => setModoPlaca(e.target.value)}
+                    onChange={(e) => setModoPlaca(e.target.value)}
                   >
                     <option value="PLACA">PLACA</option>
                     <option value="PALABRA">PALABRA</option>
                   </select>
                   {modoPlaca === "PLACA" ? (
-                    <input
-                      type="text"
-                      className="form-control select-white-blue w-50 altura-select text-select-list"
-                      name="placa"
-                      disabled={bloqueado}
-                      value={ultimaFactura.placa || ""}
-                      maxLength={6}
-                      placeholder="ABC123"
-                      onChange={handleChangeFactura}
-                    />
+                    <div className="w-100">
+                      <input
+                        type="text"
+                        className={`form-control select-white-blue w-50 altura-select text-select-list ${
+                          placaError ? "is-invalid" : ""
+                        }`}
+                        name="placa"
+                        disabled={bloqueado}
+                        value={ultimaFactura.placa || ""}
+                        maxLength={6}
+                        placeholder="ABC123"
+                        onChange={handleChangeFactura}
+                      />
+                      {placaError && (
+                        <div
+                          className="invalid-feedback d-block"
+                          style={{ fontSize: "0.9em" }}
+                        >
+                          {placaError}
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <select
                       className="form-select select-white-blue w-50 altura-select text-select-list"
                       name="placa"
                       disabled={bloqueado}
-                      value={window.palabrasPermitidas.includes(ultimaFactura.placa) ? ultimaFactura.placa : ""}
+                      value={
+                        window.palabrasPermitidas.includes(ultimaFactura.placa)
+                          ? ultimaFactura.placa
+                          : ""
+                      }
                       onChange={handleChangeFactura}
                     >
                       <option value="">Seleccione palabra</option>
-                      {window.palabrasPermitidas.map(palabra => (
-                        <option key={palabra} value={palabra}>{palabra}</option>
+                      {window.palabrasPermitidas.map((palabra) => (
+                        <option key={palabra} value={palabra}>
+                          {palabra}
+                        </option>
                       ))}
                     </select>
                   )}
@@ -571,6 +601,7 @@ const Combustible = () => {
                   type="text"
                   className="form-control select-white-blue w-75 altura-select text-select-list"
                   name="kilometraje"
+                  disabled={bloqueado}
                   value={ultimaFactura.kilometraje || ""}
                   onChange={handleChangeFactura}
                 ></input>
