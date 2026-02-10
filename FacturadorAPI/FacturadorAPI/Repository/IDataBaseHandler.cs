@@ -35,5 +35,6 @@ namespace MachineUtilizationApi.Repository
         Task<TurnoSiges> ObtenerTurnoPorIsla(int idIsla, CancellationToken cancellationToken);
         Task<FacturaSiges> ObtenerUltimaFacturaPorCara(int idCara, CancellationToken cancellationToken);
         Task ReimprimirTurno(DateTime fecha, int idIsla, int posicion);
+        Task ReimprimirFacturaCanastilla(int consecutivo);
     }
 }

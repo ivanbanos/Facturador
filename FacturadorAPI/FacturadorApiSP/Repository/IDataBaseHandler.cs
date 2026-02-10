@@ -49,5 +49,6 @@ namespace MachineUtilizationApi.Repository
         Task<IEnumerable<Factura>> getFacturaPorTurno(int isla, DateTime fecha, int num);
         Task<TurnoSiges> ObtenerTurnoIslaYFecha(int isla, DateTime fecha, int num);
         Task MandarImprimirObjeto(int idIsla, DateTime fecha, int posicion, string v);
+        Task ReimprimirFacturaCanastilla(int consecutivo);
     }
 }

@@ -419,5 +419,13 @@ namespace MachineUtilizationApi.Repository
                 {"@ventaId",ventaId }
                             });
         }
+
+        public async Task ReimprimirFacturaCanastilla(int consecutivo)
+        {
+            await LoadDataTableFromStoredProcAsync("ReimprimirFacturaCanastilla",
+                            new Dictionary<string, object>{
+                {"@consecutivo", consecutivo }
+                            });
+        }
     }
 }

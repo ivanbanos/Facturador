@@ -11,6 +11,7 @@ import ModalAddTercero from "./modalAddTercero";
 import AlertError from "./alertaError";
 import AlertVentaExitosa from "./AlertVentaExitosa";
 import ImprimirNativo from "../Services/getServices/ImprimirNativo";
+import ModalReimprimirFacturaCanastilla from "./modalReimprimirFacturaCanastilla";
 
 const Canastilla = () => {
   // Estado para turno y empleado
@@ -477,6 +478,9 @@ const Canastilla = () => {
           >
             <span className="">Imprimir ultimo</span> <span>turno</span>
           </button>
+          <ModalReimprimirFacturaCanastilla
+            handleSetShowAlertError={handleSetShowAlertError}
+          />
         </div>
         <ModalAddTercero
           showAddTercero={showAddTercero}

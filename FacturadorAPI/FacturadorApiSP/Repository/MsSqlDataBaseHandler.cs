@@ -701,5 +701,14 @@ namespace MachineUtilizationApi.Repository
                          });
 
         }
+
+        public async Task ReimprimirFacturaCanastilla(int consecutivo)
+        {
+            ConnectionString = _settings.Facturacion;
+            await LoadDataTableFromStoredProcAsync("ReimprimirFacturaCanastilla",
+                            new Dictionary<string, object>{
+                {"@consecutivo", consecutivo }
+                            });
+        }
     }
 }
