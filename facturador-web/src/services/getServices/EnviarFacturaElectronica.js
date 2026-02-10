@@ -1,33 +1,31 @@
 
 const EnviarFacturaElectronica = async (ultimaFactura, inpresiones) => {
   try {
-    if(ultimaFactura.kilometraje==""){
-    ultimaFactura.kilometraje="NP";
-  }
-  if(ultimaFactura.placa==""){
-    ultimaFactura.placa="NP";
-  }
-  if(!ultimaFactura.numeroTransaccion || ultimaFactura.numeroTransaccion==""){
-    ultimaFactura.numeroTransaccion="NA";
-  }
+    const kilometraje = ultimaFactura?.kilometraje ? ultimaFactura.kilometraje : "NP";
+    const placa = ultimaFactura?.placa ? ultimaFactura.placa : "NP";
+    const numeroTransaccion = ultimaFactura?.numeroTransaccion
+      ? ultimaFactura.numeroTransaccion
+      : "NA";
+    const impresiones = Number(inpresiones) > 0 ? Number(inpresiones) : 1;
+
     const response = await fetch(
       window.SERVER_URL +
-      "/api/Facturas/Imprimir/" +
-      ultimaFactura.facturaPOSId +
-      "/" +
-      ultimaFactura.tercero.terceroId +
-      "/" +
-      ultimaFactura.codigoFormaPago +
-      "/" +
-      ultimaFactura.ventaId +
-      "?Kilometraje=" +
-      ultimaFactura.kilometraje +
-      "&Placa=" +
-      ultimaFactura.placa +
-      "&NumeroTransaccion=" +
-      ultimaFactura.numeroTransaccion +
-      "&impresiones=" +
-      inpresiones,
+        "/api/Facturas/Imprimir/" +
+        ultimaFactura.facturaPOSId +
+        "/" +
+        ultimaFactura.tercero.terceroId +
+        "/" +
+        ultimaFactura.codigoFormaPago +
+        "/" +
+        ultimaFactura.ventaId +
+        "?Kilometraje=" +
+        encodeURIComponent(kilometraje) +
+        "&Placa=" +
+        encodeURIComponent(placa) +
+        "&NumeroTransaccion=" +
+        encodeURIComponent(numeroTransaccion) +
+        "&impresiones=" +
+        impresiones,
       {
         method: "POST",
         mode: "cors",

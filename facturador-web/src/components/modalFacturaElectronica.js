@@ -12,8 +12,7 @@ const ModalFacturaElectronica = (props) => {
   const ultimaFactura = props.ultimaFactura;
   const [showAlertImpresionExitosa, setShowAlertImpresionExitosa] =
     useState(false);
-    const [enviando, setEnviando] =
-      useState(false);
+  const [enviando, setEnviando] = useState(false);
   const [cantidad, setCantidad] = useState(2);
 
   const [
@@ -22,7 +21,13 @@ const ModalFacturaElectronica = (props) => {
   ] = useState(false);
 
   const handleChangeCantidad = async (event) => {
-    setCantidad(event.target.value);
+    const value = event.target.value;
+    if (value === "") {
+      setCantidad("");
+      return;
+    }
+    const numericValue = Number(value);
+    setCantidad(Number.isNaN(numericValue) ? 1 : Math.max(1, numericValue));
   };
   return (
     <>
@@ -48,7 +53,8 @@ const ModalFacturaElectronica = (props) => {
             placeholder="Cantidad"
             name="cantidad"
             value={cantidad || ""}
-            onkeydown="return /[a-zA-Z0-9]/i.test(event.key)"
+            min={1}
+            step={1}
             onChange={handleChangeCantidad}
           ></input>
         </Modal.Body>
@@ -58,10 +64,11 @@ const ModalFacturaElectronica = (props) => {
             
             disabled={enviando}
             onClick={async () => {
-              setEnviando(true)
+              setEnviando(true);
+              const cantidadEnviar = Number(cantidad) > 0 ? Number(cantidad) : 1;
               const respuestaEnviar = await EnviarFacturaElectronica(
                 ultimaFactura,
-                cantidad
+                cantidadEnviar
               );
               if (respuestaEnviar === "fail") {
                 props.handleSetShowAlertError(true);
@@ -71,7 +78,7 @@ const ModalFacturaElectronica = (props) => {
                 handleCloseFacturaElectronica();
                 props.getFacturaInformacion();
               }
-              setEnviando(false)
+              setEnviando(false);
             }}
           >
             Enviar e Imprimir
@@ -80,11 +87,11 @@ const ModalFacturaElectronica = (props) => {
             className="botton-medium-blue-modal"
             disabled={enviando}
             onClick={async () => {
-              
-              setEnviando(true)
+              setEnviando(true);
+              const cantidadImprimir = Number(cantidad) > 0 ? Number(cantidad) : 1;
               const respuestaImprimir = await ImprimirFactura(
                 ultimaFactura,
-                cantidad
+                cantidadImprimir
               );
               console.log(ultimaFactura);
               const text = await GetUltimaFacturaPorCaraTexto(
@@ -101,7 +108,7 @@ const ModalFacturaElectronica = (props) => {
                 handleCloseFacturaElectronica();
               }
               
-              setEnviando(false)
+              setEnviando(false);
             }}
           >
             No Enviar e Imprimir

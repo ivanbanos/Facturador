@@ -1,4 +1,6 @@
 ﻿using FacturadorAPI.Models;
+using FacturadorAPI.Repository.Repo;
+using MachineUtilizationApi.Extensions;
 using MachineUtilizationApi.Repository;
 using MediatR;
 using Microsoft.Extensions.Options;
@@ -13,14 +15,17 @@ namespace FacturadorAPI.Application.Queries
         private readonly ILogger<ObtenerUltimaFacturaPorCaraTextoQueryHandler> _logger;
         private readonly IDataBaseHandler _databaseHandler;
         private readonly InfoEstacion _infoEstacion;
+        private readonly IConexionEstacionRemota _conexionEstacionRemota;
 
         public ObtenerUltimaFacturaPorCaraTextoQueryHandler(ILogger<ObtenerUltimaFacturaPorCaraTextoQueryHandler> logger, 
             IDataBaseHandler databaseHandler,
-            IOptions<InfoEstacion> options)
+            IOptions<InfoEstacion> options,
+            IConexionEstacionRemota conexionEstacionRemota)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _databaseHandler = databaseHandler ?? throw new ArgumentNullException(nameof(databaseHandler));
             _infoEstacion = options.Value;
+            _conexionEstacionRemota = conexionEstacionRemota ?? throw new ArgumentNullException(nameof(conexionEstacionRemota));
         }
 
         public async Task<string> Handle(ObtenerUltimaFacturaPorCaraTextoQuery request, CancellationToken cancellationToken)
@@ -28,22 +33,44 @@ namespace FacturadorAPI.Application.Queries
 
             var factura = await _databaseHandler.ObtenerUltimaFacturaPorCara(request.IdCara, cancellationToken);
 
-            return getLineasImprimir(factura);
+            return await getLineasImprimir(factura);
         }
 
-        private string getLineasImprimir(FacturaSiges factura)
+        private async Task<string> getLineasImprimir(FacturaSiges factura)
         {
 
             var informacionVenta = new StringBuilder();
             informacionVenta.Append("------------------------------------------------" + "\n");
-            if (factura.Consecutivo == 0)
+               var infoTemp = "";
+               try
+            {
+                var token = await _conexionEstacionRemota.GetToken(default);
+                infoTemp = await _conexionEstacionRemota.GetInfoFacturaElectronica(factura.ventaId, Guid.Parse(_infoEstacion.EstacionFuente), token);
+
+            }
+            catch (Exception)
+            {
+                infoTemp = null;
+            }
+            if (!string.IsNullOrEmpty(infoTemp))
+            {
+                infoTemp = infoTemp.Replace("\n\r", " ");
+
+                var facturaElectronica = infoTemp.Split(' ');
+
+                informacionVenta.Append(("Factura de Venta Electrónica " + facturaElectronica[2]).Centrar() + "\n\r");
+                informacionVenta.Append(facturaElectronica[3].Centrar() + "\n\r");
+                informacionVenta.Append(facturaElectronica[4].Substring(0, facturaElectronica[4].Length / 2).Centrar() + "\n\r");
+                informacionVenta.Append(facturaElectronica[4].Substring(facturaElectronica[4].Length / 2).Centrar() + "\n\r");
+            }
+            else if (factura.Consecutivo == 0)
             {
 
-                informacionVenta.Append("Orden de despacho No:" + factura.Consecutivo + "\n");
+                informacionVenta.Append(("Orden de despacho No: " + factura.Consecutivo).Centrar() + "\n\r");
             }
             else
             {
-                informacionVenta.Append("Factura de venta P.O.S No: " + factura.DescripcionResolucion + "-" + factura.Consecutivo + "\n");
+                informacionVenta.Append(("Orden de Servicio Temporal: " + factura.Consecutivo).Centrar() + "\n\r");
             }
             informacionVenta.Append("------------------------------------------------" + "\n");
             if (factura.codigoFormaPago != 1)

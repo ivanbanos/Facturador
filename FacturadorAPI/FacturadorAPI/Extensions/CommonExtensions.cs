@@ -1,11 +1,21 @@
 ﻿using System.Data;
 using System.Reflection;
+using System.Text;
 
 namespace MachineUtilizationApi.Extensions
 {
     public static class CommonExtensions
     {
 
+        public static string Centrar(this string text)
+        {
+            var whitespaces = (40 - text.Length) / 2;
+            var tabs = new StringBuilder();
+            whitespaces = whitespaces < 0 ? 0 : whitespaces;
+            tabs.Append(' ', whitespaces);
+            return tabs.ToString() + text;
+
+        }
         public static DataTable ConvertToDataTable<T>(T[] array)
         {
             PropertyInfo[] properties = array.GetType().GetElementType().GetProperties();
@@ -27,7 +37,7 @@ namespace MachineUtilizationApi.Extensions
             {
                 dc = new DataColumn();
                 dc.ColumnName = pi.Name;
-                if(pi.PropertyType.Name == "States")
+                if (pi.PropertyType.Name == "States")
                 {
                     dc.DataType = typeof(System.Int32);
                 }

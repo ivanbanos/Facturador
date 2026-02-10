@@ -235,7 +235,7 @@ begin try
 	declare @iva float, @turnoAbierto int, @Ventaid int;
 	select @iva=  convert(float,valor) from configuracionEstacion where descripcion = 'iva'
 	
-	select @turnoAbierto = Turno.Id from Turno
+	select top(1) @turnoAbierto =  Turno.Id from Turno
 	inner join turnoSurtidor on turnoSurtidor.idTurno = turno.Id
 	 where idManguera=@IdManguera 
 	 order by Turno.ID desc
@@ -927,16 +927,18 @@ begin try
 
     insert into @facturasTemp (id)
 	select 
-	top(100)ventaId
+	top(20)ventaId
 	from FacturasPOS
-    where enviada = 0 or enviada is null
+    where (enviada = 0 or enviada is null)
+    and fecha < DATEADD(minute, -10, GETDATE())
 	order by ventaId desc
 
 	insert into @facturasTemp (id)
 	select 
-	top(100)ventaId
+	top(20)ventaId
 	from OrdenesDeDespacho
-    where enviada = 0 or enviada is null
+    where (enviada = 0 or enviada is null)
+    and fecha < DATEADD(minute, -10, GETDATE())
 	order by ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
@@ -1388,12 +1390,6 @@ begin try
 		select @consecutivoActual = case when isnull(max(consecutivo)+1, @consecutivoActual) > @consecutivoActual then isnull(max(consecutivo)+1, @consecutivoActual) else @consecutivoActual end  from FacturasCanastilla where resolucionId = @ResolucionId
 
 
-		if @fechafinal is null or @fechafinal < GETDATE() or @ConsecutivoFinal <= @consecutivoActual
-		begin
-			update Resoluciones set estado = 'VE' WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-			select @facturaPOSId as facturaPOSId
-		end
-		else
 		begin
 			if @soloGeneraOrdenes = 'SI' or (  @clientesCreditoGeneranFactura != 'SI' and @COD_FOR_PAG !=1)
 			begin
@@ -1403,37 +1399,22 @@ begin try
 			
 				select @facturaPOSId = SCOPE_IDENTITY()
 
-				select @facturaPOSId as facturaPOSId
 				
 			end
 			else
 			begin
-			while @facturaPOSId is null
-			begin
-				select @verificarConsecutivo = null
-				select @verificarConsecutivo = consecutivo from FacturasPOS  where  consecutivo = @consecutivoActual
-				if (@verificarConsecutivo is not null )
-				begin 
-					update Resoluciones set consecutivoActual = consecutivoActual+1 WHERE esPos = 'S' and estado = 'AC'  and (@mismaResolucion = 'SI' or tipo = 0)
-					select @consecutivoActual=consecutivoActual from Resoluciones where esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-				end
-				else
-				begin
-					insert into FacturasPOS (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago)
-					select @Fecha, @ResolucionId, @consecutivoActual, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @COD_FOR_PAG
-					from Resoluciones WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
+			insert into OrdenesDeDespacho (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago)
+				values(@Fecha, @ResolucionId, -1, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @COD_FOR_PAG)
 			
-					select @facturaPOSId = SCOPE_IDENTITY()
-
-					update Resoluciones set consecutivoActual = @consecutivoActual+1 WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-				end
+				select @facturaPOSId = SCOPE_IDENTITY()
 			end
 			--exec MandarImprimir @ventaId=@ventaId
-				select @facturaPOSId as facturaPOSId
-			end
+			
 		end
+        
 	end
 
+				select @facturaPOSId as facturaPOSId
 	
 end try
 begin catch
@@ -1750,7 +1731,7 @@ GO
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorIdVenta')
 	DROP PROCEDURE [dbo].[getFacturaPorIdVenta]
 GO
-CREATE procedure [dbo].[getFacturaPorIdVenta]
+create procedure [dbo].[getFacturaPorIdVenta]
 (
 	@idVenta int
 )
@@ -1939,9 +1920,7 @@ begin try
 	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from dbo.FacturasPOS
 	 
-	inner join venta on venta.Id = FacturasPOS.ventaId 
-    left join turno on venta.idturno = turno.id 
-    left join empleado on turno.idEmpleado = empleado.id
+	inner join venta on venta.Id = FacturasPOS.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
 	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
@@ -2009,7 +1988,7 @@ select @soloOrdenes=configId from configuracionEstacion where descripcion = 'Sol
 
 IF @soloOrdenes is null
 begin
-INSERT INTO configuracionEstacion(descripcion,valor) values('SoloGeneraOrdenes','SI')
+INSERT INTO configuracionEstacion(descripcion,valor) values('SoloGeneraOrdenes','NO')
 end
 GO
 
@@ -2928,25 +2907,6 @@ begin try
 	if @noabierto = 0
 	begin
 		update turno set idEstado = 4 where Id=@IdTurno
-
-        
-        declare @facturasTemp as Table(id int)
-
-        insert into @facturasTemp(id)
-        select top(2) Id from Venta
-        where idTurno = @IdTurno
-        order by Id desc
-
-        Update FacturasPOS
-				set impresa = -1,
-				enviada=0
-				from FacturasPOS
-				inner join @facturasTemp ft on FacturasPOS.ventaId = ft.id
-        Update OrdenesDeDespacho
-				set impresa = -1,
-				enviada=0
-				from OrdenesDeDespacho
-				inner join @facturasTemp ft on OrdenesDeDespacho.ventaId = ft.id
 	end
 end try
 begin catch
@@ -3061,7 +3021,9 @@ CREATE TYPE [dbo].[VehiculosType] AS TABLE(
 	[capacidad] [varchar](max) NULL,
 	[estado] [int] NULL,
 	[motivo] [varchar](max) NULL,
-	[motivoTexto] [varchar](max) NULL
+	[motivoTexto] [varchar](max) NULL,
+	[surtido] [int] NULL,
+	[isla] [varchar](max) NULL
 )
 END
 GO
@@ -3117,7 +3079,7 @@ CREATE procedure [dbo].ActualizarTurnoImpreso
 as
 begin try
     set nocount on;
-	update turno set impreso+=1 from venta where turno.ID=@Id
+	update turno set impreso+=1 from Turno where Turno.ID=@Id
     
     
 end try
@@ -3240,13 +3202,14 @@ GO
 drop procedure [dbo].GetFidelizado
 GO
 CREATE procedure [dbo].GetFidelizado
-(@documento varchar(50))
+(@ventaId int)
 as
 begin try
     set nocount on;
 	select *
 	from dbo.Fidelizado 
-	where Fidelizado.documento = @documento
+    inner join VentaFidelizada on Fidelizado.documento = VentaFidelizada.identificacion
+	where VentaFidelizada.ventaId = @ventaId
     
     
 end try
@@ -3306,12 +3269,13 @@ CREATE procedure [dbo].GetVentaFidelizarAutomatica
 as
 begin try
     set nocount on;
-	select TOP (1) Venta.total as ValorVenta, Fidelizado.documento as DocumentoFidelizado, Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo)   from Venta
-	inner join FacturasPOS on FacturasPOS.ventaId = Venta.Id
-	inner join Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
+	select TOP (1) Venta.total as ValorVenta, Fidelizado.documento as DocumentoFidelizado, case when FacturasPOS.ventaId is null then convert(varchar,OrdenesDeDespacho.facturaPOSId) else Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo) end as Factura   from Venta
+	left join FacturasPOS on FacturasPOS.ventaId = Venta.Id
+    left join OrdenesDeDespacho on OrdenesDeDespacho.ventaId = Venta.Id
+	inner join Resoluciones on  (FacturasPOS.resolucionId is not null and FacturasPOS.resolucionId = Resoluciones.ResolucionId) or (OrdenesDeDespacho.resolucionId is not null and OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId) 
 	inner join Vehiculos on Vehiculos.idrom = Venta.Ibutton
 	inner join terceros on Vehiculos.terceroId = terceros.terceroId
-	inner join Fidelizado on Fidelizado.documento = terceros.identificacion
+	left join Fidelizado on Fidelizado.documento = terceros.identificacion
 	where venta.Idmanguera = @idManguera
 	order by venta.id desc
 
@@ -3484,16 +3448,15 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-
 drop procedure [dbo].GetFacturasPorFechas
 GO
-CREATE procedure [dbo].GetFacturasPorFechas
+create procedure [dbo].GetFacturasPorFechas
 (@fechaInicio datetime, @fechaFin datetime)
 as
 begin try
     set nocount on;
-
-	select 
+	
+   select 
 	Resoluciones.habilitada as habilitada,
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
 	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
@@ -3527,8 +3490,7 @@ begin try
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
 	
 	
-	
-	where FacturasPOS.Fecha between @fechaInicio and @fechaFin
+	where FacturasPOS.estado != 'AN' and turno.FechaApertura between @fechaInicio and @fechaFin
 	
     union
 	select 
@@ -3563,11 +3525,10 @@ begin try
 	left join dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
 	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	
+	where  turno.FechaApertura between @fechaInicio and @fechaFin
     
-	where OrdenesDeDespacho.Fecha between @fechaInicio and @fechaFin;
-    
-    
+
+
 end try
 begin catch
     declare 
@@ -3583,18 +3544,142 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-ALTER procedure [dbo].GetVentaFidelizarAutomaticaPorVenta
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'MandarImprimirConsecutivo')
+	DROP PROCEDURE [dbo].[MandarImprimirConsecutivo]
+GO
+CREATE procedure [dbo].[MandarImprimirConsecutivo]
+(
+	@consecutivo int )
+as
+begin try
+		declare @impresa int
+		
+		select @impresa = impresa from FacturasPOS
+				where FacturasPOS.consecutivo = @consecutivo or FacturasPOS.ventaid = @consecutivo
+
+		if @impresa >=0
+		begin
+		Update FacturasPOS
+				set impresa = -1,
+				enviada=0
+				from FacturasPOS
+				where FacturasPOS.consecutivo = @consecutivo or FacturasPOS.ventaid = @consecutivo
+		end
+		else begin
+		
+		Update FacturasPOS
+				set impresa = impresa-1,
+				enviada=0
+				from FacturasPOS
+				where FacturasPOS.consecutivo = @consecutivo or FacturasPOS.ventaid = @consecutivo
+		end
+
+
+		
+		select @impresa = impresa from OrdenesDeDespacho
+				where OrdenesDeDespacho.ventaId = @consecutivo
+		if @impresa >=0
+		begin
+		Update OrdenesDeDespacho
+				set impresa = -1,
+				enviada=0
+				from OrdenesDeDespacho
+				where OrdenesDeDespacho.ventaId = @consecutivo
+		end
+		else begin
+		
+		Update OrdenesDeDespacho
+				set impresa = impresa-1,
+				enviada=0
+				from OrdenesDeDespacho
+				where OrdenesDeDespacho.ventaId = @consecutivo
+		end
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+drop procedure [dbo].[ReimprimirTurno]
+GO
+CREATE procedure [dbo].[ReimprimirTurno]
+(@Fecha datetime,
+@IdIsla int,
+@posicion int)
+as
+begin try
+    set nocount on;
+
+
+
+	declare @turnosCerrados as table (ID INT IDENTITY, IdTurno int)
+    declare @turnoImprimir int;
+
+    insert into @turnosCerrados (IdTurno)
+	select Id 
+    from Turno 
+    where IDISla=@IdIsla 
+    and CONVERT(date, FechaApertura) = CONVERT(date, @Fecha) 
+    and  (IdEstado=4)
+
+    select @turnoImprimir = IdTurno from @turnosCerrados where Id = @posicion
+
+	if @turnoImprimir is not null
+	begin
+		
+		update Turno set
+		 impreso=1
+		from Turno
+		where Id = @turnoImprimir 
+	end
+	else
+	begin
+		RAISERROR (N'Turno no cerrado', -- Message text.
+           10, -- Severity,
+           1, -- State,
+           7, -- First argument used for width.
+           3, -- Second argument used for precision.
+           N'Turno no cerrado');
+	end
+
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+drop procedure [dbo].GetVentaFidelizarAutomaticaPorVenta
+GO
+CREATE procedure [dbo].GetVentaFidelizarAutomaticaPorVenta
 (@idVenta int)
 as
 begin try
     set nocount on;
-	select TOP (1) Venta.total as ValorVenta, Fidelizado.documento as DocumentoFidelizado, Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo)   from Venta
-	inner join FacturasPOS on FacturasPOS.ventaId = Venta.Id
-	inner join Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	inner join Vehiculos on Vehiculos.idrom = Venta.Ibutton
-	inner join terceros on Vehiculos.terceroId = terceros.terceroId
-	inner join Fidelizado on Fidelizado.documento = terceros.identificacion
-	where venta.id = @idVenta
+	select TOP (1) Venta.total as ValorVenta, '' as DocumentoFidelizado, case when FacturasPOS.ventaId is null then convert(varchar,OrdenesDeDespacho.facturaPOSId) else Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo) end as Factura  from Venta
+	left join FacturasPOS on FacturasPOS.ventaId = Venta.Id
+    left join OrdenesDeDespacho on OrdenesDeDespacho.ventaId = Venta.Id
+	inner join Resoluciones on  (FacturasPOS.resolucionId is not null and FacturasPOS.resolucionId = Resoluciones.ResolucionId) or (OrdenesDeDespacho.resolucionId is not null and OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId) 
+	
+	where venta.Id = @idVenta
 	order by venta.id desc
 
 
@@ -3623,12 +3708,11 @@ CREATE procedure [dbo].[GetTerceroByQuery]
 as
 begin try
     set nocount on;
-	select terceros.terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
+	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
 	from dbo.terceros 
     inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-    inner join vehiculos on terceros.terceroId = vehiculos.terceroId
     where REPLACE(@identificacion, ' ', '') = identificacion
-    OR  REPLACE(@identificacion, ' ', '') = vehiculos.idrom
+    
 end try
 begin catch
     declare 
@@ -3644,3 +3728,109 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+GO
+
+	IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='VentaFidelizada' and xtype='U')
+BEGIN
+    create table dbo.[VentaFidelizada](
+    Id INT PRIMARY KEY IDENTITY (1, 1),
+    identificacion VARCHAR (50) NOT NULL,
+    ventaId int NOT NULL
+);
+END
+    GO
+    GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ActualizarFacturaFidelizada')
+	DROP PROCEDURE [dbo].[ActualizarFacturaFidelizada]
+GO
+CREATE procedure [dbo].[ActualizarFacturaFidelizada]
+( 
+    @identificacion varchar (50) ,
+    @ventaId int
+)
+as
+begin try
+    set nocount on;
+	insert into VentaFidelizada(identificacion, ventaId)
+    values(@identificacion, @ventaId)
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'BuscarFechasReportesNoEnviadasSiges')
+	DROP PROCEDURE [dbo].BuscarFechasReportesNoEnviadasSiges
+GO
+CREATE procedure [dbo].[BuscarFechasReportesNoEnviadasSiges]
+as
+begin try
+    set nocount on;
+	select top(50) v.Id as IdVentaLocal, turno.FechaApertura as FechaReporte from venta v
+	left JOIN  FacturasPOS f on f.ventaId = v.Id
+	left JOIN  ORdenesdedespacho o ON o.ventaId = v.Id
+	left join turno on v.idturno = turno.id 
+	
+	WHERE (f.ventaID is not null and (f.reporteEnviado is null or f.reporteEnviado = 0) and f.enviada = 1 	) or
+	(o.ventaID is not null and (o.reporteEnviado is null or o.reporteEnviado = 0) and o.enviada = 1 	)
+	order by v.Id desc 
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch; 
+GO 
+
+--UPDATE Fidelizado SET PUNTOS = puntos + 60 
+
+-- select 'values('+convert(varchar,IdFidelizado)+',"'+Fidelizado+'",'+convert(varchar,Puntos)+'),' from fidelizado
+
+GO
+/****** Object:  StoredProcedure [dbo].[GetVentasSinSubir]    Script Date: 28/02/2024 16:46:56 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER procedure [dbo].[GetVentasSinSubir]
+
+as
+begin try
+    set nocount on;
+	select Venta.Id, Venta.IButton, Venta.cantidad, Venta.fecha
+	from dbo.Venta 
+	where Venta.Sicom=0 or Venta.Sicom is null
+    
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;

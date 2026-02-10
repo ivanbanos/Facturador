@@ -30,6 +30,9 @@ const Combustible = () => {
 
   // Estado para modo de placa: "PLACA" o "PALABRA"
   const [modoPlaca, setModoPlaca] = useState("PLACA");
+  const palabrasPermitidas = Array.isArray(window.palabrasPermitidas)
+    ? window.palabrasPermitidas
+    : [];
   const [showAlertError, setShowAlertError] = useState(false);
   const handleSetShowAlertError = (show) => setShowAlertError(show);
   const [codigoEmpleado, setCodigoEmpleado] = useState("");
@@ -265,8 +268,8 @@ const Combustible = () => {
       const tempFactura = { ...ultimaFactura, placa: value };
       setUltimaFactura(tempFactura);
       // Validar formato y mostrar error visual
-      const regex = /^[A-Z]{3}[0-9]{3}$/;
-      if (value.length === 6 && !regex.test(value)) {
+      const regex = /^[A-Z0-9]{6,10}$/;
+      if (value.length >= 6 && !regex.test(value)) {
         setPlacaError("Formato inválido. Ejemplo: ABC123");
       } else {
         setPlacaError("");
@@ -274,7 +277,7 @@ const Combustible = () => {
     } else if (event.target.name === "placa" && modoPlaca === "PALABRA") {
       // Solo permitir palabras de la lista
       const value = event.target.value;
-      if (window.palabrasPermitidas.includes(value)) {
+      if (palabrasPermitidas.includes(value)) {
         const tempFactura = { ...ultimaFactura, placa: value };
         setUltimaFactura(tempFactura);
       }
@@ -543,7 +546,7 @@ const Combustible = () => {
                 <label className="label-info-venta ">Placa</label>
                 <div className="d-flex flex-row align-items-center">
                   <select
-                    className="form-select w-25 me-2"
+                    className="form-select select-white-blue w-25 me-2 altura-select text-select-list"
                     value={modoPlaca}
                     onChange={(e) => setModoPlaca(e.target.value)}
                   >
@@ -554,13 +557,13 @@ const Combustible = () => {
                     <div className="w-100">
                       <input
                         type="text"
-                        className={`form-control select-white-blue w-50 altura-select text-select-list ${
+                        className={`form-control select-white-blue w-75 altura-select text-select-list ${
                           placaError ? "is-invalid" : ""
                         }`}
                         name="placa"
                         disabled={bloqueado}
                         value={ultimaFactura.placa || ""}
-                        maxLength={6}
+                        maxLength={10}
                         placeholder="ABC123"
                         onChange={handleChangeFactura}
                       />
@@ -575,18 +578,18 @@ const Combustible = () => {
                     </div>
                   ) : (
                     <select
-                      className="form-select select-white-blue w-50 altura-select text-select-list"
+                      className="form-select select-white-blue w-75 altura-select text-select-list"
                       name="placa"
                       disabled={bloqueado}
                       value={
-                        window.palabrasPermitidas.includes(ultimaFactura.placa)
+                        palabrasPermitidas.includes(ultimaFactura.placa)
                           ? ultimaFactura.placa
                           : ""
                       }
                       onChange={handleChangeFactura}
                     >
                       <option value="">Seleccione palabra</option>
-                      {window.palabrasPermitidas.map((palabra) => (
+                      {palabrasPermitidas.map((palabra) => (
                         <option key={palabra} value={palabra}>
                           {palabra}
                         </option>

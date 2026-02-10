@@ -7,7 +7,7 @@
 History:
 2020-11-07 primera version
 */
-USE Ventas
+USE Estacion
 GO
 SET ANSI_NULLS ON
 GO
@@ -74,8 +74,8 @@ CREATE procedure [dbo].[ObtenerVentaPorCara]
 as
 begin try
     set nocount on;
-	select top(1)dbo.finteger(v.FECHA_REAL) FechaReporte, EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, MANGUERA.COD_SUR, MANGUERA.COD_CAR, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
-	v.*, CLIENTES.*, IMPRESOR.*,dbo.Finteger(AUTOMOTO.FECH_PRMA) as MANTENIMIENTO,AUTOMOTO.*
+	select top(1)EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, MANGUERA.COD_SUR, MANGUERA.COD_CAR, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
+	v.*, CLIENTES.*, IMPRESOR.*,dbo.Finteger(AUTOMOTO.FECH_PRMA) as MANTENIMIENTO,AUTOMOTO.*, dbo.finteger(v.FECHA) FechaReporte 
 	
 	from dbo.VENTAS v
 	left join dbo.CLIENTES on v.COD_CLI = CLIENTES.COD_CLI
@@ -117,8 +117,8 @@ as
 begin try
     set nocount on; 
 
-	select top(1)dbo.finteger(v.FECHA_REAL) FechaReporte, EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, MANGUERA.COD_SUR, MANGUERA.COD_CAR, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
-	v.*, CLIENTES.*, IMPRESOR.*,dbo.Finteger(AUTOMOTO.FECH_PRMA) as MANTENIMIENTO,AUTOMOTO.*
+	select top(1)EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, MANGUERA.COD_SUR, MANGUERA.COD_CAR, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
+	v.*, CLIENTES.*, IMPRESOR.*,dbo.Finteger(AUTOMOTO.FECH_PRMA) as MANTENIMIENTO,AUTOMOTO.*, dbo.finteger(v.FECHA) FechaReporte 
 	
 	from dbo.VENTAS v
 	left join dbo.CLIENTES on v.COD_CLI = CLIENTES.COD_CLI
@@ -175,8 +175,8 @@ CREATE procedure [dbo].[ObtenerVentasPorIds]
 as
 begin try
     set nocount on;
-	select dbo.finteger(v.FECHA_REAL) FechaReporte, EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
-	v.*, CLIENTES.*, IMPRESOR.*
+	select EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
+	v.*, CLIENTES.*, IMPRESOR.*, dbo.finteger(v.FECHA) FechaReporte 
 	
 	from dbo.VENTAS v
 	left join dbo.CLIENTES on v.COD_CLI = CLIENTES.COD_CLI
@@ -372,10 +372,7 @@ begin try
 			exec [AgregarFacturaPorIdVenta] @ventaMin
 		end
 
-Use Estacion
-update OrdenesDeDespacho set Fecha = dbo.Finteger(i.FECHA_REAL) + dbo.HINTEGER(i.hora) 
-from Facturacion_Electronica.dbo.OrdenesDeDespacho 
-inner join VENTAS i on OrdenesDeDespacho.ventaId = i.CONSECUTIVO
+
 	END
 	
 		select 'OK'
@@ -422,7 +419,7 @@ CREATE procedure [dbo].[BuscarFechasReportesNoEnviadas]
 as
 begin try
     set nocount on;
-	select top(50) v.CONSECUTIVO as IdVentaLocal, dbo.finteger(v.FECHA_REAL) FechaReporte from VENTAS v
+	select top(50) v.CONSECUTIVO as IdVentaLocal, dbo.finteger(v.FECHA) FechaReporte from VENTAS v
 	left JOIN  Facturacion_Electronica.dbo.FacturasPOS f ON f.ventaId = v.CONSECUTIVO
 	left JOIN  Facturacion_Electronica.dbo.ORdenesdedespacho o ON o.ventaId = v.CONSECUTIVO
 	
@@ -475,6 +472,7 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+use Ventas
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'setKilimetrajeVenta')
 	DROP PROCEDURE [dbo].[setKilimetrajeVenta]
 GO
@@ -519,8 +517,6 @@ begin catch
 end catch;
 GO
 
-
-
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerTurnoIsla')
 	DROP PROCEDURE [dbo].[ObtenerTurnoIsla]
 GO
@@ -529,30 +525,12 @@ CREATE procedure [dbo].[ObtenerTurnoIsla]
 as
 begin try
     set nocount on;
-	select  NUM_TUR as Numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado,  dbo.Finteger(FECHA) + dbo.HINTEGER(HORA_INI)  as FechaApertura , dbo.Finteger(FECHA) + dbo.HINTEGER(HORA_FIN) as FechaCierre 
+	select  NUM_TUR as numero, EMPLEADO.NOMBRE, empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(FECHA) as FechaApertura ,dbo.Finteger(FECHA)  as FechaCierre ,  FECHA
  from TURN_EST
 inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
 inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
  where estado != 'C' and ISLAS.COD_ISL = @IdISla
-      select TURN_LEC.COD_MAN as Manguera, TURN_LEC.COD_SUR as Surtidor, LECT_INI1 as Apertura, LECT_FIN1 as Cierre, ARTICULO.Descripcion as  Combustible, TURN_LEC.PRECIO as precioCombustible
- from TURN_LEC
-inner join TURN_EST On TURN_LEC.FECHA = TURN_EST.FECHA and TURN_LEC.NUM_TUR = TURN_EST.NUM_TUR and TURN_LEC.COD_ISL = TURN_EST.COD_ISL
-inner join VENTAS On VENTAS.FECHA_REAL = TURN_LEC.FECHA and VENTAS.NUM_TUR = TURN_LEC.NUM_TUR
-inner join ARTICULO On ARTICULO.COD_ART = TURN_LEC.COD_ART1
-  where TURN_EST.estado != 'C' and TURN_LEC.COD_ISL = @IdISla
-
-   
- select dbo.Finteger(BOLS_TUR.FECHA) as Fecha, Consecutivo, BOLS_TUR.NUM_TUR as NumeroTurno,ISLAS.DESCRIPCION as Isla,
-EMPLEADO.Nombre as Empleado, VR_MONEDA as Moneda, VR_BILLETE as Billete
-from BOLS_TUR
-
-inner join EMPLEADO On EMPLEADO.COD_EMP = BOLS_TUR.COD_EMP
-inner join ISLAS On ISLAS.COD_ISL = BOLS_TUR.COD_ISL
-inner join TURN_EST On BOLS_TUR.FECHA = TURN_EST.FECHA and BOLS_TUR.NUM_TUR = TURN_EST.NUM_TUR and BOLS_TUR.COD_ISL = TURN_EST.COD_ISL
-
-
-where TURN_EST.estado != 'C' and BOLS_TUR.COD_ISL = @IdISla
-   order by BOLS_TUR.fecha desc
+     
 end try
 begin catch
     declare 
@@ -568,58 +546,7 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-
-IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerTurnoCerradoIsla')
-	DROP PROCEDURE [dbo].[ObtenerTurnoCerradoIsla]
-GO
-CREATE procedure [dbo].[ObtenerTurnoCerradoIsla]
-(@IdIsla int)
-as
-begin try
-    set nocount on;
-	select  NUM_TUR as Numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado,   dbo.Finteger(FECHA) + dbo.HINTEGER(HORA_INI)  as FechaApertura , dbo.Finteger(FECHA) + dbo.HINTEGER(HORA_FIN) as FechaCierre 
- from TURN_EST
-inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
-inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
- where estado = 'C' and ISLAS.COD_ISL = @IdISla
- order by TURN_EST.fecha desc
-     select TURN_LEC.COD_MAN as Manguera, TURN_LEC.COD_SUR as Surtidor, LECT_INI1 as Apertura, LECT_FIN1 as Cierre, ARTICULO.Descripcion as  Combustible, TURN_LEC.PRECIO as precioCombustible
- from TURN_LEC
-inner join VENTAS On VENTAS.FECHA_REAL = TURN_LEC.FECHA and VENTAS.NUM_TUR = TURN_LEC.NUM_TUR
-inner join TURN_EST On TURN_LEC.FECHA = TURN_EST.FECHA and TURN_LEC.NUM_TUR = TURN_EST.NUM_TUR and TURN_LEC.COD_ISL = TURN_EST.COD_ISL
-
-inner join ARTICULO On ARTICULO.COD_ART = TURN_LEC.COD_ART1
-  where TURN_EST.estado = 'C' and TURN_LEC.COD_ISL = @IdISla
-   order by TURN_LEC.fecha desc
-   
- select dbo.Finteger(BOLS_TUR.FECHA) as Fecha, Consecutivo, BOLS_TUR.NUM_TUR as NumeroTurno,ISLAS.DESCRIPCION as Isla,
-EMPLEADO.Nombre as Empleado, VR_MONEDA as Moneda, VR_BILLETE as Billete
-from BOLS_TUR
-
-inner join EMPLEADO On EMPLEADO.COD_EMP = BOLS_TUR.COD_EMP
-inner join ISLAS On ISLAS.COD_ISL = BOLS_TUR.COD_ISL
-inner join TURN_EST On BOLS_TUR.FECHA = TURN_EST.FECHA and BOLS_TUR.NUM_TUR = TURN_EST.NUM_TUR and BOLS_TUR.COD_ISL = TURN_EST.COD_ISL
-
-
-where TURN_EST.estado = 'C' and BOLS_TUR.COD_ISL = @IdISla
-   order by BOLS_TUR.fecha desc
-
-end try
-begin catch
-    declare 
-        @errorMessage varchar(2000),
-        @errorProcedure varchar(255),
-        @errorLine int;
-
-    select  
-        @errorMessage = error_message(),
-        @errorProcedure = error_procedure(),
-        @errorLine = error_line();
-
-    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
-end catch;
-GO
-IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerTurnoIslaPorVenta')
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerTurnoIslaPorVentaId')
 	DROP PROCEDURE [dbo].[ObtenerTurnoIslaPorVenta]
 GO
 CREATE procedure [dbo].[ObtenerTurnoIslaPorVenta]
@@ -627,13 +554,12 @@ CREATE procedure [dbo].[ObtenerTurnoIslaPorVenta]
 as
 begin try
     set nocount on;
-	select  TURN_EST.NUM_TUR as Numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado,  dbo.Finteger(TURN_EST.FECHA) + dbo.HINTEGER(TURN_EST.HORA_INI)  as FechaApertura , dbo.Finteger(TURN_EST.FECHA) + dbo.HINTEGER(HORA_FIN) as FechaCierre 
+	select  TURN_EST.NUM_TUR as Numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(TURN_EST.FECHA) as FechaApertura ,dbo.Finteger(TURN_EST.FECHA) as FechaCierre,  , FECHA 
  from TURN_EST
 inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
 inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
 inner join VENTAS On VENTAS.FECHA_REAL = TURN_EST.FECHA and VENTAS.NUM_TUR = TURN_EST.NUM_TUR and VENTAS.COD_ISL = TURN_EST.COD_ISL
  where VENTAS.CONSECUTIVO = @ventaId
- and TURN_EST.ESTADO = 'C'
 
  select TURN_LEC.COD_MAN as Manguera, TURN_LEC.COD_SUR as Surtidor, LECT_INI1 as Apertura, LECT_FIN1 as Cierre, ARTICULO.Descripcion as  Combustible, TURN_LEC.PRECIO as precioCombustible
  from TURN_LEC
@@ -641,17 +567,6 @@ inner join VENTAS On VENTAS.FECHA_REAL = TURN_LEC.FECHA and VENTAS.NUM_TUR = TUR
 inner join ARTICULO On ARTICULO.COD_ART = TURN_LEC.COD_ART1
  where VENTAS.CONSECUTIVO = @ventaId
      
-	 
- select dbo.Finteger(BOLS_TUR.FECHA) as Fecha, BOLS_TUR.Consecutivo, BOLS_TUR.NUM_TUR as NumeroTurno,ISLAS.DESCRIPCION as Isla,
-EMPLEADO.Nombre as Empleado, VR_MONEDA as Moneda, VR_BILLETE as Billete
-from BOLS_TUR
-
-inner join EMPLEADO On EMPLEADO.COD_EMP = BOLS_TUR.COD_EMP
-inner join ISLAS On ISLAS.COD_ISL = BOLS_TUR.COD_ISL
-inner join VENTAS On VENTAS.FECHA_REAL = BOLS_TUR.FECHA and VENTAS.NUM_TUR = BOLS_TUR.NUM_TUR and VENTAS.COD_ISL = BOLS_TUR.COD_ISL
-
-where ventas.CONSECUTIVO = @ventaId
-
 end try
 begin catch
     declare 
@@ -667,246 +582,23 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerTurnoIslaYFecha')
-	DROP PROCEDURE [dbo].[ObtenerTurnoIslaYFecha]
+
+
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerTurnoIslaCerrado')
+	DROP PROCEDURE [dbo].[ObtenerTurnoIslaCerrado]
 GO
-CREATE procedure [dbo].[ObtenerTurnoIslaYFecha]
-(@IdIsla int, @num_tur int, @fecha datetime)
+CREATE procedure [dbo].[ObtenerTurnoIslaCerrado]
+(@IdIsla int)
 as
 begin try
     set nocount on;
-	select  NUM_TUR as Numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(FECHA) + dbo.HINTEGER(HORA_INI)  as FechaApertura , dbo.Finteger(FECHA) + dbo.HINTEGER(HORA_FIN) as FechaCierre 
+	select  NUM_TUR as Id, EMPLEADO.NOMBRE, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(FECHA) as FechaApertura ,null as FechaCierre , FECHA
  from TURN_EST
 inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
 inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
- where  ISLAS.COD_ISL = @IdISla and NUM_TUR = @num_tur and dbo.Finteger(FECHA) = @fecha
-      
-	  select TURN_LEC.COD_MAN as Manguera, TURN_LEC.COD_SUR as Surtidor, LECT_INI1 as Apertura, LECT_FIN1 as Cierre, ARTICULO.Descripcion as  Combustible, TURN_LEC.PRECIO as precioCombustible
- from TURN_LEC
-inner join ARTICULO On ARTICULO.COD_ART = TURN_LEC.COD_ART1
-inner join ISLAS On ISLAS.COD_ISL = TURN_LEC.COD_ISL
- where ISLAS.COD_ISL = @IdISla and NUM_TUR = @num_tur and dbo.Finteger(FECHA) = @fecha
-
- select dbo.Finteger(FECHA) as Fecha, Consecutivo, NUM_TUR as NumeroTurno,ISLAS.DESCRIPCION as Isla,
-EMPLEADO.Nombre as Empleado, VR_MONEDA as Moneda, VR_BILLETE as Billete
-from BOLS_TUR
-
-inner join EMPLEADO On EMPLEADO.COD_EMP = BOLS_TUR.COD_EMP
-inner join ISLAS On ISLAS.COD_ISL = BOLS_TUR.COD_ISL
-where dbo.Finteger(BOLS_TUR.FECHA) = @fecha and
-BOLS_TUR.COD_ISL = @IdISla
-and BOLS_TUR.NUM_TUR =@num_tur
-end try
-begin catch
-    declare 
-        @errorMessage varchar(2000),
-        @errorProcedure varchar(255),
-        @errorLine int;
-
-    select  
-        @errorMessage = error_message(),
-        @errorProcedure = error_procedure(),
-        @errorLine = error_line();
-
-    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
-end catch;
-GO
-
-IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorTurno')
-	DROP PROCEDURE [dbo].getFacturaPorTurno
-GO
-CREATE procedure [dbo].[getFacturaPorTurno]
-(@IdIsla int, @num_tur int, @fecha datetime)
-as
-begin try
-    set nocount on;
-	select 
-	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
-	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
-	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, FacturasPOS.[facturaPOSId]
-      ,FacturasPOS.[fecha]
-      ,FacturasPOS.[resolucionId]
-      ,FacturasPOS.[consecutivo]
-      ,FacturasPOS.[ventaId]
-      ,FacturasPOS.[estado]
-      ,FacturasPOS.[terceroId]
-      ,FacturasPOS.[Placa]
-      ,FacturasPOS.[Kilometraje]
-      ,FacturasPOS.[impresa]
-      ,FacturasPOS.[consolidadoId]
-      ,FacturasPOS.[enviada]
-      ,FacturasPOS.[codigoFormaPago]
-      ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
-	from Facturacion_Electronica.dbo.FacturasPOS
-	left join Facturacion_Electronica.dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	left join Facturacion_Electronica.dbo.terceros on FacturasPOS.terceroId = terceros.terceroId
-    left join Facturacion_Electronica.dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	inner join VENTAS On FacturasPOS.ventaId = VENTAS.CONSECUTIVO
-	inner join TURN_EST On VENTAS.FECHA_REAL = TURN_EST.FECHA and VENTAS.NUM_TUR = TURN_EST.NUM_TUR and VENTAS.COD_ISL = TURN_EST.COD_ISL
-	where TURN_EST.COD_ISL = @IdISla and TURN_EST.NUM_TUR = @num_tur and dbo.Finteger(TURN_EST.FECHA) = @fecha
-	union
-    select 
-	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
-	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
-	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, OrdenesDeDespacho.[facturaPOSId]
-      ,OrdenesDeDespacho.[fecha]
-      ,OrdenesDeDespacho.[resolucionId]
-      ,OrdenesDeDespacho.[consecutivo]
-      ,OrdenesDeDespacho.[ventaId]
-      ,OrdenesDeDespacho.[estado]
-      ,OrdenesDeDespacho.[terceroId]
-      ,OrdenesDeDespacho.[Placa]
-      ,OrdenesDeDespacho.[Kilometraje]
-      ,OrdenesDeDespacho.[impresa]
-      ,OrdenesDeDespacho.[consolidadoId]
-      ,OrdenesDeDespacho.[enviada]
-      ,OrdenesDeDespacho.[codigoFormaPago]
-      ,OrdenesDeDespacho.[reporteEnviado]
-      ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
-	from Facturacion_Electronica.dbo.OrdenesDeDespacho
-	left join Facturacion_Electronica.dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
-	left join Facturacion_Electronica.dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
-    left join Facturacion_Electronica.dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	inner join VENTAS On OrdenesDeDespacho.ventaId = VENTAS.CONSECUTIVO
-	inner join TURN_EST On VENTAS.FECHA_REAL = TURN_EST.FECHA and VENTAS.NUM_TUR = TURN_EST.NUM_TUR and VENTAS.COD_ISL = TURN_EST.COD_ISL
-	where TURN_EST.COD_ISL = @IdISla and TURN_EST.NUM_TUR = @num_tur and dbo.Finteger(TURN_EST.FECHA) = @fecha
-end try
-begin catch
-    declare 
-        @errorMessage varchar(2000),
-        @errorProcedure varchar(255),
-        @errorLine int;
-
-    select  
-        @errorMessage = error_message(),
-        @errorProcedure = error_procedure(),
-        @errorLine = error_line();
-
-    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
-end catch;
-GO
-
-
-IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getBolsa')
-	DROP PROCEDURE [dbo].getBolsa
-GO
-CREATE procedure [dbo].getBolsa
-(@IdIsla int, @fecha datetime)
-as
-begin try
-    set nocount on;
-	
-select dbo.Finteger(FECHA) as Fecha, Consecutivo, NUM_TUR as NumeroTurno,ISLAS.DESCRIPCION as Isla,
-EMPLEADO.Nombre as Empleado, VR_MONEDA as Moneda, VR_BILLETE as Billete
-from BOLS_TUR
-
-inner join EMPLEADO On EMPLEADO.COD_EMP = BOLS_TUR.COD_EMP
-inner join ISLAS On ISLAS.COD_ISL = BOLS_TUR.COD_ISL
-where dbo.Finteger(BOLS_TUR.FECHA) = @fecha and
-BOLS_TUR.COD_ISL = @IdISla
-order by BOLS_TUR.NUM_TUR desc
-end try
-begin catch
-    declare 
-        @errorMessage varchar(2000),
-        @errorProcedure varchar(255),
-        @errorLine int;
-
-    select  
-        @errorMessage = error_message(),
-        @errorProcedure = error_procedure(),
-        @errorLine = error_line();
-
-    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
-end catch;
-GO
-
-
-IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getBolsanumero')
-	DROP PROCEDURE [dbo].getBolsanumero
-GO
-CREATE procedure [dbo].getBolsanumero
-(@IdIsla int, @fecha datetime, @numero int)
-as
-begin try
-    set nocount on;
-	
-select dbo.Finteger(FECHA) as Fecha, Consecutivo, NUM_TUR as NumeroTurno,ISLAS.DESCRIPCION as Isla,
-EMPLEADO.Nombre as Empleado, VR_MONEDA as Moneda, VR_BILLETE as Billete
-from BOLS_TUR
-
-inner join EMPLEADO On EMPLEADO.COD_EMP = BOLS_TUR.COD_EMP
-inner join ISLAS On ISLAS.COD_ISL = BOLS_TUR.COD_ISL
-where dbo.Finteger(BOLS_TUR.FECHA) = @fecha and
-BOLS_TUR.COD_ISL = @IdISla
-and BOLS_TUR.CONSECUTIVO =@numero
-end try
-begin catch
-    declare 
-        @errorMessage varchar(2000),
-        @errorProcedure varchar(255),
-        @errorLine int;
-
-    select  
-        @errorMessage = error_message(),
-        @errorProcedure = error_procedure(),
-        @errorLine = error_line();
-
-    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
-end catch;
-Go
-drop procedure [dbo].GetVentaFidelizarAutomatica
-GO
-CREATE procedure [dbo].GetVentaFidelizarAutomatica
-(@idManguera int)
-as
-begin try
-    set nocount on;
-	select TOP (1) VENTAS.total as ValorVenta, Fidelizado.documento as DocumentoFidelizado, 
-	Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo) as Factura  
-	from VENTAS
-	inner join Facturacion_Electronica.dbo.FacturasPOS on FacturasPOS.ventaId = VENTAS.CONSECUTIVO
-	inner join Facturacion_Electronica.dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	inner join Ventas.dbo.AUTOMOTO on AUTOMOTO.PLACA = VENTAS.PLACA
-	inner join Ventas.dbo.CLIENTES on AUTOMOTO.COD_CLI = CLIENTES.COD_CLI
-	left join Facturacion_Electronica.dbo.Fidelizado on Fidelizado.documento = CLIENTES.NIT
-	where VENTAS.COD_MAN = @idManguera
-	order by VENTAS.CONSECUTIVO desc
-
-
-end try
-begin catch
-    declare 
-        @errorMessage varchar(2000),
-        @errorProcedure varchar(255),
-        @errorLine int;
-
-    select  
-        @errorMessage = error_message(),
-        @errorProcedure = error_procedure(),
-        @errorLine = error_line();
-
-    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
-end catch;
-GO
-drop procedure [dbo].GetVentaFidelizarAutomaticaPorVenta
-GO
-CREATE procedure [dbo].GetVentaFidelizarAutomaticaPorVenta
-(@idVenta int)
-as
-begin try
-    set nocount on;
-	select TOP (1) VENTAS.total as ValorVenta, '' as DocumentoFidelizado, Resoluciones.descripcion+'-'+convert(varchar,
-	FacturasPOS.consecutivo) as Factura  from VENTAS
-	inner join Facturacion_Electronica.dbo.FacturasPOS on FacturasPOS.ventaId = VENTAS.CONSECUTIVO
-	inner join Facturacion_Electronica.dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	where VENTAS.CONSECUTIVO = @idVenta
-	order by VENTAS.CONSECUTIVO desc
-
-
+ where estado = 'C' and ISLAS.COD_ISL = @IdISla 
+ order by FechaApertura desc, NUM_TUR desc
+     
 end try
 begin catch
     declare 

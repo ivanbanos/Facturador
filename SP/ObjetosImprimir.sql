@@ -19,7 +19,7 @@ CREATE procedure [dbo].GetObjetoImprimir
 as
 begin try
     set nocount on;
-	select * from ObjetoImprimir where impreso =0
+	select * from ObjetoImprimir where impreso =100
 end try
 begin catch
     declare 

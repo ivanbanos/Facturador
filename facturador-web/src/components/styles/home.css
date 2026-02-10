@@ -245,6 +245,16 @@
     color: #002244;
     border: 3px solid #0C80EA;
     border-radius: 25px;
+    background-color: #ffffff;
+}
+.select-white-blue:focus,
+.select-white-blue:active,
+.select-white-blue:focus-visible{
+    background-color: #ffffff;
+    color: #002244;
+    border-color: #0C80EA;
+    box-shadow: none;
+    outline: none;
 }
 .dark-blue-input{
     font-family: 'orkneyRegular';

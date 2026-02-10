@@ -48,13 +48,8 @@ const Terceros = () => {
   function formIsValid() {
     const _errores = {};
     if (!tercero.nombre) _errores.nombre = "Se requiere el nombre";
-    if (!tercero.telefono) {
-      _errores.telefono = "Se requiere el teléfono";
-    } else if (!/^\d{7,}$/.test(tercero.telefono)) {
+    if (tercero.telefono && !/^\d{7,}$/.test(tercero.telefono)) {
       _errores.telefono = "Teléfono inválido (mínimo 7 dígitos)";
-    }
-    if (!tercero.direccion) {
-      _errores.direccion = "Se requiere la dirección";
     }
     if (!tercero.identificacion) {
       _errores.identificacion = "Se requiere la identificación";
@@ -241,7 +236,6 @@ const Terceros = () => {
                         name="direccion"
                         value={tercero.direccion}
                         onChange={handleChangeTercero}
-                        required
                         placeholder={errores.direccion || "Dirección"}
                       ></input>
                     </div>
@@ -258,7 +252,6 @@ const Terceros = () => {
                         value={tercero.telefono}
                         onChange={handleChangeTercero}
                         maxLength={15}
-                        required
                         placeholder={errores.telefono || "Teléfono"}
                       />
                     </div>

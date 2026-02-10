@@ -1,17 +1,11 @@
 const ImprimirFactura = async (ultimaFactura, inpresiones) => {
   try {
-    if (ultimaFactura.kilometraje == "") {
-      ultimaFactura.kilometraje = "NP";
-    }
-    if (ultimaFactura.placa == "") {
-      ultimaFactura.placa = "NP";
-    }
-    if (
-      !ultimaFactura.numeroTransaccion ||
-      ultimaFactura.numeroTransaccion == ""
-    ) {
-      ultimaFactura.numeroTransaccion = "NA";
-    }
+    const kilometraje = ultimaFactura?.kilometraje ? ultimaFactura.kilometraje : "NP";
+    const placa = ultimaFactura?.placa ? ultimaFactura.placa : "NP";
+    const numeroTransaccion = ultimaFactura?.numeroTransaccion
+      ? ultimaFactura.numeroTransaccion
+      : "NA";
+    const impresiones = Number(inpresiones) > 0 ? Number(inpresiones) : 1;
     const response = await fetch(
       window.SERVER_URL +
         "/api/Facturas/Imprimir/" +
@@ -23,13 +17,13 @@ const ImprimirFactura = async (ultimaFactura, inpresiones) => {
         "/" +
         ultimaFactura.ventaId +
         "?Kilometraje=" +
-        ultimaFactura.kilometraje +
+        encodeURIComponent(kilometraje) +
         "&Placa=" +
-        ultimaFactura.placa +
+        encodeURIComponent(placa) +
         "&NumeroTransaccion=" +
-        ultimaFactura.numeroTransaccion +
+        encodeURIComponent(numeroTransaccion) +
         "&impresiones=" +
-        inpresiones,
+        impresiones,
       {
         method: "POST",
         mode: "cors",

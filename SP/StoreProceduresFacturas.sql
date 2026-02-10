@@ -1,12 +1,12 @@
 GO
- IF NOT EXISTS(SELECT * FROM sys.databases WHERE name = 'Facturacion_Electronica')
+ IF NOT EXISTS(SELECT * FROM sys.databases WHERE name = 'EstacionSIGES')
   BEGIN
-    CREATE DATABASE Facturacion_Electronica
+    CREATE DATABASE [EstacionSIGES]
 
 
     END
     GO
-       USE Facturacion_Electronica
+       USE [EstacionSIGES]
     GO
 
 	IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Resoluciones' and xtype='U')
@@ -210,22 +210,8 @@ IF NOT EXISTS (
 BEGIN
   ALTER TABLE FacturasPOS
 ADD turnoEnviado bit default 0;
-  ALTER TABLE OrdenesDeDespacho
+  ALTER TABLE OrdenDeDespacho
 ADD turnoEnviado bit default 0;
-END;
-GO
-IF NOT EXISTS (
-  SELECT
-    *
-  FROM
-    INFORMATION_SCHEMA.COLUMNS
-  WHERE
-    TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'numeroTransaccion')
-BEGIN
-  ALTER TABLE FacturasPOS
-ADD numeroTransaccion varchar(50) default null;
-  ALTER TABLE OrdenesDeDespacho
-ADD numeroTransaccion varchar(50) default null;
 END;
 GO
 IF NOT EXISTS (
@@ -485,9 +471,6 @@ GO
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'SetFacturaCanastillaEnviada')
 	DROP PROCEDURE [dbo].[SetFacturaCanastillaEnviada]
 GO
-IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ActuralizarTurnoEnviadas')
-	DROP PROCEDURE [dbo].[ActuralizarTurnoEnviadas]
-GO
 IF type_id('[dbo].[ventasIds]') IS NOT NULL
         DROP TYPE [dbo].[ventasIds];
 GO
@@ -630,18 +613,16 @@ begin try
 
     insert into @facturasTemp (id)
 	select 
-	top(20)ventaId
+	top(100)ventaId
 	from FacturasPOS
-    where (enviada = 0 or enviada is null)
-    and fecha < DATEADD(minute, -10, GETDATE())
+    where enviada = 0 or enviada is null
 	order by ventaId desc
 
 	insert into @facturasTemp (id)
 	select 
-	top(20)ventaId
+	top(100)ventaId
 	from OrdenesDeDespacho
-    where (enviada = 0 or enviada is null)
-    and fecha < DATEADD(minute, -10, GETDATE())
+    where enviada = 0 or enviada is null
 	order by ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
@@ -686,7 +667,6 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from FacturasPOS
@@ -714,7 +694,6 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
-      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from OrdenesDeDespacho
@@ -1053,11 +1032,8 @@ begin try
 	
 	select @mismaResolucion=valor from configuracionEstacion where descripcion = 'mismaResolucion'
 	if @Fecha is null
-    
-		select @Fecha = GETDATE()
 	begin
-    
-	select @Fecha = GETDATE()
+		select @Fecha = GETDATE()
 	END
 
 	if @facturaPOSId is not null 
@@ -1098,12 +1074,26 @@ begin try
 			end
 			else
 			begin
-			    insert into OrdenesDeDespacho (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago)
-				values(@Fecha, @ResolucionId, -1, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @COD_FOR_PAG)
+			while @facturaPOSId is null
+			begin
+				select @verificarConsecutivo = null
+				select @verificarConsecutivo = consecutivo from FacturasPOS  where  consecutivo = @consecutivoActual
+				if (@verificarConsecutivo is not null )
+				begin 
+					update Resoluciones set consecutivoActual = consecutivoActual+1 WHERE esPos = 'S' and estado = 'AC'  and (@mismaResolucion = 'SI' or tipo = 0)
+					select @consecutivoActual=consecutivoActual from Resoluciones where esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
+				end
+				else
+				begin
+					insert into FacturasPOS (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago)
+					select @Fecha, @ResolucionId, @consecutivoActual, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @COD_FOR_PAG
+					from Resoluciones WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
 			
-				select @facturaPOSId = SCOPE_IDENTITY()
+					select @facturaPOSId = SCOPE_IDENTITY()
 
-				select @facturaPOSId as facturaPOSId
+					update Resoluciones set consecutivoActual = @consecutivoActual+1 WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
+				end
+			end
 			--exec MandarImprimir @ventaId=@ventaId
 				select @facturaPOSId as facturaPOSId
 			end
@@ -1155,7 +1145,6 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -1184,7 +1173,6 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
-      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho
@@ -1237,7 +1225,6 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -1266,7 +1253,6 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
-      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho
@@ -1317,7 +1303,6 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -1344,7 +1329,6 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
-      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho
@@ -1461,7 +1445,6 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -1487,7 +1470,6 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
-      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho
@@ -1550,14 +1532,12 @@ begin try
 	top(100)ventaId
 	from FacturasPOS
     where enviadaFacturacion = 0 or enviadaFacturacion is null
-    and fecha < DATEADD(mi, -10, getdate())
 	order by fecha desc
 	insert into @facturasTemp (id)
 	select 
 	top(100)ventaId
 	from OrdenesDeDespacho
     where enviadaFacturacion = 0 or enviadaFacturacion is null
-    and fecha < DATEADD(mi, -10, getdate())
 	order by ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
@@ -1603,7 +1583,6 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from FacturasPOS
@@ -1630,7 +1609,6 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
-      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from OrdenesDeDespacho
@@ -1856,7 +1834,6 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -1882,7 +1859,6 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
-      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho
@@ -2098,7 +2074,6 @@ CREATE procedure [dbo].[ActualizarFactura]
 ( 
     @facturaPOSId int,
 	@Placa varchar(50) = null,
-	@NumeroTransaccion varchar(50) = null,
 	@Kilometraje varchar(50) = null,
 	@codigoFormaPago int = null,
 	@terceroId int = null,
@@ -2115,7 +2090,6 @@ begin try
 	impresa = impresa+1,
     enviada = 0,
     codigoFormaPago = @codigoFormaPago,
-	numeroTransaccion = @NumeroTransaccion,
 	terceroId = isnull(@terceroId, terceroId)
 	Where @facturaPOSId = facturaPOSId
 	and ventaId = @ventaID
@@ -2127,7 +2101,6 @@ begin try
 	impresa = impresa+1,
     enviada = 0,
     codigoFormaPago = @codigoFormaPago,
-	numeroTransaccion = @NumeroTransaccion,
 	terceroId = isnull(@terceroId, terceroId)
 	Where @facturaPOSId = facturaPOSId
 	and ventaId = @ventaID
@@ -2135,7 +2108,7 @@ begin try
 	
 
 
-	exec ZE900NG.dbo.setKilimetrajeVenta @ventaId, @Kilometraje, @Placa, @codigoFormaPago
+	exec Ventas.dbo.setKilimetrajeVenta @ventaId, @Kilometraje, @Placa, @codigoFormaPago
 
 end try
 begin catch
@@ -2247,7 +2220,6 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -2273,7 +2245,6 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
-      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho
@@ -2312,20 +2283,14 @@ begin try
 	select 
 	top(100)ventaId
 	from FacturasPOS
-    inner join ventas.dbo.VENTAS On FacturasPOS.ventaId = VENTAS.CONSECUTIVO
-	inner join ventas.dbo.TURN_EST On VENTAS.FECHA_REAL = TURN_EST.FECHA and VENTAS.NUM_TUR = TURN_EST.NUM_TUR and VENTAS.COD_ISL = TURN_EST.COD_ISL
-    where (turnoEnviado = 0 or turnoEnviado is null)
-    and TURN_EST.ESTADO like 'C'
+    where turnoEnviado = 0 or turnoEnviado is null
 	order by ventaId desc
 
 	insert into @facturasTemp (id)
 	select 
 	top(100)ventaId
 	from OrdenesDeDespacho
-    inner join ventas.dbo.VENTAS On OrdenesDeDespacho.ventaId = VENTAS.CONSECUTIVO
-	inner join ventas.dbo.TURN_EST On VENTAS.FECHA_REAL = TURN_EST.FECHA and VENTAS.NUM_TUR = TURN_EST.NUM_TUR and VENTAS.COD_ISL = TURN_EST.COD_ISL
-    where (turnoEnviado = 0 or turnoEnviado is null)
-    and TURN_EST.ESTADO like 'C'
+    where turnoEnviado = 0 or turnoEnviado is null
 	order by ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
@@ -2370,7 +2335,6 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from FacturasPOS
@@ -2398,7 +2362,6 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
-      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from OrdenesDeDespacho
@@ -2421,8 +2384,8 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorConsecutivoORVentaId')
-	DROP PROCEDURE [dbo].getFacturaPorConsecutivoORVentaId
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorConsecutivo')
+	DROP PROCEDURE [dbo].getFacturaPorConsecutivo
 GO
 CREATE procedure [dbo].[getFacturaPorConsecutivoORVentaId]
 (
@@ -2448,7 +2411,6 @@ begin try
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.numeroTransaccion
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.FacturasPOS
@@ -2474,7 +2436,6 @@ begin try
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
-      ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	from dbo.OrdenesDeDespacho
@@ -2482,6 +2443,244 @@ begin try
 	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
 	where OrdenesDeDespacho.ventaId = @consecutivo
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Fidelizado' and xtype='U')
+BEGIN
+    create table dbo.Fidelizado(
+    Id INT PRIMARY KEY IDENTITY (1, 1),
+    documento VARCHAR (50) NOT NULL,
+    puntos float NOT NULL
+);
+END
+
+GO
+drop procedure [dbo].GetFidelizado
+GO
+CREATE procedure [dbo].GetFidelizado
+(@ventaId int)
+as
+begin try
+    set nocount on;
+	select *
+	from dbo.Fidelizado 
+    inner join VentaFidelizada on Fidelizado.documento = VentaFidelizada.identificacion
+	where VentaFidelizada.ventaId = @ventaId
+    
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+drop procedure [dbo].AddFidelizado
+GO
+CREATE procedure [dbo].AddFidelizado
+(@documento varchar(50),@puntos float)
+as
+begin try
+    set nocount on;
+	declare @Id int;
+	select @Id=Id from fidelizado where @documento = documento
+	if @Id is null
+	begin
+	insert into dbo.Fidelizado (documento, puntos) values(@documento, @puntos)
+
+    end
+	
+	select @Id=Id from fidelizado where @documento = documento
+
+	update Fidelizado set puntos=@puntos from Fidelizado where  @documento = documento
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+GO
+
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'GetTerceroByQuery')
+	DROP PROCEDURE [dbo].[GetTerceroByQuery]
+GO
+CREATE procedure [dbo].[GetTerceroByQuery]
+( 
+    @identificacion CHAR (15) 
+)
+as
+begin try
+    set nocount on;
+	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
+	from dbo.terceros 
+    inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
+    where REPLACE(@identificacion, ' ', '') = identificacion
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+GO
+
+	IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='VentaFidelizada' and xtype='U')
+BEGIN
+    create table dbo.[VentaFidelizada](
+    Id INT PRIMARY KEY IDENTITY (1, 1),
+    identificacion VARCHAR (50) NOT NULL,
+    ventaId int NOT NULL
+);
+END
+    GO
+    GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ActualizarFacturaFidelizada')
+	DROP PROCEDURE [dbo].[ActualizarFacturaFidelizada]
+GO
+CREATE procedure [dbo].[ActualizarFacturaFidelizada]
+( 
+    @identificacion varchar (50) ,
+    @ventaId int
+)
+as
+begin try
+    set nocount on;
+	insert into VentaFidelizada(identificacion, ventaId)
+    values(@identificacion, @ventaId)
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ObjetoImprimir' and xtype='U')
+BEGIN
+    create table dbo.[ObjetoImprimir](
+    Id INT PRIMARY KEY IDENTITY (1, 1),
+    fecha DateTime NOT NULL,
+    Isla int NOT NULL,
+    Numero int NOT NULL, 
+	Objeto varchar(10),
+	impreso bit Not null
+);
+END
+    GO
+	IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'GetObjetoImprimir')
+	DROP PROCEDURE [dbo].GetObjetoImprimir
+GO
+CREATE procedure [dbo].GetObjetoImprimir
+as
+begin try
+    set nocount on;
+	select * from ObjetoImprimir where impreso =0
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'SetObjetoImpreso')
+	DROP PROCEDURE [dbo].SetObjetoImpreso
+GO
+CREATE procedure [dbo].SetObjetoImpreso
+( 
+    @Id int
+)
+as
+begin try
+    set nocount on;
+	Update ObjetoImprimir set impreso = 1
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'AgregarObjetoImprimir')
+	DROP PROCEDURE [dbo].AgregarObjetoImprimir
+GO
+CREATE procedure [dbo].AgregarObjetoImprimir
+( 
+   @fecha DateTime ,
+    @Isla int,
+    @Numero int, 
+	@Objeto varchar(10)
+)
+as
+begin try
+    set nocount on;
+	insert into  ObjetoImprimir (fecha, Isla,Numero,Objeto,impreso)
+	values(@fecha, @Isla, @Numero, @Objeto,0)
 end try
 begin catch
     declare 
