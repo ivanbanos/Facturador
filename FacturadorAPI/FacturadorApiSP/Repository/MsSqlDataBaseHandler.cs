@@ -270,7 +270,9 @@ namespace MachineUtilizationApi.Repository
 
                 {"@vendedor",facturaCanastilla.empleado.Replace("\"","").Trim()},
 
-                {"@isla",facturaCanastilla.isla}
+                {"@isla",facturaCanastilla.isla},
+
+                {"@placa",facturaCanastilla.placa ?? ""}
             };
             DataTable dt = await LoadDataTableFromStoredProcAsync( "CrearFacturaCanastilla",
                          parameters);

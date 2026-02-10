@@ -6,6 +6,7 @@ namespace FacturadorAPI.Models
         public int terceroId { get; set; }
         public int codigoFormaPago { get; set; }
         public float descuento { get; set; }
+        public string placa { get; set; }
         public List<CanastillaFactura> canastillas { get; set; }
 
     }

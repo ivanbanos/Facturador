@@ -26,6 +26,7 @@ const Canastilla = () => {
     descuento: 0,
     vendedor: 0,
     isla: 0,
+    placa: "",
     canastillas: [],
   };
   const [objetoPostCanastilla, setObjetoPostCanastilla] = useState(
@@ -189,6 +190,13 @@ const Canastilla = () => {
     };
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
   };
+  const handleChangePlaca = (event) => {
+    const tempObjetoPostCanastilla = {
+      ...objetoPostCanastilla,
+      placa: event.target.value,
+    };
+    setObjetoPostCanastilla(tempObjetoPostCanastilla);
+  };
   const onClickImprimirTurno = async () => {
     const respuesta = await PostImprimirTurnoCanastilla(
       localStorage.getItem("islaSelect")
@@ -202,6 +210,8 @@ const Canastilla = () => {
   const onClickGenerarVenta = async (canastilla) => {
     if (canastilla.codigoFormaPago == 0) {
       handleSetShowAlertError(true);
+    } else if (canastilla.codigoFormaPago == 6 && (!canastilla.placa || canastilla.placa.trim() === "")) {
+      alert("La placa es obligatoria cuando la forma de pago es crédito.");
     } else {
       canastilla.isla = localStorage.getItem("islaSelect");
       canastilla.empleado = localStorage.getItem("empleado");
@@ -421,6 +431,20 @@ const Canastilla = () => {
                         </option>
                       ))}
                   </select>
+                </div>
+                <div className="div-info-venta-canastilla mt-2">
+                  <label className="label-info-venta-canastilla">
+                    Placa {objetoPostCanastilla.codigoFormaPago == 6 && <span style={{color: 'red'}}>*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control w-75 altura-select select-white-blue text-select-list"
+                    placeholder="Ingrese la placa"
+                    name="placa"
+                    value={objetoPostCanastilla.placa}
+                    onChange={handleChangePlaca}
+                    maxLength={20}
+                  />
                 </div>
               </div>
             </div>

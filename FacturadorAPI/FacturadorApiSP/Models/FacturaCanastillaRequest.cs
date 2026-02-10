@@ -9,6 +9,7 @@
         public int vendedor { get; set; }
         public IEnumerable<CanastillaFacturaRequest> canastillas { get; set; }
         public float descuento { get; set; }
+        public string placa { get; set; }
 
     }
 

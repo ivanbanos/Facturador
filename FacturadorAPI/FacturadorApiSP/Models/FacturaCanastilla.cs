@@ -21,6 +21,7 @@ namespace FacturadorAPI.Models
         public float descuento { get; set; }
         public float iva { get; set; }
         public float total { get; set; }
+        public string placa { get; set; }
         public Guid Guid { get; set; }
         public Guid IdEstacion { get; set; }
 

@@ -247,7 +247,9 @@ namespace MachineUtilizationApi.Repository
 
                 {"@imprimir", imprimir},
 
-                {"@descuento",facturaCanastilla.descuento}
+                {"@descuento",facturaCanastilla.descuento},
+
+                {"@placa",facturaCanastilla.placa ?? ""}
             };
             DataTable dt = await LoadDataTableFromStoredProcAsync( "CrearFacturaCanastilla",
                          parameters);
