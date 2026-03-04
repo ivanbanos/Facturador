@@ -7,6 +7,7 @@ import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
 const ModalCerrarTurno = (props) => {
   const [showModalCerrarTurno, setShowModalCerrarTurno] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const handleCloseModalCerrarTurno = () => setShowModalCerrarTurno(false);
   const handleShowModalCerrarTurno = () => setShowModalCerrarTurno(true);
   const [codigoEmpleado, setCodigoEmpleado] = useState("");
@@ -18,6 +19,7 @@ const ModalCerrarTurno = (props) => {
     <>
       <Button
         className="botton-green m-1 right-botton"
+        disabled={isProcessing}
         onClick={() => {
           handleShowModalCerrarTurno();
         }}
@@ -49,6 +51,7 @@ const ModalCerrarTurno = (props) => {
                   className="form-control modal-tercero-input"
                   name="identificacion"
                   value={codigoEmpleado}
+                  disabled={isProcessing}
                   onChange={(event) =>
                     handleChangeCodigoEmpleado(event.target.value)
                   }
@@ -75,6 +78,7 @@ const ModalCerrarTurno = (props) => {
         <Modal.Footer>
           <Button
             className="botton-light-blue-modal"
+            disabled={isProcessing}
             onClick={() => {
               handleCloseModalCerrarTurno();
             }}
@@ -83,9 +87,19 @@ const ModalCerrarTurno = (props) => {
           </Button>
           <Button
             className="botton-medium-blue-modal"
-            onClick={() => {
+            disabled={isProcessing}
+            onClick={async () => {
+              if (isProcessing) {
+                return;
+              }
+
+              setIsProcessing(true);
               handleCloseModalCerrarTurno();
-              cerrarTurno(islaSelect, codigoEmpleado);
+              try {
+                await cerrarTurno(islaSelect, codigoEmpleado);
+              } finally {
+                setIsProcessing(false);
+              }
             }}
           >
             Cerrar Turno

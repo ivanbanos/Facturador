@@ -7,11 +7,18 @@ BEGIN
     fecha DateTime NOT NULL,
     Isla int NOT NULL,
     Numero int NOT NULL, 
-	Objeto varchar(10),
+	Objeto varchar(50),
 	impreso bit Not null
 );
 END
     GO
+
+-- Ampliar columna Objeto si ya existe la tabla con varchar(10)
+IF COL_LENGTH('ObjetoImprimir', 'Objeto') IS NOT NULL
+BEGIN
+    ALTER TABLE ObjetoImprimir ALTER COLUMN Objeto varchar(50);
+END
+GO
 	IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'GetObjetoImprimir')
 	DROP PROCEDURE [dbo].GetObjetoImprimir
 GO
@@ -19,7 +26,7 @@ CREATE procedure [dbo].GetObjetoImprimir
 as
 begin try
     set nocount on;
-	select * from ObjetoImprimir where impreso =100
+	select * from ObjetoImprimir where impreso = 0
 end try
 begin catch
     declare 
@@ -45,7 +52,7 @@ CREATE procedure [dbo].SetObjetoImpreso
 as
 begin try
     set nocount on;
-	Update ObjetoImprimir set impreso = 1
+	Update ObjetoImprimir set impreso = 1 WHERE Id = @Id
 end try
 begin catch
     declare 
@@ -70,7 +77,7 @@ CREATE procedure [dbo].AgregarObjetoImprimir
    @fecha DateTime ,
     @Isla int,
     @Numero int, 
-	@Objeto varchar(10)
+	@Objeto varchar(50)
 )
 as
 begin try

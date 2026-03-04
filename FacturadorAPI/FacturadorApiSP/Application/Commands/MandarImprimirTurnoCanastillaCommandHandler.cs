@@ -28,7 +28,14 @@ namespace FacturadorApiSP.Application.Commands
 
         public async Task<string> Handle(MandarImprimirTurnoCanastillaCommand request, CancellationToken cancellationToken)
         {
-            await _databaseHandler.MandarImprimirObjeto(request.Isla, DateTime.Now.Date, 0, "CierreCanastilla");
+            var turnoA = await _databaseHandler.ObtenerTurnoPorIsla(request.Isla, cancellationToken);
+            if(turnoA == null)
+            {
+                await _databaseHandler.MandarImprimirObjeto(request.Isla, DateTime.Now.Date, 0, "CierreCanastilla");
+            } else
+            {
+                await _databaseHandler.MandarImprimirObjeto(request.Isla, turnoA.FechaApertura, turnoA.numero, "CierreCanastilla");
+            }
             return "Ok";
         }
     }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Button } from "react-bootstrap";
 import "./styles/home.css";
 import GetIslas from "../Services/getServices/GetIslas";
 import GetTurnoIsla from "../Services/getServices/GetTurnoIsla";
@@ -22,6 +23,7 @@ import ModalImprimirPorConsecutivo from "./modalImprimirPorConsecutivo";
 import ModalReimprimirTurno from "./modalReimprimirTurno";
 import ModalFidelizarVenta from "./modalFidelizarVenta";
 import ImprimirNativo from "../Services/getServices/ImprimirNativo";
+import ModalAgregarFormaPago from "./modalAgregarFormaPago";
 
 const Combustible = () => {
   // Estado para mostrar error de placa
@@ -45,8 +47,19 @@ const Combustible = () => {
   const [identificacion, setIdentificacion] = useState("");
   const [bloqueado, setUsuarioBloqueado] = useState(false);
   const [showFacturaElectronica, setShowFacturaElectronica] = useState(false);
+  const [showModalSegundaFormaPago, setShowModalSegundaFormaPago] =
+    useState(false);
+  const habilitarSegundaFormaPago = window.HabilitarSegundaFormaPago !== false;
 
   const handleCloseFacturaElectronica = () => setShowFacturaElectronica(false);
+  const handleCloseModalSegundaFormaPago = () =>
+    setShowModalSegundaFormaPago(false);
+  const handleShowModalSegundaFormaPago = () => {
+    if (!habilitarSegundaFormaPago) {
+      return;
+    }
+    setShowModalSegundaFormaPago(true);
+  };
   const handleShowFacturaElectrónica = () => {
     setShowFacturaElectronica(true);
   };
@@ -97,6 +110,7 @@ const Combustible = () => {
     terceroId: 0,
     coD_CLI: "",
     nombre: "",
+    apellidos: "",
     telefono: "",
     direccion: "",
     identificacion: "",
@@ -131,6 +145,7 @@ const Combustible = () => {
       terceroId: 0,
       coD_CLI: "",
       nombre: "",
+      apellidos: "",
       telefono: "",
       direccion: "",
       identificacion: "",
@@ -264,13 +279,13 @@ const Combustible = () => {
   const handleChangeFactura = async (event) => {
     if (event.target.name === "placa" && modoPlaca === "PLACA") {
       // Permitir que el input se actualice siempre, validando solo al guardar
-      const value = event.target.value.toUpperCase();
+      const value = event.target.value.toUpperCase().trim();
       const tempFactura = { ...ultimaFactura, placa: value };
       setUltimaFactura(tempFactura);
       // Validar formato y mostrar error visual
-      const regex = /^[A-Z0-9]{6,10}$/;
-      if (value.length >= 6 && !regex.test(value)) {
-        setPlacaError("Formato inválido. Ejemplo: ABC123");
+      const regex = /^[A-Z0-9\-]{3,10}$/;
+      if (value.length >= 3 && !regex.test(value)) {
+        setPlacaError("Formato inválido. Ejemplo: ABC123 o ABC-123");
       } else {
         setPlacaError("");
       }
@@ -289,9 +304,36 @@ const Combustible = () => {
         ...ultimaFactura,
         [event.target.name]: event.target.value,
       };
+
+      if (
+        event.target.name === "codigoFormaPago" &&
+        Number(tempFactura.codigoFormaPago2) === Number(event.target.value)
+      ) {
+        tempFactura.codigoFormaPago2 = null;
+        tempFactura.total2 = null;
+        tempFactura.total1 = null;
+      }
+
       setUltimaFactura(tempFactura);
       await handleEstadoFactura(tempFactura);
     }
+  };
+
+  const handleGuardarSegundaFormaPago = ({
+    codigoFormaPago2,
+    total2,
+    total1,
+  }) => {
+    if (!habilitarSegundaFormaPago) {
+      return;
+    }
+    const tempFactura = {
+      ...ultimaFactura,
+      codigoFormaPago2,
+      total2,
+      total1,
+    };
+    setUltimaFactura(tempFactura);
   };
 
   const fetcInicial = async () => {
@@ -480,7 +522,9 @@ const Combustible = () => {
                 </div>
                 <div className="col-8 datos-cliente">
                   <p className="texto-datos-cliente">
-                    {ultimaFactura.tercero.nombre || ""}
+                    {[ultimaFactura.tercero.nombre, ultimaFactura.tercero.apellidos]
+                      .filter(Boolean)
+                      .join(" ")}
                   </p>
                   <p className="texto-datos-cliente">
                     {ultimaFactura.tercero.telefono || ""}
@@ -521,6 +565,20 @@ const Combustible = () => {
                       </option>
                     ))}
                 </select>
+                {habilitarSegundaFormaPago && (
+                  <Button
+                    className="botton-light-blue-modal mt-2"
+                    onClick={handleShowModalSegundaFormaPago}
+                    disabled={disableForma || bloqueado}
+                  >
+                    Agregar forma de pago
+                  </Button>
+                )}
+                {habilitarSegundaFormaPago && ultimaFactura.codigoFormaPago2 && (
+                  <small className="d-block text-white mt-1">
+                    Forma 2: {ultimaFactura.codigoFormaPago2} | Valor: {ultimaFactura.total2 || 0}
+                  </small>
+                )}
               </div>
               <div className="div-info-venta ">
                 <label className="label-info-venta ">N. trans</label>
@@ -686,6 +744,15 @@ const Combustible = () => {
             islaSelectName={islaSelectName}
             handleSetShowAlertError={handleSetShowAlertError}
           ></ModalReimprimirTurno>
+          {habilitarSegundaFormaPago && (
+            <ModalAgregarFormaPago
+              show={showModalSegundaFormaPago}
+              handleClose={handleCloseModalSegundaFormaPago}
+              onSave={handleGuardarSegundaFormaPago}
+              formasDePago={formasDePago}
+              factura={ultimaFactura}
+            />
+          )}
         </div>
       </div>
       <AlertError

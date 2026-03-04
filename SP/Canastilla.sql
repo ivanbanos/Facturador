@@ -39,6 +39,9 @@ BEGIN
         impresa INT DEFAULT 0,
         enviada BIT DEFAULT 0,
         codigoFormaPago INT NOT NULL DEFAULT 4,
+        codigoFormaPago2 INT NULL,
+        total1 FLOAT NULL,
+        total2 FLOAT NULL,
         subtotal FLOAT NOT NULL,
         descuento FLOAT NOT NULL,
         iva FLOAT NOT NULL,
@@ -55,6 +58,24 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'placa' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
 BEGIN
     ALTER TABLE dbo.FacturasCanastilla ADD placa VARCHAR(20) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'codigoFormaPago2' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
+BEGIN
+    ALTER TABLE dbo.FacturasCanastilla ADD codigoFormaPago2 INT NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'total1' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
+BEGIN
+    ALTER TABLE dbo.FacturasCanastilla ADD total1 FLOAT NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'total2' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
+BEGIN
+    ALTER TABLE dbo.FacturasCanastilla ADD total2 FLOAT NULL;
 END
 GO
 --ALTER TABLE FacturasCanastilla
@@ -348,7 +369,10 @@ CREATE OR ALTER PROCEDURE dbo.CrearFacturaCanastilla
     @imprimir BIT = 1,
     @vendedor VARCHAR(50) = NULL,
     @isla VARCHAR(50) = NULL,
-    @placa VARCHAR(20) = NULL
+    @placa VARCHAR(20) = NULL,
+    @COD_FOR_PAG_2 SMALLINT = NULL,
+    @total1 FLOAT = NULL,
+    @total2 FLOAT = NULL
 )
 AS
 BEGIN TRY
@@ -356,6 +380,15 @@ BEGIN TRY
     DECLARE @ResolucionId INT, @consecutivoActual INT, @fechafinal DATETIME, @facturaCanastillaId INT, @ConsecutivoFinal INT, @cantidadCanastillas INT, @mismaResolucion VARCHAR(50), @fecha INT, @turno INT;
     DECLARE @subtotal FLOAT = 0, @totalIva FLOAT = 0, @total FLOAT = 0;
     DECLARE @ivaPorcentaje BIT = 0;
+    DECLARE @codigoFormaPagoPrincipal SMALLINT;
+    DECLARE @montoPago1 FLOAT;
+    DECLARE @montoPago2 FLOAT;
+
+    SET @codigoFormaPagoPrincipal = ISNULL(@COD_FOR_PAG, @COD_FOR_PAG_2);
+    IF @codigoFormaPagoPrincipal IS NULL
+    BEGIN
+        SET @codigoFormaPagoPrincipal = 4;
+    END
 
     -- Obtener información del turno
     SELECT @fecha = FECHA, @turno = NUM_TUR 
@@ -389,6 +422,23 @@ BEGIN TRY
     BEGIN
         SELECT 0 AS facturaCanastillaId;
         RETURN;
+    END
+
+    SET @montoPago1 = ISNULL(@total1, 0);
+    SET @montoPago2 = ISNULL(@total2, 0);
+
+    IF @total1 IS NULL AND @total2 IS NULL
+    BEGIN
+        SET @montoPago1 = @total;
+        SET @montoPago2 = 0;
+    END
+    ELSE IF @total1 IS NULL
+    BEGIN
+        SET @montoPago1 = @total - @montoPago2;
+    END
+    ELSE IF @total2 IS NULL
+    BEGIN
+        SET @montoPago2 = @total - @montoPago1;
     END
 
     -- Determinar configuración de resolución
@@ -425,12 +475,12 @@ BEGIN TRY
     -- Crear factura
     INSERT INTO FacturasCanastilla (
         fecha, resolucionId, consecutivo, estado, terceroId, enviada, 
-        codigoFormaPago, subtotal, descuento, iva, total, impresa,
+        codigoFormaPago, codigoFormaPago2, total1, total2, subtotal, descuento, iva, total, impresa,
         vendedor, isla, fechaturno, turno, placa
     )
     VALUES (
         GETDATE(), @ResolucionId, @consecutivoActual, 'CR', @terceroId, 0, 
-        @COD_FOR_PAG, @subtotal, @descuento, @totalIva, @total, -1,
+        @codigoFormaPagoPrincipal, @COD_FOR_PAG_2, @montoPago1, @montoPago2, @subtotal, @descuento, @totalIva, @total, -1,
         @vendedor, @isla, @fecha, @turno, @placa
     );
 
@@ -477,4 +527,15 @@ BEGIN CATCH
     SELECT @errorMessage = ERROR_MESSAGE(), @errorProcedure = ERROR_PROCEDURE(), @errorLine = ERROR_LINE();
     RAISERROR (N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 END CATCH
+GO
+CREATE OR ALTER PROCEDURE ReimprimirFacturaCanastilla
+    @consecutivo INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE FacturasCanastilla
+    SET impresa = -1
+    WHERE consecutivo = @consecutivo;
+END
 GO

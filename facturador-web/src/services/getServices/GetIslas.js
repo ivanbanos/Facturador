@@ -1,7 +1,14 @@
 
+import GetServerUrl from "./GetServerUrl";
+
 const GetIslas = async () => {
   try {
-    const response = await fetch(window.SERVER_URL + "/api/Estacion/Islas");
+    const serverUrl = GetServerUrl();
+    if (!serverUrl) {
+      return "fail";
+    }
+
+    const response = await fetch(serverUrl + "/api/Estacion/Islas");
 
     if (response.status === 200) {
       return await response.json();

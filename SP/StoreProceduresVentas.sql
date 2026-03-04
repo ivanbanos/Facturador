@@ -614,3 +614,44 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+ALTER procedure [dbo].[ObtenerTurnoIslaYFecha]
+(@IdIsla int, @num_tur int, @fecha datetime)
+as
+begin try
+    set nocount on;
+	select  NUM_TUR as Numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(FECHA) + dbo.HINTEGER(HORA_INI)  as FechaApertura , dbo.Finteger(FECHA) + dbo.HINTEGER(HORA_FIN) as FechaCierre , FECHA
+ from TURN_EST
+inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
+inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
+ where  ISLAS.COD_ISL = @IdISla and NUM_TUR = @num_tur and dbo.Finteger(FECHA) = @fecha
+      
+	  select TURN_LEC.COD_MAN as Manguera, TURN_LEC.COD_SUR as Surtidor, LECT_INI1 as Apertura, LECT_FIN1 as Cierre, ARTICULO.Descripcion as  Combustible, TURN_LEC.PRECIO as precioCombustible
+ from TURN_LEC
+inner join ARTICULO On ARTICULO.COD_ART = TURN_LEC.COD_ART1
+inner join ISLAS On ISLAS.COD_ISL = TURN_LEC.COD_ISL
+ where ISLAS.COD_ISL = @IdISla and NUM_TUR = @num_tur and dbo.Finteger(FECHA) = @fecha
+
+ select dbo.Finteger(FECHA) as Fecha, Consecutivo, NUM_TUR as NumeroTurno,ISLAS.DESCRIPCION as Isla,
+EMPLEADO.Nombre as Empleado, VR_MONEDA as Moneda, VR_BILLETE as Billete
+from BOLS_TUR
+
+inner join EMPLEADO On EMPLEADO.COD_EMP = BOLS_TUR.COD_EMP
+inner join ISLAS On ISLAS.COD_ISL = BOLS_TUR.COD_ISL
+where dbo.Finteger(BOLS_TUR.FECHA) = @fecha and
+BOLS_TUR.COD_ISL = @IdISla
+and BOLS_TUR.NUM_TUR =@num_tur
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO

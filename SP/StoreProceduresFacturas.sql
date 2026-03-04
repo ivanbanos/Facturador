@@ -33,6 +33,7 @@ BEGIN
     tipoIdentificacion int NULL,
     identificacion VARCHAR (50) NOT NULL,
     nombre VARCHAR (50) NULL,
+    apellidos VARCHAR (50) NULL,
     telefono VARCHAR (50) NULL,
     correo VARCHAR (50) NULL,
     direccion VARCHAR (50) NULL,
@@ -95,6 +96,19 @@ IF NOT EXISTS (
     *
   FROM
     INFORMATION_SCHEMA.COLUMNS
+    WHERE
+        TABLE_NAME = 'terceros' AND COLUMN_NAME = 'apellidos')
+BEGIN
+    ALTER TABLE terceros
+ADD apellidos VARCHAR(50) NULL;
+END;
+
+GO
+IF NOT EXISTS (
+    SELECT
+        *
+    FROM
+        INFORMATION_SCHEMA.COLUMNS
   WHERE
     TABLE_NAME = 'terceros' AND COLUMN_NAME = 'COD_CLI')
 BEGIN
@@ -137,6 +151,9 @@ BEGIN
 	enviadaFacturacion bit default 0,
 	enviada bit default 0,
 	codigoFormaPago int not null default 4,
+    codigoFormaPago2 int null,
+    total1 float null,
+    total2 float null,
     FOREIGN KEY (resolucionId) REFERENCES dbo.Resoluciones (ResolucionId)
 );
 
@@ -164,6 +181,9 @@ BEGIN
 	enviadaFacturacion bit default 0,
 	enviada bit default 0,
 	codigoFormaPago int not null default 4,
+    codigoFormaPago2 int null,
+    total1 float null,
+    total2 float null,
     FOREIGN KEY (resolucionId) REFERENCES dbo.Resoluciones (ResolucionId)
 );
 
@@ -325,7 +345,7 @@ CREATE procedure [dbo].[ObtenerTercero]
 as
 begin try
     set nocount on;
-	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
+	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, apellidos, telefono, correo, direccion, terceros.estado, COD_CLI 
 	from dbo.terceros 
     inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
     where REPLACE(@identificacion, ' ', '') = identificacion
@@ -382,6 +402,7 @@ CREATE procedure [dbo].[CrearTercero]
     @tipoIdentificacion int,
     @identificacion VARCHAR (50) ,
     @nombre VARCHAR (50) ,
+    @apellidos VARCHAR (50) = null,
     @telefono VARCHAR (50) ,
     @correo VARCHAR (50) ,
     @direccion VARCHAR (50) ,
@@ -407,8 +428,8 @@ begin try
 			REPLACE(@identificacion, ' ', '') = identificacion
 			if @idTerceroCreado is null
 			begin
-				INSERT INTO terceros (tipoIdentificacion,identificacion,nombre,telefono,correo,direccion,estado,COD_CLI) 
-				values(@tipoIdentificacion,REPLACE(@identificacion, ' ', ''),@nombre,@telefono,@correo,@direccion,@estado,@COD_CLI)
+                INSERT INTO terceros (tipoIdentificacion,identificacion,nombre,apellidos,telefono,correo,direccion,estado,COD_CLI) 
+                values(@tipoIdentificacion,REPLACE(@identificacion, ' ', ''),@nombre,@apellidos,@telefono,@correo,@direccion,@estado,@COD_CLI)
 
 				select @idTerceroCreado = @@Identity
 			end
@@ -419,6 +440,7 @@ begin try
 			tipoIdentificacion = @tipoIdentificacion,
 			identificacion = REPLACE(@identificacion, ' ', ''),
 			nombre = @nombre,
+            apellidos = @apellidos,
 			telefono = @telefono,
 			correo = @correo,
 			direccion = @direccion,
@@ -428,7 +450,7 @@ begin try
 			where @idTerceroCreado = terceroId
 		end
 		end
-	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
+    select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, apellidos, telefono, correo, direccion, terceros.estado, COD_CLI 
 	from dbo.terceros 
     inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
     where @idTerceroCreado = terceroId
@@ -592,6 +614,78 @@ ALTER TABLE
   FacturasPOS ADD codigoFormaPago int not null default 4
 END;
 GO
+IF NOT EXISTS (
+    SELECT
+        *
+    FROM
+        INFORMATION_SCHEMA.COLUMNS
+    WHERE
+        TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'codigoFormaPago2')
+BEGIN
+ALTER TABLE
+    FacturasPOS ADD codigoFormaPago2 int null
+END;
+GO
+IF NOT EXISTS (
+    SELECT
+        *
+    FROM
+        INFORMATION_SCHEMA.COLUMNS
+    WHERE
+        TABLE_NAME = 'OrdenesDeDespacho' AND COLUMN_NAME = 'codigoFormaPago2')
+BEGIN
+ALTER TABLE
+    OrdenesDeDespacho ADD codigoFormaPago2 int null
+END;
+GO
+IF NOT EXISTS (
+    SELECT
+        *
+    FROM
+        INFORMATION_SCHEMA.COLUMNS
+    WHERE
+        TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'total1')
+BEGIN
+ALTER TABLE
+    FacturasPOS ADD total1 float null
+END;
+GO
+IF NOT EXISTS (
+    SELECT
+        *
+    FROM
+        INFORMATION_SCHEMA.COLUMNS
+    WHERE
+        TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'total2')
+BEGIN
+ALTER TABLE
+    FacturasPOS ADD total2 float null
+END;
+GO
+IF NOT EXISTS (
+    SELECT
+        *
+    FROM
+        INFORMATION_SCHEMA.COLUMNS
+    WHERE
+        TABLE_NAME = 'OrdenesDeDespacho' AND COLUMN_NAME = 'total1')
+BEGIN
+ALTER TABLE
+    OrdenesDeDespacho ADD total1 float null
+END;
+GO
+IF NOT EXISTS (
+    SELECT
+        *
+    FROM
+        INFORMATION_SCHEMA.COLUMNS
+    WHERE
+        TABLE_NAME = 'OrdenesDeDespacho' AND COLUMN_NAME = 'total2')
+BEGIN
+ALTER TABLE
+    OrdenesDeDespacho ADD total2 float null
+END;
+GO
 DECLARE @resolucionId int
 SELECT @resolucionId = resolucionId from Resoluciones where estado = 'AC'
 if @resolucionId is  null
@@ -665,7 +759,10 @@ begin try
       ,FacturasPOS.[impresa]
       ,FacturasPOS.[consolidadoId]
       ,FacturasPOS.[enviada]
-      ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago2]
+    ,FacturasPOS.[total1]
+    ,FacturasPOS.[total2]
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -692,7 +789,10 @@ begin try
       ,OrdenesDeDespacho.[impresa]
       ,OrdenesDeDespacho.[consolidadoId]
       ,OrdenesDeDespacho.[enviada]
-      ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1012,7 +1112,10 @@ CREATE procedure [dbo].[CrearFactura]
 	@Placa varchar(50) = null,
 	@Kilometraje varchar(50) = null,
 	@COD_FOR_PAG smallint,
-	@Fecha datetime = null
+    @Fecha datetime = null,
+    @COD_FOR_PAG_2 smallint = null,
+    @total1 float = null,
+    @total2 float = null
 )
 as
 begin try
@@ -1020,7 +1123,7 @@ begin try
 	declare @ResolucionId int, @consecutivoActual int, @fechafinal DATETIME, @facturaPOSId int, @ConsecutivoFinal int,
 	
 	@clientesCreditoGeneranFactura VARCHAR (50), @soloGeneraOrdenes VARCHAR (50), @verificarConsecutivo int,
-	@OrdenDeDespachoId int, @mismaResolucion VARCHAR (50);
+    @OrdenDeDespachoId int, @mismaResolucion VARCHAR (50), @codigoFormaPagoPrincipal smallint;
 	
 	select @facturaPOSId = facturaPOSId from FacturasPOS where ventaId = @ventaId
 	select @OrdenDeDespachoId = facturaPOSId from OrdenesDeDespacho where ventaId = @ventaId
@@ -1035,6 +1138,12 @@ begin try
 	begin
 		select @Fecha = GETDATE()
 	END
+
+    select @codigoFormaPagoPrincipal = isnull(@COD_FOR_PAG, 4)
+    if @codigoFormaPagoPrincipal is null
+    begin
+        select @codigoFormaPagoPrincipal = 4
+    end
 
 	if @facturaPOSId is not null 
 	begin
@@ -1061,11 +1170,11 @@ begin try
 		end
 		else
 		begin
-			if @soloGeneraOrdenes = 'SI' or (  @clientesCreditoGeneranFactura != 'SI' and @COD_FOR_PAG !=4)
+            if @soloGeneraOrdenes = 'SI' or (  @clientesCreditoGeneranFactura != 'SI' and @codigoFormaPagoPrincipal !=4)
 			begin
 			
-				insert into OrdenesDeDespacho (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago)
-				values(@Fecha, @ResolucionId, 0, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @COD_FOR_PAG)
+                insert into OrdenesDeDespacho (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago, codigoFormaPago2, total1, total2)
+                values(@Fecha, @ResolucionId, 0, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @codigoFormaPagoPrincipal, null, null, null)
 			
 				select @facturaPOSId = SCOPE_IDENTITY()
 
@@ -1085,8 +1194,8 @@ begin try
 				end
 				else
 				begin
-					insert into FacturasPOS (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago)
-					select @Fecha, @ResolucionId, @consecutivoActual, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @COD_FOR_PAG
+                    insert into FacturasPOS (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago, codigoFormaPago2, total1, total2)
+                    select @Fecha, @ResolucionId, @consecutivoActual, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @codigoFormaPagoPrincipal, null, null, null
 					from Resoluciones WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
 			
 					select @facturaPOSId = SCOPE_IDENTITY()
@@ -1143,7 +1252,10 @@ begin try
       ,FacturasPOS.[impresa]
       ,FacturasPOS.[consolidadoId]
       ,FacturasPOS.[enviada]
-      ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago2]
+    ,FacturasPOS.[total1]
+    ,FacturasPOS.[total2]
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1171,7 +1283,10 @@ begin try
       ,OrdenesDeDespacho.[impresa]
       ,OrdenesDeDespacho.[consolidadoId]
       ,OrdenesDeDespacho.[enviada]
-      ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1223,7 +1338,10 @@ begin try
       ,FacturasPOS.[impresa]
       ,FacturasPOS.[consolidadoId]
       ,FacturasPOS.[enviada]
-      ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago2]
+    ,FacturasPOS.[total1]
+    ,FacturasPOS.[total2]
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1251,7 +1369,10 @@ begin try
       ,OrdenesDeDespacho.[impresa]
       ,OrdenesDeDespacho.[consolidadoId]
       ,OrdenesDeDespacho.[enviada]
-      ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1301,7 +1422,10 @@ begin try
       ,FacturasPOS.[impresa]
       ,FacturasPOS.[consolidadoId]
       ,FacturasPOS.[enviada]
-      ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago2]
+    ,FacturasPOS.[total1]
+    ,FacturasPOS.[total2]
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1327,7 +1451,10 @@ begin try
       ,OrdenesDeDespacho.[impresa]
       ,OrdenesDeDespacho.[consolidadoId]
       ,OrdenesDeDespacho.[enviada]
-      ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1443,7 +1570,10 @@ begin try
       ,FacturasPOS.[impresa]
       ,FacturasPOS.[consolidadoId]
       ,FacturasPOS.[enviada]
-      ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago2]
+    ,FacturasPOS.[total1]
+    ,FacturasPOS.[total2]
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1468,7 +1598,10 @@ begin try
       ,OrdenesDeDespacho.[impresa]
       ,OrdenesDeDespacho.[consolidadoId]
       ,OrdenesDeDespacho.[enviada]
-      ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1581,7 +1714,10 @@ begin try
       ,FacturasPOS.[impresa]
       ,FacturasPOS.[consolidadoId]
       ,FacturasPOS.[enviada]
-      ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago2]
+    ,FacturasPOS.[total1]
+    ,FacturasPOS.[total2]
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1607,7 +1743,10 @@ begin try
       ,OrdenesDeDespacho.[impresa]
       ,OrdenesDeDespacho.[consolidadoId]
       ,OrdenesDeDespacho.[enviada]
-      ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1832,7 +1971,10 @@ begin try
       ,FacturasPOS.[impresa]
       ,FacturasPOS.[consolidadoId]
       ,FacturasPOS.[enviada]
-      ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago2]
+    ,FacturasPOS.[total1]
+    ,FacturasPOS.[total2]
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1857,7 +1999,10 @@ begin try
       ,OrdenesDeDespacho.[impresa]
       ,OrdenesDeDespacho.[consolidadoId]
       ,OrdenesDeDespacho.[enviada]
-      ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -2076,6 +2221,9 @@ CREATE procedure [dbo].[ActualizarFactura]
 	@Placa varchar(50) = null,
 	@Kilometraje varchar(50) = null,
 	@codigoFormaPago int = null,
+    @codigoFormaPago2 int = null,
+    @total1 float = null,
+    @total2 float = null,
 	@terceroId int = null,
 	@ventaId int
 )
@@ -2090,6 +2238,9 @@ begin try
 	impresa = impresa+1,
     enviada = 0,
     codigoFormaPago = @codigoFormaPago,
+    codigoFormaPago2 = isnull(@codigoFormaPago2, codigoFormaPago2),
+    total1 = isnull(@total1, total1),
+    total2 = isnull(@total2, total2),
 	terceroId = isnull(@terceroId, terceroId)
 	Where @facturaPOSId = facturaPOSId
 	and ventaId = @ventaID
@@ -2101,6 +2252,9 @@ begin try
 	impresa = impresa+1,
     enviada = 0,
     codigoFormaPago = @codigoFormaPago,
+    codigoFormaPago2 = isnull(@codigoFormaPago2, codigoFormaPago2),
+    total1 = isnull(@total1, total1),
+    total2 = isnull(@total2, total2),
 	terceroId = isnull(@terceroId, terceroId)
 	Where @facturaPOSId = facturaPOSId
 	and ventaId = @ventaID
@@ -2218,7 +2372,10 @@ begin try
       ,FacturasPOS.[impresa]
       ,FacturasPOS.[consolidadoId]
       ,FacturasPOS.[enviada]
-      ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago2]
+    ,FacturasPOS.[total1]
+    ,FacturasPOS.[total2]
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -2243,7 +2400,10 @@ begin try
       ,OrdenesDeDespacho.[impresa]
       ,OrdenesDeDespacho.[consolidadoId]
       ,OrdenesDeDespacho.[enviada]
-      ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -2333,7 +2493,10 @@ begin try
       ,FacturasPOS.[impresa]
       ,FacturasPOS.[consolidadoId]
       ,FacturasPOS.[enviada]
-      ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago2]
+    ,FacturasPOS.[total1]
+    ,FacturasPOS.[total2]
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -2360,7 +2523,10 @@ begin try
       ,OrdenesDeDespacho.[impresa]
       ,OrdenesDeDespacho.[consolidadoId]
       ,OrdenesDeDespacho.[enviada]
-      ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -2410,6 +2576,9 @@ begin try
       ,FacturasPOS.[consolidadoId]
       ,FacturasPOS.[enviada]
       ,FacturasPOS.[codigoFormaPago]
+    ,FacturasPOS.[codigoFormaPago2]
+    ,FacturasPOS.[total1]
+    ,FacturasPOS.[total2]
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -2435,6 +2604,9 @@ begin try
       ,OrdenesDeDespacho.[consolidadoId]
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -2544,7 +2716,7 @@ CREATE procedure [dbo].[GetTerceroByQuery]
 as
 begin try
     set nocount on;
-	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
+	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, apellidos, telefono, correo, direccion, terceros.estado, COD_CLI 
 	from dbo.terceros 
     inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
     where REPLACE(@identificacion, ' ', '') = identificacion

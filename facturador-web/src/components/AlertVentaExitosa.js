@@ -10,7 +10,7 @@ function AlertVentaExitosa(props) {
           onClose={() => props.handleSetShowAlertVentaExitosa(false)}
           dismissible
         >
-          <Alert.Heading>Venta Generada Exitosamente</Alert.Heading>
+          <Alert.Heading>{props.mensaje || "Venta Generada Exitosamente"}</Alert.Heading>
         </Alert>
       </div>
     );

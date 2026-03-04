@@ -6,11 +6,13 @@ import "./styles/modal.css";
 
 const ModalAddTercero = (props) => {
   const [errores, setErrores] = useState({});
+  const [isProcessing, setIsProcessing] = useState(false);
   const tiposDeIdentificacion = props.tiposDeIdentificacion;
   const terceroInicial = {
     terceroId: 0,
     coD_CLI: "",
     nombre: "",
+    apellidos: "",
     telefono: "",
     direccion: "",
     identificacion: "",
@@ -22,7 +24,7 @@ const ModalAddTercero = (props) => {
   const handleChangeTercero = (event) => {
     let value = event.target.value;
     // Forzar mayúsculas en todos los campos excepto identificacion, telefono y correo
-    if (["nombre", "direccion", "coD_CLI"].includes(event.target.name)) {
+    if (["nombre", "apellidos", "direccion", "coD_CLI"].includes(event.target.name)) {
       value = value.toUpperCase();
     }
     // Teléfono solo números
@@ -46,6 +48,7 @@ const ModalAddTercero = (props) => {
   function formIsValid() {
     const _errores = {};
     if (!nuevoTercero.nombre) _errores.nombre = "Se requiere el nombre";
+    if (!nuevoTercero.apellidos) _errores.apellidos = "Se requieren los apellidos";
     if (nuevoTercero.telefono && !/^\d{7,}$/.test(nuevoTercero.telefono)) {
       _errores.telefono = "Teléfono inválido (mínimo 7 dígitos)";
     }
@@ -65,17 +68,23 @@ const ModalAddTercero = (props) => {
     return Object.keys(_errores).length === 0;
   }
   const onSubmitTercero = async (newTercero) => {
+    if (isProcessing) return;
     if (!formIsValid()) return;
-    const respuesta = await PostTercero(newTercero);
-    if (respuesta === "fail") {
-      props.handleSetShowAlertError(true);
-    } else {
-      props.handleSetTerceroModalAddTercero &&
-        props.handleSetTerceroModalAddTercero(newTercero);
-      setNuevoTercero(terceroInicial);
-    }
+    setIsProcessing(true);
+    try {
+      const respuesta = await PostTercero(newTercero);
+      if (respuesta === "fail") {
+        props.handleSetShowAlertError && props.handleSetShowAlertError(true);
+      } else {
+        props.handleSetTerceroModalAddTercero &&
+          props.handleSetTerceroModalAddTercero(newTercero);
+        setNuevoTercero(terceroInicial);
+      }
 
-    props.handleShowAddTercero(false);
+      props.handleShowAddTercero(false);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -84,6 +93,7 @@ const ModalAddTercero = (props) => {
         <Modal
           show={props.showAddTercero}
           onHide={() => {
+            if (isProcessing) return;
             props.handleShowAddTercero(false);
           }}
           backdrop="static"
@@ -106,6 +116,7 @@ const ModalAddTercero = (props) => {
                     className="form-select modal-tercero-input"
                     name="tipoIdentificacion"
                     value={nuevoTercero.tipoIdentificacion}
+                    disabled={isProcessing}
                     onChange={handleChangeTercero}
                   >
                     <option value="">Selecciona tipo identificación</option>
@@ -138,6 +149,7 @@ const ModalAddTercero = (props) => {
                     }`}
                     name="identificacion"
                     value={nuevoTercero.identificacion}
+                    disabled={isProcessing}
                     onChange={handleChangeTercero}
                     placeholder={errores.identificacion || "Identificación"}
                     maxLength={15}
@@ -155,8 +167,25 @@ const ModalAddTercero = (props) => {
                     }`}
                     name="nombre"
                     value={nuevoTercero.nombre}
+                    disabled={isProcessing}
                     onChange={handleChangeTercero}
                     placeholder={errores.nombre || "Nombre"}
+                  ></input>
+                </div>
+              </div>
+              <div className="row mb-3">
+                <label className="col-sm-4 col-form-label">Apellidos</label>
+                <div className="col-sm-8">
+                  <input
+                    type="text"
+                    className={`form-control modal-tercero-input ${
+                      errores.apellidos ? "is-invalid" : ""
+                    }`}
+                    name="apellidos"
+                    value={nuevoTercero.apellidos}
+                    disabled={isProcessing}
+                    onChange={handleChangeTercero}
+                    placeholder={errores.apellidos || "Apellidos"}
                   ></input>
                 </div>
               </div>
@@ -170,6 +199,7 @@ const ModalAddTercero = (props) => {
                     }`}
                     name="direccion"
                     value={nuevoTercero.direccion}
+                    disabled={isProcessing}
                     onChange={handleChangeTercero}
                     placeholder={errores.direccion || "Dirección"}
                   ></input>
@@ -185,6 +215,7 @@ const ModalAddTercero = (props) => {
                     }`}
                     name="telefono"
                     value={nuevoTercero.telefono}
+                    disabled={isProcessing}
                     onChange={handleChangeTercero}
                     placeholder={errores.telefono || "Teléfono"}
                     maxLength={15}
@@ -201,6 +232,7 @@ const ModalAddTercero = (props) => {
                     }`}
                     name="correo"
                     value={nuevoTercero.correo}
+                    disabled={isProcessing}
                     onChange={handleChangeTercero}
                     placeholder={errores.correo || "Correo"}
                     style={{ textTransform: "uppercase" }}
@@ -212,6 +244,7 @@ const ModalAddTercero = (props) => {
           <Modal.Footer>
             <Button
               className="botton-light-blue-modal"
+              disabled={isProcessing}
               onClick={() => {
                 props.handleShowAddTercero(false);
                 props.handleNoCambiarTercero();
@@ -222,6 +255,7 @@ const ModalAddTercero = (props) => {
             </Button>
             <Button
               className="botton-medium-blue-modal"
+              disabled={isProcessing}
               onClick={() => {
                 onSubmitTercero(nuevoTercero);
               }}

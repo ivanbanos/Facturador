@@ -1,33 +1,23 @@
-import React, { useState, useEffect } from "react";
-import { Modal, Button } from "react-bootstrap";
-import ReimprimirTurno from "../Services/getServices/ReimprimirTurno";
+import React, { useState } from "react";
+import { Modal, Button, Alert } from "react-bootstrap";
+import ReimprimirTurnoCanastilla from "../Services/getServices/ReimprimirTurnoCanastilla";
 import "./styles/home.css";
 import "./styles/modal.css";
-import { Alert } from "react-bootstrap";
 import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
-const ModalReimprimirTurno = (props) => {
-  const [showModalReimpirmirTurno, setShowModalReimprimirTurno] =
-    useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const handleCloseModalReimprimirTurno = () =>
-    setShowModalReimprimirTurno(false);
-  const handleShowModalReimprimirTurno = () =>
-    setShowModalReimprimirTurno(true);
+const ModalReimprimirTurnoCanastilla = (props) => {
+  const [showModal, setShowModal] = useState(false);
+  const handleCloseModal = () => setShowModal(false);
+  const handleShowModal = () => setShowModal(true);
   const [fechaTurno, setFechaTurno] = useState("");
   const [fechaSelected, setFechaSelected] = useState("");
   const [posicion, setPosicion] = useState("");
-  const [showAlertImpresionExitosa, setShowAlertImpresionExitosa] =
-    useState(false);
-
-  const islaSelect = props.islaSelect;
+  const [showAlertExitosa, setShowAlertExitosa] = useState(false);
 
   const handleDateChange = (event) => {
     const selectedDate = event.target.value;
     setFechaSelected(selectedDate);
-    // Asegurémonos de que la fecha sea válida antes de guardarla
     if (isValidDate(selectedDate)) {
-      // Realizamos la conversión al formato mes-día-año (MM-DD-YYYY)
       const parts = selectedDate.split("-");
       if (parts.length === 3) {
         const formattedDate = `${parts[1]}-${parts[2]}-${parts[0]}`;
@@ -36,7 +26,6 @@ const ModalReimprimirTurno = (props) => {
     }
   };
 
-  // Función para verificar si la fecha es válida
   const isValidDate = (date) => {
     const pattern = /^\d{4}-\d{2}-\d{2}$/;
     return pattern.test(date);
@@ -45,18 +34,15 @@ const ModalReimprimirTurno = (props) => {
   return (
     <>
       <Button
-        className="botton-green m-1 right-botton"
-        disabled={isProcessing}
-        onClick={() => {
-          handleShowModalReimprimirTurno();
-        }}
+        className="botton-green m-3 right-botton right-botton-xs"
+        onClick={handleShowModal}
       >
-        Reimprimir Turno
+        <span>Reimprimir</span> <span>Turno</span>
       </Button>
 
       <Modal
-        show={showModalReimpirmirTurno}
-        onHide={handleCloseModalReimprimirTurno}
+        show={showModal}
+        onHide={handleCloseModal}
         backdrop="static"
         keyboard={false}
         dialogClassName="custom-modal"
@@ -64,7 +50,7 @@ const ModalReimprimirTurno = (props) => {
         centered
       >
         <Modal.Header className="header-modal" closeButton>
-          <Modal.Title>Reimpimir Turno</Modal.Title>
+          <Modal.Title>Reimprimir Turno Canastilla</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <form>
@@ -77,7 +63,7 @@ const ModalReimprimirTurno = (props) => {
                   type="text"
                   className="form-control modal-tercero-input"
                   name="isla"
-                  value={props.islaSelectName}
+                  value={localStorage.getItem("islaSelectName") || "No seleccionada"}
                   disabled
                 ></input>
               </div>
@@ -89,7 +75,6 @@ const ModalReimprimirTurno = (props) => {
                   className="form-select modal-tercero-input"
                   aria-label="Default select example"
                   value={posicion}
-                  disabled={isProcessing}
                   onChange={(event) => setPosicion(event.target.value)}
                 >
                   <option value="">Selecciona el número de turno</option>
@@ -108,7 +93,6 @@ const ModalReimprimirTurno = (props) => {
                   className="form-control modal-tercero-input"
                   name="fechaTurno"
                   value={fechaSelected}
-                  disabled={isProcessing}
                   onChange={handleDateChange}
                 ></input>
               </div>
@@ -118,65 +102,55 @@ const ModalReimprimirTurno = (props) => {
         <Modal.Footer>
           <Button
             className="botton-light-blue-modal"
-            disabled={isProcessing}
-            onClick={() => {
-              handleCloseModalReimprimirTurno();
-            }}
+            onClick={handleCloseModal}
           >
             Cancelar
           </Button>
           <Button
             className="botton-medium-blue-modal"
-            disabled={isProcessing}
             onClick={async () => {
-              if (isProcessing) {
+              handleCloseModal();
+              const islaSelect = localStorage.getItem("islaSelect");
+              if (!islaSelect || !fechaTurno || !posicion) {
+                props.handleSetShowAlertError(true);
                 return;
               }
-
-              setIsProcessing(true);
-              handleCloseModalReimprimirTurno();
-              try {
-                const respuestaReImprimir = await ReimprimirTurno(
-                  fechaTurno,
-                  islaSelect,
-                  posicion
-                );
-                if (respuestaReImprimir === "fail") {
-                  props.handleSetShowAlertError(true);
-                } else {
-                  if (window.imprimirNativo) {
-                    await ImprimirNativo(respuestaReImprimir);
-                  }
-                  setPosicion("");
-                  setFechaSelected("");
-                  setFechaTurno("");
-                  setShowAlertImpresionExitosa(true);
+              const respuesta = await ReimprimirTurnoCanastilla(
+                fechaTurno,
+                islaSelect,
+                posicion
+              );
+              if (respuesta === "fail") {
+                props.handleSetShowAlertError(true);
+              } else {
+                if (window.imprimirNativo) {
+                  await ImprimirNativo(respuesta);
                 }
-              } finally {
-                setIsProcessing(false);
+                setPosicion("");
+                setFechaSelected("");
+                setFechaTurno("");
+                setShowAlertExitosa(true);
               }
             }}
           >
-            Reimpimir Turno
+            Reimprimir Turno
           </Button>
         </Modal.Footer>
       </Modal>
       <div
-        className={`alert-container ${
-          showAlertImpresionExitosa ? "active" : ""
-        }`}
+        className={`alert-container ${showAlertExitosa ? "active" : ""}`}
       >
         <Alert
           variant="info"
-          show={showAlertImpresionExitosa}
-          onClose={() => setShowAlertImpresionExitosa(false)}
+          show={showAlertExitosa}
+          onClose={() => setShowAlertExitosa(false)}
           dismissible
         >
-          <Alert.Heading>Turno reimpreso de forma exitosa</Alert.Heading>
+          <Alert.Heading>Turno canastilla reimpreso de forma exitosa</Alert.Heading>
         </Alert>
       </div>
     </>
   );
 };
 
-export default ModalReimprimirTurno;
+export default ModalReimprimirTurnoCanastilla;

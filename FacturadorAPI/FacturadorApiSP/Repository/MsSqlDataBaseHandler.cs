@@ -264,6 +264,12 @@ namespace MachineUtilizationApi.Repository
 
                 {"@COD_FOR_PAG",facturaCanastilla.codigoFormaPago},
 
+                {"@COD_FOR_PAG_2",facturaCanastilla.codigoFormaPago2},
+
+                {"@total1",facturaCanastilla.total1},
+
+                {"@total2",facturaCanastilla.total2},
+
                 {"@imprimir", imprimir},
 
                 {"@descuento",facturaCanastilla.descuento},
@@ -289,6 +295,7 @@ namespace MachineUtilizationApi.Repository
                     {"@tipoIdentificacion", tercero.tipoIdentificacion??1 },
                     {"@identificacion", tercero.identificacion },
                     {"@nombre", tercero.Nombre.ToUpper() },
+                                        {"@apellidos", (tercero.Apellidos ?? string.Empty).ToUpper() },
                     {"@telefono", tercero.Telefono },
                     {"@correo", tercero.Correo },
                     {"@direccion", tercero.Direccion.ToUpper() },
@@ -343,7 +350,7 @@ namespace MachineUtilizationApi.Repository
             return dt.ConvertirFacturasSiges();
         }
 
-        public async Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje, string numeroTransaccion)
+        public async Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje, string numeroTransaccion, int? codigoFormaPago2 = null, double? total1 = null, double? total2 = null)
         {
             ConnectionString = _settings.Facturacion;
             await LoadDataTableFromStoredProcAsync("ActualizarFactura",
@@ -353,6 +360,9 @@ namespace MachineUtilizationApi.Repository
                     {"@Placa", placa },
                     {"@Kilometraje", kilometraje },
                     {"@codigoFormaPago", codigoFormaPago },
+                    {"@codigoFormaPago2", codigoFormaPago2 },
+                    {"@total1", total1 },
+                    {"@total2", total2 },
                     {"@terceroId", terceroId },
                     {"@ventaId", idVenta },
                     {"@NumeroTransaccion", numeroTransaccion },

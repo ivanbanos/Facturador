@@ -30,6 +30,9 @@ namespace FacturadorAPI.Models
         public string Estado { get; set; }
         public bool habilitada { get; internal set; }
         public int codigoFormaPago { get; set; }
+        public int? codigoFormaPago2 { get; set; }
+        public double? total1 { get; set; }
+        public double? total2 { get; set; }
 
         public string CodigoInterno { get; set; }
         public string Empleado { get; set; }

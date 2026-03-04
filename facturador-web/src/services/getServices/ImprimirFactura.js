@@ -5,6 +5,19 @@ const ImprimirFactura = async (ultimaFactura, inpresiones) => {
     const numeroTransaccion = ultimaFactura?.numeroTransaccion
       ? ultimaFactura.numeroTransaccion
       : "NA";
+    const formaPago2 =
+      ultimaFactura?.codigoFormaPago2 !== null &&
+      ultimaFactura?.codigoFormaPago2 !== undefined
+        ? Number(ultimaFactura.codigoFormaPago2)
+        : "";
+    const total1 =
+      ultimaFactura?.total1 !== null && ultimaFactura?.total1 !== undefined
+        ? Number(ultimaFactura.total1)
+        : "";
+    const total2 =
+      ultimaFactura?.total2 !== null && ultimaFactura?.total2 !== undefined
+        ? Number(ultimaFactura.total2)
+        : "";
     const impresiones = Number(inpresiones) > 0 ? Number(inpresiones) : 1;
     const response = await fetch(
       window.SERVER_URL +
@@ -22,6 +35,12 @@ const ImprimirFactura = async (ultimaFactura, inpresiones) => {
         encodeURIComponent(placa) +
         "&NumeroTransaccion=" +
         encodeURIComponent(numeroTransaccion) +
+        "&FormaPago2=" +
+        encodeURIComponent(formaPago2) +
+        "&total1=" +
+        encodeURIComponent(total1) +
+        "&total2=" +
+        encodeURIComponent(total2) +
         "&impresiones=" +
         impresiones,
       {

@@ -245,6 +245,12 @@ namespace MachineUtilizationApi.Repository
 
                 {"@COD_FOR_PAG",facturaCanastilla.codigoFormaPago},
 
+                {"@COD_FOR_PAG_2",facturaCanastilla.codigoFormaPago2},
+
+                {"@total1",facturaCanastilla.total1},
+
+                {"@total2",facturaCanastilla.total2},
+
                 {"@imprimir", imprimir},
 
                 {"@descuento",facturaCanastilla.descuento},
@@ -265,6 +271,7 @@ namespace MachineUtilizationApi.Repository
                     {"@tipoIdentificacion", tercero.tipoIdentificacion??1 },
                     {"@identificacion", tercero.identificacion },
                     {"@nombre", tercero.Nombre },
+                                        {"@apellidos", tercero.Apellidos },
                     {"@telefono", tercero.Telefono },
                     {"@correo", tercero.Correo },
                     {"@direccion", tercero.Direccion },

@@ -55,5 +55,13 @@ namespace FacturadorAPI.Controllers
             await _mediator.Send(new ReimprimirFacturaCanastillaCommand(consecutivo), cancellationToken);
             return Ok();
         }
+
+        [HttpPost]
+        [Route("ReimprimirTurnoCanastilla/{fecha}/{isla}/{posicion}")]
+        [ProducesResponseType(typeof(IActionResult), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> ReimprimirTurnoCanastilla(DateTime fecha, int isla, int posicion, CancellationToken cancellationToken)
+        {
+            return Ok(await _mediator.Send(new ReimprimirTurnoCanastillaCommand(fecha, isla, posicion), cancellationToken));
+        }
     }
 }

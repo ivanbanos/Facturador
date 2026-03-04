@@ -1,8 +1,15 @@
 
+import GetServerUrl from "./GetServerUrl";
+
 const GetFormasDePago = async () => {
   try {
+    const serverUrl = GetServerUrl();
+    if (!serverUrl) {
+      return "fail";
+    }
+
     const response = await fetch(
-      window.SERVER_URL + "/api/Facturas/FormasDePago",
+      serverUrl + "/api/Facturas/FormasDePago",
       {
         method: "GET",
         mode: "cors",

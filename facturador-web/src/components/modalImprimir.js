@@ -23,6 +23,7 @@ const ModalImprimir = (props) => {
   const ultimaFactura = props.ultimaFactura;
   const [show, setShow] = useState(false);
   const [showConvertirAFactura, setShowConvertirAFactura] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const [showAlertImpresionExitosa, setShowAlertImpresionExitosa] =
     useState(false);
@@ -48,42 +49,59 @@ const ModalImprimir = (props) => {
   };
 
   async function onClickConvertirAOrden() {
+    if (isProcessing) {
+      return;
+    }
+
+    setIsProcessing(true);
     handleClose();
-    const respuesta = await ConvertirAOrden(ultimaFactura.ventaId);
+    try {
+      const respuesta = await ConvertirAOrden(ultimaFactura.ventaId);
 
-    if (respuesta === "fail") {
-      props.handleSetShowAlertError(true);
-    } else {
-      if (!window.GenerarFacturaelectronica) {
-        const respuestaImprimir = await ImprimirFactura(ultimaFactura);
-        if (respuestaImprimir === "fail") {
-          props.handleSetShowAlertError(true);
-        } else {
-          props.getFacturaInformacion();
-
-          console.log(ultimaFactura);
-          const text = await GetUltimaFacturaPorCaraTexto(ultimaFactura.cara);
-          if(window.imprimirNativo){
-
-          await ImprimirNativo(text);
-        }
-          
-          if (respuestaImprimir == "Ok") {
-            setShowAlertImpresionExitosa(true);
-          }
-        }
+      if (respuesta === "fail") {
+        props.handleSetShowAlertError(true);
       } else {
-        props.handleShowFacturaElectrónica();
+        if (!window.GenerarFacturaelectronica) {
+          const respuestaImprimir = await ImprimirFactura(ultimaFactura);
+          if (respuestaImprimir === "fail") {
+            props.handleSetShowAlertError(true);
+          } else {
+            props.getFacturaInformacion();
+
+            console.log(ultimaFactura);
+            const text = await GetUltimaFacturaPorCaraTexto(ultimaFactura.cara);
+            if (window.imprimirNativo) {
+              await ImprimirNativo(text);
+            }
+
+            if (respuestaImprimir == "Ok") {
+              setShowAlertImpresionExitosa(true);
+            }
+          }
+        } else {
+          props.handleShowFacturaElectrónica();
+        }
       }
+    } finally {
+      setIsProcessing(false);
     }
   }
   async function onClickConvertirAFactura() {
+    if (isProcessing) {
+      return;
+    }
+
+    setIsProcessing(true);
     handleCloseConvertirAFactura();
-    const respuesta = await ConvertirAFactura(ultimaFactura.ventaId);
-    if (respuesta === "fail") {
-      props.handleSetShowAlertError(true);
-    } else {
-      props.handleShowFacturaElectrónica();
+    try {
+      const respuesta = await ConvertirAFactura(ultimaFactura.ventaId);
+      if (respuesta === "fail") {
+        props.handleSetShowAlertError(true);
+      } else {
+        props.handleShowFacturaElectrónica();
+      }
+    } finally {
+      setIsProcessing(false);
     }
   }
   function onClickNoConvertirAOrden() {
@@ -99,6 +117,7 @@ const ModalImprimir = (props) => {
     <>
       <Button
         className="print-button-modal botton-light-blue-modal"
+        disabled={isProcessing}
         onClick={() => {
           ultimaFactura.consecutivo === 0
             ? handleShowConvertirAFactura()
@@ -127,6 +146,7 @@ const ModalImprimir = (props) => {
         <Modal.Footer>
           <Button
             className="botton-light-blue-modal"
+            disabled={isProcessing}
             onClick={() => {
               onClickConvertirAFactura();
             }}
@@ -135,6 +155,7 @@ const ModalImprimir = (props) => {
           </Button>
           <Button
             className="botton-medium-blue-modal"
+            disabled={isProcessing}
             onClick={() => {
               onClickNoConvertirAFactura();
             }}
@@ -162,6 +183,7 @@ const ModalImprimir = (props) => {
         <Modal.Footer>
           <Button
             className="botton-light-blue-modal"
+            disabled={isProcessing}
             onClick={() => {
               onClickConvertirAOrden();
             }}
@@ -170,6 +192,7 @@ const ModalImprimir = (props) => {
           </Button>
           <Button
             className="botton-medium-blue-modal"
+            disabled={isProcessing}
             onClick={() => {
               onClickNoConvertirAOrden();
             }}

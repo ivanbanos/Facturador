@@ -7,6 +7,7 @@ import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 
 const ModalAbrirTurno = (props) => {
   const [showModalAbrirTurno, setShowModalAbrirTurno] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const handleCloseModalAbrirTurno = () => setShowModalAbrirTurno(false);
   const handleShowModalAbrirTurno = () => setShowModalAbrirTurno(true);
   const codigoEmpleado = props.codigoEmpleado;
@@ -18,6 +19,7 @@ const ModalAbrirTurno = (props) => {
     <>
       <Button
         className="botton-green m-1 right-botton"
+        disabled={isProcessing}
         onClick={() => {
           handleShowModalAbrirTurno();
         }}
@@ -49,6 +51,7 @@ const ModalAbrirTurno = (props) => {
                   className="form-control modal-tercero-input"
                   name="identificacion"
                   value={codigoEmpleado}
+                  disabled={isProcessing}
                   onChange={(event) =>
                     handleChangeCodigoEmpleado(event.target.value)
                   }
@@ -75,6 +78,7 @@ const ModalAbrirTurno = (props) => {
         <Modal.Footer>
           <Button
             className="botton-light-blue-modal"
+            disabled={isProcessing}
             onClick={() => {
               handleCloseModalAbrirTurno();
             }}
@@ -83,16 +87,25 @@ const ModalAbrirTurno = (props) => {
           </Button>
           <Button
             className="botton-medium-blue-modal"
+            disabled={isProcessing}
             onClick={async () => {
-              handleCloseModalAbrirTurno();
-              let respuesta = await AbrirTurno(islaSelect, codigoEmpleado);
-              if(respuesta === "fail"){
-                handleSetShowAlertError(true);
-              } else{
-if(window.imprimirNativo){
+              if (isProcessing) {
+                return;
+              }
 
-          await ImprimirNativo(respuesta);
-        }
+              setIsProcessing(true);
+              handleCloseModalAbrirTurno();
+              try {
+                let respuesta = await AbrirTurno(islaSelect, codigoEmpleado);
+                if (respuesta === "fail") {
+                  handleSetShowAlertError(true);
+                } else {
+                  if (window.imprimirNativo) {
+                    await ImprimirNativo(respuesta);
+                  }
+                }
+              } finally {
+                setIsProcessing(false);
               }
             }}
           >

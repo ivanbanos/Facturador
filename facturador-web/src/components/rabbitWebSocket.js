@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Client } from "@stomp/stompjs";
 import { Modal, Button } from "react-bootstrap";
 import "./styles/home.css";
@@ -37,43 +37,73 @@ const VehiculosSICOMModal = (props) => {
   const [show, setShow] = useState(false);
   const [vehiculo, setVehiculo] = useState({ placa: "" });
   const [estado, setEstado] = useState("Autorizado");
+  const clientRef = useRef(null);
 
   const handleCloseModal = () => setShow(false);
-  // The compat mode syntax is totally different, converting to v5 syntax
-  // Client is imported from '@stomp/stompjs'
-  const client = new Client({
-    brokerURL: window.RabbitWebSocket,
-    reconnectDelay: 5000,
-    heartbeatIncoming: 4000,
-    heartbeatOutgoing: 4000,
-    connectHeaders: {
-      login: "siges",
-      passcode: "siges",
-    },
-    onConnect: () => {
-      client.subscribe("VehiculosSICOM", (message) => {
-        const now = new Date();
-        setVehiculo(JSON.parse(message.body));
-        let vehiculoJson = JSON.parse(message.body);
-        if (
-          vehiculoJson.isla ==
-            JSON.parse(localStorage.getItem("islaSelectName")) ||
-          null
-        ) {
-          setEstado("Autorizado");
-          if (compareDates(now, vehiculoJson.fechaFin) >= 0) {
-            setEstado("No Autorizado, motivo vencido");
-          }
-          if (vehiculoJson.estado != 0) {
-            setEstado("No Autorizado, motivo " + vehiculoJson.motivoTexto);
-          }
-          setShow(true);
-        }
-      });
-    },
-  });
   useEffect(() => {
-    client.activate();
+    if (!window.RabbitWebSocket) {
+      console.error(
+        "[RabbitWebSocket] No está definida la variable RabbitWebSocket en config.js"
+      );
+      return;
+    }
+
+    const brokerURL =
+      window.location.protocol === "https:" &&
+      window.RabbitWebSocket.startsWith("ws://")
+        ? window.RabbitWebSocket.replace("ws://", "wss://")
+        : window.RabbitWebSocket;
+
+    const stompClient = new Client({
+      brokerURL,
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+      connectHeaders: {
+        login: "siges",
+        passcode: "siges",
+      },
+      onConnect: () => {
+        stompClient.subscribe("VehiculosSICOM", (message) => {
+          const now = new Date();
+          setVehiculo(JSON.parse(message.body));
+          let vehiculoJson = JSON.parse(message.body);
+          if (
+            vehiculoJson.isla ==
+              JSON.parse(localStorage.getItem("islaSelectName")) ||
+            null
+          ) {
+            setEstado("Autorizado");
+            if (compareDates(now, vehiculoJson.fechaFin) >= 0) {
+              setEstado("No Autorizado, motivo vencido");
+            }
+            if (vehiculoJson.estado != 0) {
+              setEstado("No Autorizado, motivo " + vehiculoJson.motivoTexto);
+            }
+            setShow(true);
+          }
+        });
+      },
+      onStompError: (frame) => {
+        console.error("[RabbitWebSocket] STOMP error", frame);
+      },
+      onWebSocketError: (event) => {
+        console.error("[RabbitWebSocket] WebSocket error", event);
+      },
+      onWebSocketClose: (event) => {
+        console.warn("[RabbitWebSocket] WebSocket closed", event);
+      },
+    });
+
+    clientRef.current = stompClient;
+    stompClient.activate();
+
+    return () => {
+      if (clientRef.current && clientRef.current.active) {
+        clientRef.current.deactivate();
+      }
+      clientRef.current = null;
+    };
   }, []);
 
   useEffect(() => {

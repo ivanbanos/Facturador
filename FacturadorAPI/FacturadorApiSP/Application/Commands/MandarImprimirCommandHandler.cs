@@ -35,7 +35,17 @@ namespace FacturadorAPI.Application.Commands
                 
                 if (!factura.enviada)
                 {
-                    await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, request.NumeroTransaccion == "NP" ? "" : request.NumeroTransaccion);
+                    await _databaseHandler.ActualizarFactura(
+                        factura.facturaPOSId,
+                        request.TerceroId,
+                        request.FormaPago,
+                        request.VentaId,
+                        request.Placa == "NP" ? "" : request.Placa,
+                        request.Kilometraje == "NP" ? "" : request.Kilometraje,
+                        request.NumeroTransaccion == "NP" ? "" : request.NumeroTransaccion,
+                        request.FormaPago2,
+                        request.Total1,
+                        request.Total2);
 
                     factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
 
@@ -74,7 +84,17 @@ namespace FacturadorAPI.Application.Commands
 
                 if (!factura.enviada)
                 {
-                    await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, request.NumeroTransaccion == "NP" ? "" : request.NumeroTransaccion);
+                    await _databaseHandler.ActualizarFactura(
+                        factura.facturaPOSId,
+                        request.TerceroId,
+                        request.FormaPago,
+                        request.VentaId,
+                        request.Placa == "NP" ? "" : request.Placa,
+                        request.Kilometraje == "NP" ? "" : request.Kilometraje,
+                        request.NumeroTransaccion == "NP" ? "" : request.NumeroTransaccion,
+                        request.FormaPago2,
+                        request.Total1,
+                        request.Total2);
 
                     factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
 
@@ -93,6 +113,9 @@ namespace FacturadorAPI.Application.Commands
                 Cantidad = (double)factura.Venta.CANTIDAD,
                 Cara = factura.Venta.COD_CAR.ToString(),
                 codigoFormaPago = factura.codigoFormaPago,
+                codigoFormaPago2 = factura.codigoFormaPago2,
+                total1 = factura.total1,
+                total2 = factura.total2,
                 CodigoInterno = factura.Venta.COD_INT,
                 Combustible = factura.Venta.Combustible,
                 Consecutivo = factura.Consecutivo,

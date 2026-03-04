@@ -12,6 +12,7 @@ namespace FacturadorAPI.Models
         {
             terceroId = x.IdLocal;
             Nombre = x.Nombre;
+            Apellidos = string.Empty;
             Telefono = x.Telefono;
             Direccion = x.Direccion;
             identificacion = x.Identificacion;
@@ -24,6 +25,7 @@ namespace FacturadorAPI.Models
         public int terceroId { get; set; }
         public string COD_CLI { get; set; }
         public string Nombre { get; set; }
+        public string Apellidos { get; set; }
         public string Telefono { get; set; }
         public string Direccion { get; set; }
         public string identificacion { get; set; }

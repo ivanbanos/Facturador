@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./styles/home.css";
 import GetCanastilla from "../Services/getServices/GetCanastilla";
 import GetTercero from "../Services/getServices/GetTercero";
@@ -12,8 +12,15 @@ import AlertError from "./alertaError";
 import AlertVentaExitosa from "./AlertVentaExitosa";
 import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 import ModalReimprimirFacturaCanastilla from "./modalReimprimirFacturaCanastilla";
+import ModalReimprimirTurnoCanastilla from "./modalReimprimirTurnoCanastilla";
 
 const Canastilla = () => {
+  const placaObligatoriaCanastillaCredito =
+    window.PlacaObligatoriaCanastillaCredito === undefined ||
+    window.PlacaObligatoriaCanastillaCredito === true ||
+    String(window.PlacaObligatoriaCanastillaCredito).toLowerCase() ===
+      "true";
+
   // Estado para turno y empleado
   const [turno, setTurno] = useState(null);
 
@@ -22,7 +29,7 @@ const Canastilla = () => {
   const [productosFiltrados, setProductosFiltrados] = useState([]); // Productos filtrados
   const valorInicialObjetoPostCanastilla = {
     terceroId: 0,
-    codigoFormaPago: 0,
+    codigoFormaPago: 4,
     descuento: 0,
     vendedor: 0,
     isla: 0,
@@ -52,6 +59,7 @@ const Canastilla = () => {
     terceroId: 0,
     coD_CLI: "",
     nombre: "",
+    apellidos: "",
     telefono: "",
     direccion: "",
     identificacion: "222222222222",
@@ -65,10 +73,15 @@ const Canastilla = () => {
   const [tiposDeIdentificacion, setTiposDeIdentificacion] = useState([]);
   const [formasDePago, setformasDePago] = useState([]);
   const [terceroBusqueda, setTerceroBusqueda] = useState([{}]);
+  const terceroRequestVersion = useRef(0);
   const handleChangeIdentificacion = async (event) => {
     const nuevaIdentificacion = event.target.value;
     setIdentificacion(nuevaIdentificacion);
+    const requestVersion = ++terceroRequestVersion.current;
     let nuevoTercero = await GetTercero(nuevaIdentificacion);
+    if (requestVersion !== terceroRequestVersion.current) {
+      return;
+    }
     setTerceroBusqueda(nuevoTercero);
     if (nuevoTercero.length > 0) {
       setTercero(nuevoTercero[0]);
@@ -92,9 +105,10 @@ const Canastilla = () => {
     setShowTerceroNoExiste(showTerceroNoExiste);
   }
   function handleNoCambiarTercero() {
-    setIdentificacion("");
+    setIdentificacion("222222222222");
   }
   const [showAlertVentaExitosa, setShowAlertVentaExitosa] = useState(false);
+  const [mensajeAlerta, setMensajeAlerta] = useState("Venta Generada Exitosamente");
   const handleSetShowAlertVentaExitosa = (show) =>
     setShowAlertVentaExitosa(show);
   const [showAddTercero, setShowAddTercero] = useState(false);
@@ -111,6 +125,39 @@ const Canastilla = () => {
   }
   const [totalItems, setTotalItems] = useState(0);
   const [subTotal, setSubTotal] = useState(0);
+  const [isGeneratingVenta, setIsGeneratingVenta] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [isPrintingTurno, setIsPrintingTurno] = useState(false);
+
+  const isActionInProgress =
+    isGeneratingVenta || isResetting || isPrintingTurno;
+
+  const limpiarEstadoCanastilla = (terceroActual) => {
+    setSubTotal(0);
+    setTotalItems(0);
+    setObjetoCanastillas(valorInicialObjetoCanastillas);
+    setCanastillas([]);
+    setCantidadSeleccionada(0);
+    setProductoSeleccionado(null);
+    setFiltroProducto("");
+    setProductosFiltrados(productos);
+
+    setObjetoPostCanastilla({
+      ...valorInicialObjetoPostCanastilla,
+      terceroId: terceroActual?.terceroId || 0,
+    });
+  };
+
+  const restaurarEstadoCanastilla = (snapshot) => {
+    setSubTotal(snapshot.subTotal);
+    setTotalItems(snapshot.totalItems);
+    setCanastillas(snapshot.canastillas);
+    setObjetoPostCanastilla(snapshot.objetoPostCanastilla);
+    setCantidadSeleccionada(snapshot.cantidadSeleccionada);
+    setProductoSeleccionado(snapshot.productoSeleccionado);
+    setFiltroProducto(snapshot.filtroProducto);
+    setProductosFiltrados(snapshot.productosFiltrados);
+  };
 
   // Función para filtrar productos por descripción
   const handleFiltroProducto = (event) => {
@@ -191,63 +238,146 @@ const Canastilla = () => {
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
   };
   const handleChangePlaca = (event) => {
+    const placaNormalizada = event.target.value
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 6);
     const tempObjetoPostCanastilla = {
       ...objetoPostCanastilla,
-      placa: event.target.value,
+      placa: placaNormalizada,
     };
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
   };
-  const onClickImprimirTurno = async () => {
-    const respuesta = await PostImprimirTurnoCanastilla(
-      localStorage.getItem("islaSelect")
-    );
-    if (respuesta === "fail") {
-      handleSetShowAlertError(true);
-    } else {
-      handleSetShowAlertVentaExitosa(true);
-    }
+
+  const esPlacaColombianaValida = (placa) => {
+    const placaLimpia = (placa || "").trim().toUpperCase();
+    return /^(?:[A-Z]{3}\d{3}|[A-Z]{3}\d{2}[A-Z])$/.test(placaLimpia);
   };
-  const onClickGenerarVenta = async (canastilla) => {
-    if (canastilla.codigoFormaPago == 0) {
-      handleSetShowAlertError(true);
-    } else if (canastilla.codigoFormaPago == 6 && (!canastilla.placa || canastilla.placa.trim() === "")) {
-      alert("La placa es obligatoria cuando la forma de pago es crédito.");
-    } else {
-      canastilla.isla = localStorage.getItem("islaSelect");
-      canastilla.empleado = localStorage.getItem("empleado");
-      const respuesta = await PostCanastilla(canastilla);
+  const onClickImprimirTurno = async () => {
+    if (isPrintingTurno) {
+      return;
+    }
+
+    setIsPrintingTurno(true);
+    try {
+      const respuesta = await PostImprimirTurnoCanastilla(
+        localStorage.getItem("islaSelect")
+      );
       if (respuesta === "fail") {
         handleSetShowAlertError(true);
       } else {
-        if(window.imprimirNativo){
+        setMensajeAlerta("Turno mandado a imprimir con éxito");
+        handleSetShowAlertVentaExitosa(true);
+      }
+    } finally {
+      setIsPrintingTurno(false);
+    }
+  };
+  const onClickGenerarVenta = async (canastilla) => {
+    if (isGeneratingVenta) {
+      return;
+    }
 
+    const islaSeleccionada = localStorage.getItem("islaSelect");
+    if (!islaSeleccionada || islaSeleccionada === "") {
+      alert("Debe seleccionar una isla/cara antes de generar la venta.");
+    } else if (canastilla.codigoFormaPago == 0) {
+      handleSetShowAlertError(true);
+    } else if (
+      placaObligatoriaCanastillaCredito &&
+      canastilla.codigoFormaPago == 6 &&
+      (!canastilla.placa || canastilla.placa.trim() === "")
+    ) {
+      alert("La placa es obligatoria cuando la forma de pago es crédito.");
+    } else if (
+      canastilla.placa &&
+      canastilla.placa.trim() !== "" &&
+      !esPlacaColombianaValida(canastilla.placa)
+    ) {
+      alert("La placa debe tener formato colombiano válido (ej: ABC123 o ABC12D).");
+    } else {
+      const ventaPayload = {
+        ...canastilla,
+        isla: localStorage.getItem("islaSelect"),
+        empleado: localStorage.getItem("empleado"),
+        canastillas: Array.isArray(canastilla.canastillas)
+          ? [...canastilla.canastillas]
+          : [],
+      };
+
+      const snapshotCanastilla = {
+        subTotal,
+        totalItems,
+        canastillas,
+        objetoPostCanastilla,
+        cantidadSeleccionada,
+        productoSeleccionado,
+        filtroProducto,
+        productosFiltrados,
+      };
+
+      setIsGeneratingVenta(true);
+      limpiarEstadoCanastilla(tercero);
+
+      try {
+        const respuesta = await PostCanastilla(ventaPayload);
+        if (respuesta === "fail") {
+          restaurarEstadoCanastilla(snapshotCanastilla);
+          handleSetShowAlertError(true);
+          return;
+        }
+
+        if (window.imprimirNativo) {
           await ImprimirNativo(respuesta);
         }
+        setMensajeAlerta("Venta Generada Exitosamente");
         handleSetShowAlertVentaExitosa(true);
-        resetValues();
+        await resetValues();
+      } finally {
+        setIsGeneratingVenta(false);
       }
     }
     // setObjetoPostCanastilla(valorInicialObjetoPostCanastilla)
   };
   const resetValues = async () => {
+    if (isResetting) {
+      return;
+    }
+
+    setIsResetting(true);
     setSubTotal(0);
     setTotalItems(0);
     setObjetoCanastillas(valorInicialObjetoCanastillas);
     setCanastillas([]);
     setObjetoPostCanastilla(valorInicialObjetoPostCanastilla);
+    setTercero(valorInicialTercero);
+    setTerceroBusqueda([]);
+    setShowTerceroNoExiste(false);
+    setCantidadSeleccionada(0);
+    setProductoSeleccionado(null);
+    setFiltroProducto("");
+    setProductosFiltrados(productos);
 
-    setIdentificacion("222222222222");
-    let nuevoTercero = await GetTercero("222222222222");
-    if (nuevoTercero.length > 0) {
-      setTercero();
-      const tempObjetoPostCanastilla = {
-        ...objetoPostCanastilla,
-        terceroId: nuevoTercero[0].terceroId,
-      };
-      setObjetoPostCanastilla(tempObjetoPostCanastilla);
+    try {
+      setIdentificacion("222222222222");
+      const requestVersion = ++terceroRequestVersion.current;
+      let nuevoTercero = await GetTercero("222222222222");
+      if (requestVersion !== terceroRequestVersion.current) {
+        return;
+      }
+      if (nuevoTercero.length > 0) {
+        setTercero(nuevoTercero[0]);
+        setTerceroBusqueda(nuevoTercero);
+        const tempObjetoPostCanastilla = {
+          ...valorInicialObjetoPostCanastilla,
+          terceroId: nuevoTercero[0].terceroId,
+        };
+        setObjetoPostCanastilla(tempObjetoPostCanastilla);
 
-      // setShowTerceroNoExiste(false);
-    } else {
+        // setShowTerceroNoExiste(false);
+      }
+    } finally {
+      setIsResetting(false);
     }
   };
   useEffect(() => {
@@ -261,7 +391,11 @@ const Canastilla = () => {
         let formasPago = await GetFormasDePago();
         setformasDePago(formasPago);
         setIdentificacion("222222222222");
+        const requestVersion = ++terceroRequestVersion.current;
         let nuevoTercero = await GetTercero("222222222222");
+        if (requestVersion !== terceroRequestVersion.current) {
+          return;
+        }
         setTerceroBusqueda(nuevoTercero);
         if (nuevoTercero.length > 0) {
           setTercero(nuevoTercero[0]);
@@ -364,6 +498,7 @@ const Canastilla = () => {
               <button
                 className="print-button botton-light-blue botton-agregar-producto"
                 onClick={onClickAgregarProducto}
+                disabled={isActionInProgress}
               >
                 Agregar
               </button>
@@ -397,7 +532,9 @@ const Canastilla = () => {
             <div className="mt-2">
               <div className="form-control dark-blue-input input-datos-cliente-canastilla my-3">
                 <p className="texto-datos-cliente-canastilla">
-                  Nombre: {tercero?.nombre}
+                  Nombre: {[tercero?.nombre, tercero?.apellidos]
+                    .filter(Boolean)
+                    .join(" ")}
                 </p>
                 <p className="texto-datos-cliente-canastilla">
                   Teléfono: {tercero?.telefono}{" "}
@@ -409,13 +546,13 @@ const Canastilla = () => {
                   Dirección: {tercero?.direccion}
                 </p>
               </div>
-              <div className="info-venta-div d-flex flex-column align-items-end">
-                <div className="div-info-venta-canastilla ">
+              <div className="info-venta-div d-flex flex-column w-100">
+                <div className="div-info-venta-canastilla canastilla-venta-row">
                   <label className="label-info-venta-canastilla ">
                     Forma de Pago
                   </label>
                   <select
-                    className="form-select  w-75 altura-select select-white-blue text-select-list"
+                    className="form-select altura-select select-white-blue text-select-list canastilla-venta-control"
                     aria-label="Default select example"
                     name="codigoFormaPago"
                     value={objetoPostCanastilla.codigoFormaPago || "0"}
@@ -432,18 +569,21 @@ const Canastilla = () => {
                       ))}
                   </select>
                 </div>
-                <div className="div-info-venta-canastilla mt-2">
+                <div className="div-info-venta-canastilla mt-2 canastilla-venta-row">
                   <label className="label-info-venta-canastilla">
-                    Placa {objetoPostCanastilla.codigoFormaPago == 6 && <span style={{color: 'red'}}>*</span>}
+                    Placa{" "}
+                    {placaObligatoriaCanastillaCredito &&
+                      objetoPostCanastilla.codigoFormaPago == 6 &&
+                      <span style={{ color: "red" }}>*</span>}
                   </label>
                   <input
                     type="text"
-                    className="form-control w-75 altura-select select-white-blue text-select-list"
+                    className="form-control altura-select select-white-blue text-select-list canastilla-venta-control"
                     placeholder="Ingrese la placa"
                     name="placa"
                     value={objetoPostCanastilla.placa}
                     onChange={handleChangePlaca}
-                    maxLength={20}
+                    maxLength={6}
                   />
                 </div>
               </div>
@@ -454,7 +594,11 @@ const Canastilla = () => {
       <div className="col-5 center-column columnas custom-style-canastilla">
         <div className="container container-factura my-4">
           <div className=" factura px-2 h-100 texto-canastilla">
-            <p>Vendido a: {tercero?.nombre} </p>
+            <p>
+              Vendido a: {[tercero?.nombre, tercero?.apellidos]
+                .filter(Boolean)
+                .join(" ")}
+            </p>
             <p>Nit/CC: {tercero?.identificacion}</p>
 
             {objetoPostCanastilla.canastillas.length > 0 && (
@@ -483,6 +627,7 @@ const Canastilla = () => {
             onClick={() => {
               onClickGenerarVenta(objetoPostCanastilla);
             }}
+            disabled={isActionInProgress}
           >
             <span className="">Generar</span> <span>Venta</span>
           </button>
@@ -491,6 +636,7 @@ const Canastilla = () => {
             onClick={async () => {
               await resetValues();
             }}
+            disabled={isActionInProgress}
           >
             <span>Borrar</span>
           </button>
@@ -499,10 +645,14 @@ const Canastilla = () => {
             onClick={() => {
               onClickImprimirTurno();
             }}
+            disabled={isActionInProgress}
           >
             <span className="">Imprimir ultimo</span> <span>turno</span>
           </button>
           <ModalReimprimirFacturaCanastilla
+            handleSetShowAlertError={handleSetShowAlertError}
+          />
+          <ModalReimprimirTurnoCanastilla
             handleSetShowAlertError={handleSetShowAlertError}
           />
         </div>
@@ -521,6 +671,7 @@ const Canastilla = () => {
       <AlertVentaExitosa
         showAlertVentaExitosa={showAlertVentaExitosa}
         handleSetShowAlertVentaExitosa={handleSetShowAlertVentaExitosa}
+        mensaje={mensajeAlerta}
       ></AlertVentaExitosa>
     </div>
   );

@@ -1,8 +1,15 @@
 
+import GetServerUrl from "./GetServerUrl";
+
 const GetTiposDeIdentificacion = async () => {
   try {
+    const serverUrl = GetServerUrl();
+    if (!serverUrl) {
+      return "fail";
+    }
+
     const response = await fetch(
-      window.SERVER_URL + "/api/Terceros/TiposIdentificacion"
+      serverUrl + "/api/Terceros/TiposIdentificacion"
     );
 
     if (response.status === 200) {

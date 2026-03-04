@@ -9,6 +9,7 @@ import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 const ModalImprimirPorConsecutivo = (props) => {
   const [showModalImprimirPorConsecutivo, setShowModalImprimirPorConsecutivo] =
     useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const handleCloseModalImprimirPorConsecutivo = () =>
     setShowModalImprimirPorConsecutivo(false);
   const handleShowModalImprimirPorConsecutivo = () =>
@@ -21,6 +22,7 @@ const ModalImprimirPorConsecutivo = (props) => {
     <>
       <Button
         className="botton-light-blue right-botton m-1"
+        disabled={isProcessing}
         onClick={() => {
           handleShowModalImprimirPorConsecutivo();
         }}
@@ -52,6 +54,7 @@ const ModalImprimirPorConsecutivo = (props) => {
                   className="form-control modal-tercero-input"
                   name="identificacion"
                   value={consecutivo}
+                  disabled={isProcessing}
                   onChange={(event) => setConsecutivo(event.target.value)}
                 ></input>
               </div>
@@ -61,6 +64,7 @@ const ModalImprimirPorConsecutivo = (props) => {
         <Modal.Footer>
           <Button
             className="botton-light-blue-modal"
+            disabled={isProcessing}
             onClick={() => {
               handleCloseModalImprimirPorConsecutivo();
               setConsecutivo("");
@@ -70,20 +74,29 @@ const ModalImprimirPorConsecutivo = (props) => {
           </Button>
           <Button
             className="botton-medium-blue-modal"
+            disabled={isProcessing}
             onClick={async () => {
-              handleCloseModalImprimirPorConsecutivo();
-              const respuestaImprimir = await ImprimirPorConsecutivo(
-                consecutivo
-              );
-              if (respuestaImprimir === "fail") {
-                props.handleSetShowAlertError(true);
-              } else {
-                if(window.imprimirNativo){
+              if (isProcessing) {
+                return;
+              }
 
-          await ImprimirNativo(respuestaImprimir);
-        }
-                setConsecutivo("");
-                setShowAlertImpresionExitosa(true);
+              setIsProcessing(true);
+              handleCloseModalImprimirPorConsecutivo();
+              try {
+                const respuestaImprimir = await ImprimirPorConsecutivo(
+                  consecutivo
+                );
+                if (respuestaImprimir === "fail") {
+                  props.handleSetShowAlertError(true);
+                } else {
+                  if (window.imprimirNativo) {
+                    await ImprimirNativo(respuestaImprimir);
+                  }
+                  setConsecutivo("");
+                  setShowAlertImpresionExitosa(true);
+                }
+              } finally {
+                setIsProcessing(false);
               }
             }}
           >

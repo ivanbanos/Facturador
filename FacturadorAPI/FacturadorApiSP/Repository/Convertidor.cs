@@ -25,6 +25,7 @@ namespace FacturadorAPI.Repository
                     COD_CLI = dr.Field<string>("COD_CLI"),
                     Direccion = dr.Field<string>("direccion"),
                     Nombre = dr.Field<string>("Nombre"),
+                    Apellidos = dr.Table.Columns.Contains("apellidos") && !dr.IsNull("apellidos") ? dr.Field<string>("apellidos") : string.Empty,
                     Telefono = dr.Field<string>("Telefono"),
                     identificacion = dr.Field<string>("identificacion"),
 
@@ -184,6 +185,9 @@ namespace FacturadorAPI.Repository
                     impresa = dr.Field<int>("impresa"),
                     Estado = dr.Field<string>("estado"),
                     codigoFormaPago = dr.Field<int>("codigoFormaPago"),
+                    codigoFormaPago2 = dr.Table.Columns.Contains("codigoFormaPago2") && !dr.IsNull("codigoFormaPago2") ? dr.Field<int?>("codigoFormaPago2") : null,
+                    total1 = dr.Table.Columns.Contains("total1") && !dr.IsNull("total1") ? dr.Field<double?>("total1") : null,
+                    total2 = dr.Table.Columns.Contains("total2") && !dr.IsNull("total2") ? dr.Field<double?>("total2") : null,
                     Combustible = dr.Field<string>("Combustible"),
                     Surtidor = dr.Field<string>("Surtidor"),
                     Cara = dr.Field<string>("Cara"),
@@ -201,6 +205,7 @@ namespace FacturadorAPI.Repository
                         COD_CLI = dr.Field<string>("COD_CLI"),
                         Direccion = dr.Field<string>("direccion"),
                         Nombre = dr.Field<string>("Nombre"),
+                        Apellidos = dr.Table.Columns.Contains("apellidos") && !dr.IsNull("apellidos") ? dr.Field<string>("apellidos") : string.Empty,
                         Telefono = dr.Field<string>("Telefono"),
                         identificacion = dr.Field<string>("identificacion"),
 
@@ -561,6 +566,9 @@ namespace FacturadorAPI.Repository
                     fc.impresa = dr.Field<int>("impresa");
                     fc.estado = dr.Field<string>("estado");
                     fc.codigoFormaPago =  dr.Field<int>("codigoFormaPago") ;
+                    fc.codigoFormaPago2 = dr.Table.Columns.Contains("codigoFormaPago2") && !dr.IsNull("codigoFormaPago2") ? dr.Field<int?>("codigoFormaPago2") : null;
+                    fc.total1 = dr.Table.Columns.Contains("total1") && !dr.IsNull("total1") ? Convert.ToSingle(dr.Field<double>("total1")) : null;
+                    fc.total2 = dr.Table.Columns.Contains("total2") && !dr.IsNull("total2") ? Convert.ToSingle(dr.Field<double>("total2")) : null;
                     fc.Forma = new FormasPagos() { Id = dr.Field<int>("codigoFormaPago") };
                     fc.descuento = Convert.ToSingle(dr.Field<double>("descuento"));
                     fc.subtotal = Convert.ToSingle(dr.Field<double>("subtotal"));
@@ -573,6 +581,7 @@ namespace FacturadorAPI.Repository
                     fc.Tercero.COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI");
                     fc.Tercero.Direccion = dr.Field<string>("direccion");
                     fc.Tercero.Nombre = dr.Field<string>("Nombre");
+                    fc.Tercero.Apellidos = dr.Table.Columns.Contains("apellidos") && !dr.IsNull("apellidos") ? dr.Field<string>("apellidos") : string.Empty;
                     fc.Tercero.Telefono = dr.Field<string>("Telefono");
                     fc.Tercero.identificacion = dr.Field<string>("identificacion");
 
@@ -650,6 +659,9 @@ namespace FacturadorAPI.Repository
                     impresa = dr.Field<int>("impresa"),
                     Estado = dr.Field<string>("estado"),
                     codigoFormaPago = dr.Field<int>("codigoFormaPago"),
+                    codigoFormaPago2 = dr.Table.Columns.Contains("codigoFormaPago2") && !dr.IsNull("codigoFormaPago2") ? dr.Field<int?>("codigoFormaPago2") : null,
+                    total1 = dr.Table.Columns.Contains("total1") && !dr.IsNull("total1") ? dr.Field<double?>("total1") : null,
+                    total2 = dr.Table.Columns.Contains("total2") && !dr.IsNull("total2") ? dr.Field<double?>("total2") : null,
                     numeroTransaccion = dr.Field<string>("numeroTransaccion"),
                     enviadaFacturacion = dr.Field<bool>("enviadaFacturacion"),
                     enviada = dr.Field<bool>("enviada"),
@@ -658,6 +670,7 @@ namespace FacturadorAPI.Repository
                         COD_CLI = dr.Field<string>("COD_CLI"),
                         Direccion = dr.Field<string>("direccion"),
                         Nombre = dr.Field<string>("Nombre"),
+                        Apellidos = dr.Table.Columns.Contains("apellidos") && !dr.IsNull("apellidos") ? dr.Field<string>("apellidos") : string.Empty,
                         Telefono = dr.Field<string>("Telefono"),
                         identificacion = dr.Field<string>("identificacion"),
 

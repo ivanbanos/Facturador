@@ -4,6 +4,8 @@ var ConvertirAFactura = false;
 var ConvertirAOrden = false;
 var GenerarFacturaelectronica = true;
 var DesabilitaFormasNoCredito=true;
+var HabilitarSegundaFormaPago = true;
+var PlacaObligatoriaCanastillaCredito = true;
 var FormasPagos = [1,4,98];
 var palabrasPermitidas = [
     "PIMPINAS",

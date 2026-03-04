@@ -13,6 +13,7 @@ const Terceros = () => {
     terceroId: 0,
     coD_CLI: "",
     nombre: "",
+    apellidos: "",
     telefono: "",
     direccion: "",
     identificacion: "",
@@ -24,7 +25,7 @@ const Terceros = () => {
   const handleChangeTercero = (event) => {
     let value = event.target.value;
     // Forzar mayúsculas en nombre, dirección y coD_CLI
-    if (["nombre", "direccion", "coD_CLI"].includes(event.target.name)) {
+    if (["nombre", "apellidos", "direccion", "coD_CLI"].includes(event.target.name)) {
       value = value.toUpperCase();
     }
     // Teléfono solo números
@@ -48,6 +49,7 @@ const Terceros = () => {
   function formIsValid() {
     const _errores = {};
     if (!tercero.nombre) _errores.nombre = "Se requiere el nombre";
+    if (!tercero.apellidos) _errores.apellidos = "Se requieren los apellidos";
     if (tercero.telefono && !/^\d{7,}$/.test(tercero.telefono)) {
       _errores.telefono = "Teléfono inválido (mínimo 7 dígitos)";
     }
@@ -122,6 +124,7 @@ const Terceros = () => {
       terceroId: 0,
       coD_CLI: "",
       nombre: "",
+      apellidos: "",
       telefono: "",
       direccion: "",
       identificacion: "",
@@ -222,6 +225,22 @@ const Terceros = () => {
                         onChange={handleChangeTercero}
                         required
                         placeholder={errores.nombre || "Nombre"}
+                      ></input>
+                    </div>
+                  </div>
+                  <div className="row margen-input-3">
+                    <label className="col-sm-4 col-form-label">Apellidos</label>
+                    <div className="col-sm-8">
+                      <input
+                        type="text"
+                        className={`form-control tercero-input ${
+                          errores.apellidos ? "is-invalid" : ""
+                        }`}
+                        name="apellidos"
+                        value={tercero.apellidos || ""}
+                        onChange={handleChangeTercero}
+                        required
+                        placeholder={errores.apellidos || "Apellidos"}
                       ></input>
                     </div>
                   </div>

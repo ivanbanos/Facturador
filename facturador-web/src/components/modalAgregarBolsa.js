@@ -9,6 +9,7 @@ import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 const ModalAgregarBolsa = (props) => {
   const [showModalReimpirmirTurno, setShowModalReimprimirTurno] =
     useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const handleCloseModalReimprimirTurno = () =>
     setShowModalReimprimirTurno(false);
   const handleShowModalReimprimirTurno = () =>
@@ -33,6 +34,7 @@ const ModalAgregarBolsa = (props) => {
     <>
       <Button
         className="botton-green m-1 right-botton"
+        disabled={isProcessing}
         onClick={() => {
           handleShowModalReimprimirTurno();
         }}
@@ -78,6 +80,7 @@ const ModalAgregarBolsa = (props) => {
                   className="form-control modal-tercero-input"
                   name="identificacion"
                   value={codigoEmpleado}
+                  disabled={isProcessing}
                   onChange={(event) =>
                     handleChangeCodigoEmpleado(event.target.value)
                   }
@@ -94,6 +97,7 @@ const ModalAgregarBolsa = (props) => {
                   className="form-control modal-tercero-input"
                   name="identificacion"
                   value={cantidad}
+                  disabled={isProcessing}
                   onChange={(event) =>
                     handleChangeCantidad(event.target.value)
                   }
@@ -110,6 +114,7 @@ const ModalAgregarBolsa = (props) => {
                   className="form-control modal-tercero-input"
                   name="identificacion"
                   value={moneda}
+                  disabled={isProcessing}
                   onChange={(event) =>
                     handleChangeMoneda(event.target.value)
                   }
@@ -126,6 +131,7 @@ const ModalAgregarBolsa = (props) => {
                   className="form-control modal-tercero-input"
                   name="identificacion"
                   value={numero}
+                  disabled={isProcessing}
                   onChange={(event) =>
                     handleChangeNumero(event.target.value)
                   }
@@ -137,6 +143,7 @@ const ModalAgregarBolsa = (props) => {
         <Modal.Footer>
           <Button
             className="botton-light-blue-modal"
+            disabled={isProcessing}
             onClick={() => {
               handleCloseModalReimprimirTurno();
             }}
@@ -145,23 +152,32 @@ const ModalAgregarBolsa = (props) => {
           </Button>
           <Button
             className="botton-medium-blue-modal"
+            disabled={isProcessing}
             onClick={async () => {
-              handleCloseModalReimprimirTurno();
-              const respuestaReImprimir = await AgregarBolsa(
-                islaSelect,
-                codigoEmpleado,
-                cantidad,
-                moneda,
-                numero
-              );
-              if (respuestaReImprimir === "fail") {
-                props.handleSetShowAlertError(true);
-              } else {
-                if(window.imprimirNativo){
+              if (isProcessing) {
+                return;
+              }
 
-          await ImprimirNativo(respuestaReImprimir);
-        }
-                setShowAlertImpresionExitosa(true);
+              setIsProcessing(true);
+              handleCloseModalReimprimirTurno();
+              try {
+                const respuestaReImprimir = await AgregarBolsa(
+                  islaSelect,
+                  codigoEmpleado,
+                  cantidad,
+                  moneda,
+                  numero
+                );
+                if (respuestaReImprimir === "fail") {
+                  props.handleSetShowAlertError(true);
+                } else {
+                  if (window.imprimirNativo) {
+                    await ImprimirNativo(respuestaReImprimir);
+                  }
+                  setShowAlertImpresionExitosa(true);
+                }
+              } finally {
+                setIsProcessing(false);
               }
             }}
           >

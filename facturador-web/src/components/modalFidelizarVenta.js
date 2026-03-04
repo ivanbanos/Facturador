@@ -8,6 +8,7 @@ import GetTercero from "../Services/getServices/GetTercero";
 
 const ModalFidelizarVenta = (props) => {
   const [showModalFidelizarVenta, setShowModalFidelizarVenta] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const handleCloseModalFidelizarVenta = () =>
     setShowModalFidelizarVenta(false);
   const handleShowModalFidelizarVenta = () => setShowModalFidelizarVenta(true);
@@ -21,23 +22,32 @@ const ModalFidelizarVenta = (props) => {
   const [hasError, setHasError] = useState(false);
   
   const onClickFidelizarVenta = async () => {
+    if (isProcessing) {
+      return;
+    }
+
     if (!hasError) {
+      setIsProcessing(true);
       handleCloseModalFidelizarVenta();
-      const respuestaFidelizar = await FidelizarVenta(
-        identificacionFidelizar,
-        props.ventaId
-      );
-      if (respuestaFidelizar === "fail") {
-        props.handleSetShowAlertError(true);
-      } else {
-        setIdentificacionFidelizar("");
-        setTerceroBusqueda([{}]);
-        setTercero({
-          nombre: "",
-        });
-        setHasError(false);
-        props.getFacturaInformacion();
-        setShowAlertFidelizacionExitosa(true);
+      try {
+        const respuestaFidelizar = await FidelizarVenta(
+          identificacionFidelizar,
+          props.ventaId
+        );
+        if (respuestaFidelizar === "fail") {
+          props.handleSetShowAlertError(true);
+        } else {
+          setIdentificacionFidelizar("");
+          setTerceroBusqueda([{}]);
+          setTercero({
+            nombre: "",
+          });
+          setHasError(false);
+          props.getFacturaInformacion();
+          setShowAlertFidelizacionExitosa(true);
+        }
+      } finally {
+        setIsProcessing(false);
       }
     }
   };
@@ -46,6 +56,7 @@ const ModalFidelizarVenta = (props) => {
     <>
       <Button
         className="botton-light-blue right-botton m-1"
+        disabled={isProcessing}
         onClick={() => {
           handleShowModalFidelizarVenta();
         }}
@@ -75,6 +86,7 @@ const ModalFidelizarVenta = (props) => {
                   className="form-control modal-tercero-input"
                   name="identificacion"
                   value={identificacionFidelizar}
+                  disabled={isProcessing}
                   onChange={(event) =>
                     setIdentificacionFidelizar(event.target.value)
                   }
@@ -86,6 +98,7 @@ const ModalFidelizarVenta = (props) => {
         <Modal.Footer>
           <Button
             className="botton-light-blue-modal"
+            disabled={isProcessing}
             onClick={() => {
               handleCloseModalFidelizarVenta();
               setIdentificacionFidelizar("");
@@ -100,6 +113,7 @@ const ModalFidelizarVenta = (props) => {
           </Button>
           <Button
             className="botton-medium-blue-modal"
+            disabled={isProcessing}
             onClick={onClickFidelizarVenta}
           >
             Fidelizar
