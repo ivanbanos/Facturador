@@ -118,6 +118,10 @@ IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaSinEnviarSiesa')
 	DROP PROCEDURE [dbo].[getFacturaSinEnviarSiesa]
 GO
 CREATE procedure [dbo].[getFacturaSinEnviarSiesa]
+(
+    @fechaMin date = null,
+    @fechaMax date = null
+)
 as
 begin try
     set nocount on;
@@ -129,7 +133,10 @@ begin try
 	select 
 	top(10)ventaId
 	from OrdenesDeDespacho
-     where (enviada =1 and (EnviadaSiesa = 0 OR EnviadaSiesa IS NULL)) ORDER BY ventaId desc
+    where (enviada =1 and (EnviadaSiesa = 0 OR EnviadaSiesa IS NULL))
+    and (@fechaMin is null or cast(OrdenesDeDespacho.fecha as date) >= @fechaMin)
+    and (@fechaMax is null or cast(OrdenesDeDespacho.fecha as date) <= @fechaMax)
+    ORDER BY ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
 

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Data;
+using System.Data.SqlClient;
 using System.Runtime;
 
 namespace MachineUtilizationApi.Repository
@@ -209,11 +210,27 @@ namespace MachineUtilizationApi.Repository
         public async Task MandarImprimir(int idVenta, int veces)
         {
             ConnectionString = _settings.Facturacion;
-            await LoadDataTableFromStoredProcAsync("MandarImprimir",
-                            new Dictionary<string, object>{
+            try
+            {
+                await LoadDataTableFromStoredProcAsync("MandarImprimir",
+                                new Dictionary<string, object>{
 
                     {"@ventaId", idVenta },{"@veces", veces}
-                            });
+                                });
+            }
+            catch (SqlException ex) when (ex.Number == 8144)
+            {
+                // Compatibilidad con BD donde MandarImprimir solo recibe @ventaId.
+                var cantidadImpresiones = Math.Max(veces, 1);
+                for (int i = 0; i < cantidadImpresiones; i++)
+                {
+                    await LoadDataTableFromStoredProcAsync("MandarImprimir",
+                                    new Dictionary<string, object>
+                                    {
+                                        {"@ventaId", idVenta }
+                                    });
+                }
+            }
         }
 
         public async Task<int> GenerarFacturaCanastilla(FacturaCanastillaRequest facturaCanastilla, bool imprimir)
@@ -353,9 +370,8 @@ namespace MachineUtilizationApi.Repository
         public async Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje, string numeroTransaccion, int? codigoFormaPago2 = null, double? total1 = null, double? total2 = null)
         {
             ConnectionString = _settings.Facturacion;
-            await LoadDataTableFromStoredProcAsync("ActualizarFactura",
-                            new Dictionary<string, object>{
-
+            var parametrosActuales = new Dictionary<string, object>
+            {
                     {"@facturaPOSId", facturaPOSId },
                     {"@Placa", placa },
                     {"@Kilometraje", kilometraje },
@@ -366,8 +382,48 @@ namespace MachineUtilizationApi.Repository
                     {"@terceroId", terceroId },
                     {"@ventaId", idVenta },
                     {"@NumeroTransaccion", numeroTransaccion },
+            };
 
-                            });
+            try
+            {
+                await LoadDataTableFromStoredProcAsync("ActualizarFactura", parametrosActuales);
+            }
+            catch (SqlException ex) when (ex.Number == 8144)
+            {
+                // Compatibilidad con BD que aun no tiene @NumeroTransaccion.
+                var parametrosSinNumeroTransaccion = new Dictionary<string, object>
+                {
+                    {"@facturaPOSId", facturaPOSId },
+                    {"@Placa", placa },
+                    {"@Kilometraje", kilometraje },
+                    {"@codigoFormaPago", codigoFormaPago },
+                    {"@codigoFormaPago2", codigoFormaPago2 },
+                    {"@total1", total1 },
+                    {"@total2", total2 },
+                    {"@terceroId", terceroId },
+                    {"@ventaId", idVenta },
+                };
+
+                try
+                {
+                    await LoadDataTableFromStoredProcAsync("ActualizarFactura", parametrosSinNumeroTransaccion);
+                }
+                catch (SqlException ex2) when (ex2.Number == 8144)
+                {
+                    // Compatibilidad con BD legacy que no tiene forma de pago secundaria ni totales.
+                    var parametrosLegacy = new Dictionary<string, object>
+                    {
+                        {"@facturaPOSId", facturaPOSId },
+                        {"@Placa", placa },
+                        {"@Kilometraje", kilometraje },
+                        {"@codigoFormaPago", codigoFormaPago },
+                        {"@terceroId", terceroId },
+                        {"@ventaId", idVenta },
+                    };
+
+                    await LoadDataTableFromStoredProcAsync("ActualizarFactura", parametrosLegacy);
+                }
+            }
         }
 
         public async Task<Puntos> GetVentaFidelizarAutomaticaPorVenta(int idVenta)

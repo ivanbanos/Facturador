@@ -6,12 +6,25 @@ import Combustible from "./combustible";
 import Canastilla from "./canastilla.js";
 import VehiculosSICOMModal from "./rabbitWebSocket";
 import Terceros from "./terceros";
-import { Routes, Route, BrowserRouter } from "react-router-dom";
+import ReloadToRootOnRefreshGuard from "./ReloadToRootOnRefreshGuard";
+import { Routes, Route, BrowserRouter, Navigate } from "react-router-dom";
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" exact element={<Combustible />} />
+      <Route path="/canastilla" exact element={<Canastilla />} />
+      <Route path="/terceros" exact element={<Terceros />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
 
 function App() {
   return (
     <>
       <BrowserRouter>
+        <ReloadToRootOnRefreshGuard />
         <NavBar></NavBar>
         <div className=" main-box">
           <div className="icon-container">
@@ -22,11 +35,7 @@ function App() {
             ></img>
           </div>
           <div className="row box mx-2">
-            <Routes>
-              <Route path="/" exact element={<Combustible />} />
-              <Route path="/canastilla" exact element={<Canastilla />} />
-              <Route path="/terceros" exact element={<Terceros />} />
-            </Routes>
+            <AppRoutes />
           </div>
         </div>
       </BrowserRouter>

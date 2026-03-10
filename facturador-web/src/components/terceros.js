@@ -49,7 +49,6 @@ const Terceros = () => {
   function formIsValid() {
     const _errores = {};
     if (!tercero.nombre) _errores.nombre = "Se requiere el nombre";
-    if (!tercero.apellidos) _errores.apellidos = "Se requieren los apellidos";
     if (tercero.telefono && !/^\d{7,}$/.test(tercero.telefono)) {
       _errores.telefono = "Teléfono inválido (mínimo 7 dígitos)";
     }

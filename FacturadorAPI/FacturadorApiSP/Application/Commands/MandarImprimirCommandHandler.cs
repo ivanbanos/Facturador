@@ -5,6 +5,7 @@ using MachineUtilizationApi.Repository;
 using MediatR;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
+using System.Text;
 
 namespace FacturadorAPI.Application.Commands
 {
@@ -28,13 +29,16 @@ namespace FacturadorAPI.Application.Commands
 
         public async Task<string> Handle(MandarImprimirCommand request, CancellationToken cancellationToken)
         {
+            await WriteDebugLogAsync($"INICIO MandarImprimir ventaId={request.VentaId}, facturaPOSId={request.FacturaPOSId}, terceroId={request.TerceroId}, formaPago={request.FormaPago}, formaPago2={request.FormaPago2}, total1={request.Total1}, total2={request.Total2}, impresiones={request.Impresiones}, placa={request.Placa}, kilometraje={request.Kilometraje}, numeroTransaccion={request.NumeroTransaccion}");
             try
             {
                 var token = await _conexionEstacionRemota.GetToken(cancellationToken);
                 var factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
+                await WriteDebugLogAsync($"Factura antes de actualizar: ventaId={factura.ventaId}, facturaPOSId={factura.facturaPOSId}, enviada={factura.enviada}, codigoFormaPago={factura.codigoFormaPago}, codigoFormaPago2={factura.codigoFormaPago2}, total1={factura.total1}, total2={factura.total2}");
                 
                 if (!factura.enviada)
                 {
+                    await WriteDebugLogAsync("Entra a ActualizarFactura porque enviada = false");
                     await _databaseHandler.ActualizarFactura(
                         factura.facturaPOSId,
                         request.TerceroId,
@@ -48,7 +52,12 @@ namespace FacturadorAPI.Application.Commands
                         request.Total2);
 
                     factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
+                    await WriteDebugLogAsync($"Factura despues de actualizar: ventaId={factura.ventaId}, facturaPOSId={factura.facturaPOSId}, enviada={factura.enviada}, codigoFormaPago={factura.codigoFormaPago}, codigoFormaPago2={factura.codigoFormaPago2}, total1={factura.total1}, total2={factura.total2}");
 
+                }
+                else
+                {
+                    await WriteDebugLogAsync("No entra a ActualizarFactura porque enviada = true");
                 }
 
                 var facturaSIGES = ConvertToFacturaSIGES(factura);
@@ -58,6 +67,7 @@ namespace FacturadorAPI.Application.Commands
                     await _conexionEstacionRemota.EnviarFacturas(new List<FacturaSiges>() { facturaSIGES }, formas, token);
 
                     await _databaseHandler.ActuralizarFacturasEnviados(new List<int>() { request.VentaId });
+                    await WriteDebugLogAsync($"Factura enviada a SIGES y marcada como enviada: ventaId={request.VentaId}");
 
                 }
                 catch (Exception ex)
@@ -65,25 +75,31 @@ namespace FacturadorAPI.Application.Commands
 
                     Console.WriteLine($"Error {ex.Message}");
                     Console.WriteLine($"Error {ex.StackTrace}");
+                    await WriteDebugLogAsync($"Error enviando factura a SIGES: {ex.Message}");
 
                 }
                 if (!factura.enviada)
                 {
                     await _databaseHandler.MandarImprimir(request.VentaId, request.Impresiones);
+                    await WriteDebugLogAsync($"MandarImprimir ejecutado (factura no enviada previamente). ventaId={request.VentaId}");
                     return "NoChange";
                 }
                 else
                 {
                     await _databaseHandler.MandarImprimir(request.VentaId, request.Impresiones);
+                    await WriteDebugLogAsync($"MandarImprimir ejecutado (factura ya enviada previamente). ventaId={request.VentaId}");
                     return "Ok";
                 }
             }
             catch (Exception ex)
             {
+                await WriteDebugLogAsync($"Excepcion general en Handle: {ex.Message}");
                 var factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
+                await WriteDebugLogAsync($"Factura en catch antes de actualizar: ventaId={factura.ventaId}, facturaPOSId={factura.facturaPOSId}, enviada={factura.enviada}, codigoFormaPago={factura.codigoFormaPago}, codigoFormaPago2={factura.codigoFormaPago2}, total1={factura.total1}, total2={factura.total2}");
 
                 if (!factura.enviada)
                 {
+                    await WriteDebugLogAsync("Catch: entra a ActualizarFactura porque enviada = false");
                     await _databaseHandler.ActualizarFactura(
                         factura.facturaPOSId,
                         request.TerceroId,
@@ -97,12 +113,34 @@ namespace FacturadorAPI.Application.Commands
                         request.Total2);
 
                     factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
+                    await WriteDebugLogAsync($"Catch: factura despues de actualizar: ventaId={factura.ventaId}, facturaPOSId={factura.facturaPOSId}, enviada={factura.enviada}, codigoFormaPago={factura.codigoFormaPago}, codigoFormaPago2={factura.codigoFormaPago2}, total1={factura.total1}, total2={factura.total2}");
 
+                }
+                else
+                {
+                    await WriteDebugLogAsync("Catch: no entra a ActualizarFactura porque enviada = true");
                 }
                 Console.WriteLine($"Error {ex.Message}");
                 Console.WriteLine($"Error {ex.StackTrace}");
                 await _databaseHandler.MandarImprimir(request.VentaId, request.Impresiones); 
+                await WriteDebugLogAsync($"Catch: MandarImprimir ejecutado. ventaId={request.VentaId}");
                 return "Error";
+            }
+        }
+
+        private async Task WriteDebugLogAsync(string message)
+        {
+            try
+            {
+                var logDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
+                Directory.CreateDirectory(logDirectory);
+                var logFile = Path.Combine(logDirectory, "mandar-imprimir-debug.log");
+                var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}{Environment.NewLine}";
+                await File.AppendAllTextAsync(logFile, line, Encoding.UTF8);
+            }
+            catch
+            {
+                // No interrumpir el flujo funcional por errores de logging de diagnostico.
             }
         }
         private FacturaSiges ConvertToFacturaSIGES(Factura factura)

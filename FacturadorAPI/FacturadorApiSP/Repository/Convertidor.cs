@@ -173,7 +173,7 @@ namespace FacturadorAPI.Repository
                     DescripcionResolucion = dr.Field<string>("descripcionRes"),
                     Autorizacion = dr.Field<string>("autorizacion"),
 
-                    numeroTransaccion = dr.Field<string>("numeroTransaccion"),
+                    numeroTransaccion = dr.Table.Columns.Contains("numeroTransaccion") && !dr.IsNull("numeroTransaccion") ? dr.Field<string>("numeroTransaccion") : null,
                     Placa = dr.Field<string>("Placa"),
                     Kilometraje = dr.Field<string>("Kilometraje"),
                     fecha = dr.Field<DateTime>("fecha"),
@@ -662,7 +662,7 @@ namespace FacturadorAPI.Repository
                     codigoFormaPago2 = dr.Table.Columns.Contains("codigoFormaPago2") && !dr.IsNull("codigoFormaPago2") ? dr.Field<int?>("codigoFormaPago2") : null,
                     total1 = dr.Table.Columns.Contains("total1") && !dr.IsNull("total1") ? dr.Field<double?>("total1") : null,
                     total2 = dr.Table.Columns.Contains("total2") && !dr.IsNull("total2") ? dr.Field<double?>("total2") : null,
-                    numeroTransaccion = dr.Field<string>("numeroTransaccion"),
+                    numeroTransaccion = dr.Table.Columns.Contains("numeroTransaccion") && !dr.IsNull("numeroTransaccion") ? dr.Field<string>("numeroTransaccion") : null,
                     enviadaFacturacion = dr.Field<bool>("enviadaFacturacion"),
                     enviada = dr.Field<bool>("enviada"),
                     Tercero = new Tercero()

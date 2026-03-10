@@ -1,12 +1,12 @@
 GO
- IF NOT EXISTS(SELECT * FROM sys.databases WHERE name = 'EstacionSIGES')
+ IF NOT EXISTS(SELECT * FROM sys.databases WHERE name = 'Facturacion_Electronica')
   BEGIN
-    CREATE DATABASE [EstacionSIGES]
+    CREATE DATABASE [Facturacion_Electronica]
 
 
     END
     GO
-       USE [EstacionSIGES]
+       USE [Facturacion_Electronica]
     GO
 
 	IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Resoluciones' and xtype='U')
@@ -716,7 +716,8 @@ begin try
 	select 
 	top(100)ventaId
 	from OrdenesDeDespacho
-    where enviada = 0 or enviada is null
+    where (enviada = 0 or enviada is null)
+    and fecha <= DATEADD(MINUTE, -10, GETDATE())
 	order by ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
@@ -1670,7 +1671,8 @@ begin try
 	select 
 	top(100)ventaId
 	from OrdenesDeDespacho
-    where enviadaFacturacion = 0 or enviadaFacturacion is null
+    where (enviadaFacturacion = 0 or enviadaFacturacion is null)
+    and fecha <= DATEADD(MINUTE, -10, GETDATE())
 	order by ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
@@ -2450,7 +2452,8 @@ begin try
 	select 
 	top(100)ventaId
 	from OrdenesDeDespacho
-    where turnoEnviado = 0 or turnoEnviado is null
+    where (turnoEnviado = 0 or turnoEnviado is null)
+    and fecha <= DATEADD(MINUTE, -10, GETDATE())
 	order by ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int

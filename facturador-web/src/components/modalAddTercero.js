@@ -48,7 +48,6 @@ const ModalAddTercero = (props) => {
   function formIsValid() {
     const _errores = {};
     if (!nuevoTercero.nombre) _errores.nombre = "Se requiere el nombre";
-    if (!nuevoTercero.apellidos) _errores.apellidos = "Se requieren los apellidos";
     if (nuevoTercero.telefono && !/^\d{7,}$/.test(nuevoTercero.telefono)) {
       _errores.telefono = "Teléfono inválido (mínimo 7 dígitos)";
     }

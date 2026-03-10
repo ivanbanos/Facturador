@@ -359,6 +359,7 @@ BEGIN
     tipoIdentificacion int NULL,
     identificacion VARCHAR (50) NOT NULL,
     nombre VARCHAR (50) NULL,
+    apellidos VARCHAR (50) NULL,
     telefono VARCHAR (50) NULL,
     correo VARCHAR (50) NULL,
     direccion VARCHAR (50) NULL,
@@ -427,6 +428,19 @@ IF NOT EXISTS (
     *
   FROM
     INFORMATION_SCHEMA.COLUMNS
+    WHERE
+        TABLE_NAME = 'terceros' AND COLUMN_NAME = 'apellidos')
+BEGIN
+    ALTER TABLE terceros
+ADD apellidos VARCHAR(50) NULL;
+END;
+
+GO
+IF NOT EXISTS (
+    SELECT
+        *
+    FROM
+        INFORMATION_SCHEMA.COLUMNS
   WHERE
     TABLE_NAME = 'terceros' AND COLUMN_NAME = 'COD_CLI')
 BEGIN
@@ -645,7 +659,7 @@ CREATE procedure [dbo].[ObtenerTercero]
 as
 begin try
     set nocount on;
-	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
+	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, apellidos, telefono, correo, direccion, terceros.estado, COD_CLI 
 	from dbo.terceros 
     inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
     where REPLACE(@identificacion, ' ', '') = identificacion
@@ -702,6 +716,7 @@ CREATE procedure [dbo].[CrearTercero]
     @tipoIdentificacion int,
     @identificacion VARCHAR (50) ,
     @nombre VARCHAR (50) ,
+    @apellidos VARCHAR (50) = null,
     @telefono VARCHAR (50) ,
     @correo VARCHAR (50) ,
     @direccion VARCHAR (50) ,
@@ -727,8 +742,8 @@ begin try
 			REPLACE(@identificacion, ' ', '') = identificacion
 			if @idTerceroCreado is null
 			begin
-				INSERT INTO terceros (tipoIdentificacion,identificacion,nombre,telefono,correo,direccion,estado,COD_CLI) 
-				values(@tipoIdentificacion,REPLACE(@identificacion, ' ', ''),@nombre,@telefono,@correo,@direccion,@estado,@COD_CLI)
+                INSERT INTO terceros (tipoIdentificacion,identificacion,nombre,apellidos,telefono,correo,direccion,estado,COD_CLI) 
+                values(@tipoIdentificacion,REPLACE(@identificacion, ' ', ''),@nombre,@apellidos,@telefono,@correo,@direccion,@estado,@COD_CLI)
 
 				select @idTerceroCreado = @@Identity
 			end
@@ -739,6 +754,7 @@ begin try
 			tipoIdentificacion = @tipoIdentificacion,
 			identificacion = REPLACE(@identificacion, ' ', ''),
 			nombre = @nombre,
+            apellidos = @apellidos,
 			telefono = @telefono,
 			correo = @correo,
 			direccion = @direccion,
@@ -748,7 +764,7 @@ begin try
 			where @idTerceroCreado = terceroId
 		end
 		end
-	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
+    select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, apellidos, telefono, correo, direccion, terceros.estado, COD_CLI 
 	from dbo.terceros 
     inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
     where @idTerceroCreado = terceroId
@@ -2147,7 +2163,8 @@ begin try
 	select 
 	top(100)ventaId
 	from OrdenesDeDespacho
-    where enviada = 0 or enviada is null
+    where (enviada = 0 or enviada is null)
+    and fecha < DATEADD(minute, -10, GETDATE())
 	order by ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
@@ -3864,7 +3881,7 @@ CREATE procedure [dbo].[GetTerceroByQuery]
 as
 begin try
     set nocount on;
-	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
+	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, apellidos, telefono, correo, direccion, terceros.estado, COD_CLI 
 	from dbo.terceros 
     inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
     where REPLACE(@identificacion, ' ', '') = identificacion
