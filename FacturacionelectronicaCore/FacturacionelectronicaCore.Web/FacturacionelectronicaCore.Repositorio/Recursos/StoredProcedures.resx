@@ -1,0 +1,324 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AgregarIsla" xml:space="preserve">
+    <value>[dbo].[AgregarOModificarIsla]</value>
+  </data>
+  <data name="AgregarSurtidor" xml:space="preserve">
+    <value>[dbo].[AgregarSurtidor]</value>
+  </data>
+  <data name="BorrarIsla" xml:space="preserve">
+    <value>[dbo].[BorrarIsla]</value>
+  </data>
+  <data name="BorrarSurtidor" xml:space="preserve">
+    <value>[dbo].[BorrarSurtidor]</value>
+  </data>
+  <data name="GetUserByGuid" xml:space="preserve">
+    <value>[dbo].[GetUserByGuid]</value>
+  </data>
+  <data name="GetUserGuidByUserNPass" xml:space="preserve">
+    <value>[dbo].[GetUserGuidByUserNPass]</value>
+  </data>
+  <data name="GetUsuarios" xml:space="preserve">
+    <value>[dbo].[GetUsuarios]</value>
+  </data>
+  <data name="ListarIsla" xml:space="preserve">
+    <value>[dbo].[ListarIslas]</value>
+  </data>
+  <data name="ListarSurtidor" xml:space="preserve">
+    <value>[dbo].[ListarSurtidor]</value>
+  </data>
+  <data name="ModificarIsla" xml:space="preserve">
+    <value>[dbo].[AgregarOModificarIsla]</value>
+  </data>
+  <data name="ModificarSurtidor" xml:space="preserve">
+    <value>[dbo].[ModificarSurtidor]</value>
+  </data>
+  <data name="ObtenerIslaPorGuid" xml:space="preserve">
+    <value>[dbo].[ObtenerIslaPorGuid]</value>
+  </data>
+  <data name="ObtenerSurtidoresPorGuidIsla" xml:space="preserve">
+    <value>[dbo].[ObtenerSurtidoresPorGuidIsla]</value>
+  </data>
+  <data name="ObtenerSurtidorPorGuid" xml:space="preserve">
+    <value>[dbo].[ObtenerSurtidorPorGuid]</value>
+  </data>
+  <data name="SaveOrUpdateUser" xml:space="preserve">
+    <value>[dbo].[SaveOrUpdateUser]</value>
+  </data>
+  <data name="DeleteClienteByGuid" xml:space="preserve">
+    <value>[dbo].[DeleteClienteByGuid]</value>
+  </data>
+  <data name="GetClienteByGuid" xml:space="preserve">
+    <value>[dbo].[GetClienteByGuid]</value>
+  </data>
+  <data name="ListarClientes" xml:space="preserve">
+    <value>[dbo].[ListarClientes]</value>
+  </data>
+  <data name="SaveOrUpdateCliente" xml:space="preserve">
+    <value>[dbo].[SaveOrUpdateCliente]</value>
+  </data>
+  <data name="AgregarFactura" xml:space="preserve">
+    <value>[dbo].[AgregarFactura]</value>
+  </data>
+  <data name="BorrarFactura" xml:space="preserve">
+    <value />
+  </data>
+  <data name="FacturaOrdenesDeDespacho" xml:space="preserve">
+    <value>[dbo].[FacturaOrdenesDeDespacho]</value>
+  </data>
+  <data name="ListarFactura" xml:space="preserve">
+    <value>[dbo].[GetFacturas]</value>
+  </data>
+  <data name="ModificarFactura" xml:space="preserve">
+    <value />
+  </data>
+  <data name="ObtenerFacturaPorGuid" xml:space="preserve">
+    <value>[dbo].ObtenerFacturaPorGuid</value>
+  </data>
+  <data name="GetOrdenesDeDespacho" xml:space="preserve">
+    <value>[dbo].[GetOrdenesDeDespacho]</value>
+  </data>
+  <data name="GetTerceros" xml:space="preserve">
+    <value>[dbo].[GetTerceros]</value>
+  </data>
+  <data name="GetFacturaByEstado" xml:space="preserve">
+    <value>[dbo].[GetFacturaByEstado]</value>
+  </data>
+  <data name="SetConsecutivoFacturaPendiente" xml:space="preserve">
+    <value>[dbo].[SetConsecutivoFacturaPendiente]</value>
+  </data>
+  <data name="UpdateOrCreateTerceros" xml:space="preserve">
+    <value>[dbo].[UpdateOrCreateTerceros]</value>
+  </data>
+  <data name="UpdateConsecutivoResolucion" xml:space="preserve">
+    <value>[dbo].[UpdateConsecutivoResolucion]</value>
+  </data>
+  <data name="AgregarOrdenDespacho" xml:space="preserve">
+    <value>[dbo].[AgregarOrdenDespacho]</value>
+  </data>
+  <data name="GetTipoIdentificacionIdByTexto" xml:space="preserve">
+    <value>[dbo].[GetTipoIdentificacionIdByTexto]</value>
+  </data>
+  <data name="GetTercero" xml:space="preserve">
+    <value>[dbo].[GetTercero]</value>
+  </data>
+  <data name="AnularFacturas" xml:space="preserve">
+    <value>[dbo].[AnularFacturas]</value>
+  </data>
+  <data name="AddFacturasImprimir" xml:space="preserve">
+    <value>[dbo].[AddFacturasImprimir]</value>
+  </data>
+  <data name="AddOrdenesImprimir" xml:space="preserve">
+    <value>[dbo].[AddOrdenesImprimir]</value>
+  </data>
+  <data name="GetFacturasImprimir" xml:space="preserve">
+    <value>[dbo].[GetFacturasImprimir]</value>
+  </data>
+  <data name="GetOrdenesImprimir" xml:space="preserve">
+    <value>[dbo].[GetOrdenesImprimir]</value>
+  </data>
+  <data name="GetTercerosActualizados" xml:space="preserve">
+    <value>[dbo].[GetTercerosActualizados]</value>
+  </data>
+  <data name="AnularOrdenesDeDespacho" xml:space="preserve">
+    <value>[dbo].[AnularOrdenesDeDespacho]</value>
+  </data>
+  <data name="AddNuevaResolucion" xml:space="preserve">
+    <value>[dbo].[AddNuevaResolucion]</value>
+  </data>
+  <data name="GetResolucionActiva" xml:space="preserve">
+    <value>[dbo].[GetResolucionActiva]</value>
+  </data>
+  <data name="HabilitarResolucion" xml:space="preserve">
+    <value>[dbo].[HabilitarResolucion]</value>
+  </data>
+  <data name="UpdateOrCreateEstacion" xml:space="preserve">
+    <value>[dbo].[AgregarOActualizarEstacion]</value>
+  </data>
+  <data name="GetEstaciones" xml:space="preserve">
+    <value>[dbo].[GetEstaciones]</value>
+  </data>
+  <data name="GetEstacion" xml:space="preserve">
+    <value>[dbo].[GetEstacion]</value>
+  </data>
+  <data name="BorrarEstacion" xml:space="preserve">
+    <value>[dbo].[BorrarEstacion]</value>
+  </data>
+  <data name="GetOrdenesDeDespachoByFactura" xml:space="preserve">
+    <value>[dbo].[GetOrdenesDeDespachoByFactura]</value>
+  </data>
+  <data name="AgregarFechaReporteFactura" xml:space="preserve">
+    <value>[dbo].[AgregarFechaReporteFactura]</value>
+  </data>
+  <data name="GetTiposIdentificaciones" xml:space="preserve">
+    <value>[dbo].[GetTiposIdentificaciones]</value>
+  </data>
+  <data name="SetIdFacturacion" xml:space="preserve">
+    <value>[dbo].[SetIdFacturacion]</value>
+  </data>
+  <data name="SetIdFacturaElectronicaOrdenesdeDespacho" xml:space="preserve">
+    <value>[dbo].[SetIdFacturaElectronicaOrdenesdeDespacho]</value>
+  </data>
+  <data name="ObtenerOrdenDespachoPorGuid" xml:space="preserve">
+    <value>[dbo].ObtenerOrdenDespachoPorGuid</value>
+  </data>
+  <data name="ObtenerTerceroPorIdentificacion" xml:space="preserve">
+    <value>[dbo].ObtenerTerceroPorIdentificacion</value>
+  </data>
+  <data name="SetIdFacturaElectronicaFactura" xml:space="preserve">
+    <value>[dbo].SetIdFacturaElectronicaFactura</value>
+  </data>
+  <data name="ObtenerFacturaPorIdVentaLocal" xml:space="preserve">
+    <value>ObtenerFacturaPorIdVentaLocal</value>
+  </data>
+  <data name="ObtenerOrdenDespachoPorIdVentaLocal" xml:space="preserve">
+    <value>ObtenerOrdenDespachoPorIdVentaLocal</value>
+  </data>
+  <data name="s" xml:space="preserve">
+    <value>ObtenerOrdenDespachoPorIdVentaLocal</value>
+  </data>
+  <data name="GetCanastilla" xml:space="preserve">
+    <value>[dbo].[GetCanastilla]</value>
+  </data>
+  <data name="UpdateOrCreateCanastilla" xml:space="preserve">
+    <value>[dbo].[UpdateOrCreateCanastilla]</value>
+  </data>
+  <data name="AnularResolucion" xml:space="preserve">
+    <value>[dbo].[AnularResolucion]</value>
+  </data>
+  <data name="CrearFacturaCanastilla" xml:space="preserve">
+    <value>[dbo].[CrearFacturaCanastilla]</value>
+  </data>
+  <data name="CrearFacturaDetalle" xml:space="preserve">
+    <value>[dbo].[CrearFacturaDetalle]</value>
+  </data>
+  <data name="getFacturaCanatillaDetalle" xml:space="preserve">
+    <value>[dbo].[getFacturaCanatillaDetalle]</value>
+  </data>
+  <data name="getFacturasCanastilla" xml:space="preserve">
+    <value>[dbo].[getFacturasCanastilla]</value>
+  </data>
+  <data name="getFacturaCanastilla" xml:space="preserve">
+    <value>[dbo].[getFacturaCanastilla]</value>
+  </data>
+  <data name="GetEmpleadosByNombre" xml:space="preserve">
+    <value>[dbo].[GetEmpleadosByNombre]</value>
+  </data>
+</root>

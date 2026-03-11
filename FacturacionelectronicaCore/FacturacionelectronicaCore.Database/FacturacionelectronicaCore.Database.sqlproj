@@ -1,0 +1,129 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Name>FacturacionelectronicaCore.Database</Name>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectVersion>4.1</ProjectVersion>
+    <ProjectGuid>{16f3443b-bd09-4f16-9ea8-aa79d5f04555}</ProjectGuid>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql130DatabaseSchemaProvider</DSP>
+    <OutputType>Database</OutputType>
+    <RootPath>
+    </RootPath>
+    <RootNamespace>FacturacionelectronicaCore.Database</RootNamespace>
+    <AssemblyName>FacturacionelectronicaCore.Database</AssemblyName>
+    <ModelCollation>1033, CI</ModelCollation>
+    <DefaultFileStructure>BySchemaAndSchemaType</DefaultFileStructure>
+    <DeployToDatabase>True</DeployToDatabase>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetLanguage>CS</TargetLanguage>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <SqlServerVerification>False</SqlServerVerification>
+    <IncludeCompositeObjects>True</IncludeCompositeObjects>
+    <TargetDatabaseSet>True</TargetDatabaseSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
+    <!-- Default to the v11.0 targets path if the targets file for the current VS version is not found -->
+    <SSDTExists Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets')">True</SSDTExists>
+    <VisualStudioVersion Condition="'$(SSDTExists)' == ''">11.0</VisualStudioVersion>
+  </PropertyGroup>
+  <Import Condition="'$(SQLDBExtensionsRefPath)' != ''" Project="$(SQLDBExtensionsRefPath)\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <ItemGroup>
+    <Folder Include="Properties" />
+    <Folder Include="dbo" />
+    <Folder Include="dbo\Tables" />
+    <Folder Include="StoredProcedures" />
+    <Folder Include="types" />
+    <Folder Include="Schemas" />
+    <Folder Include="admin" />
+  </ItemGroup>
+  <ItemGroup>
+    <Build Include="dbo\Tables\EstadoFactura.sql" />
+    <Build Include="dbo\Tables\Estados.sql" />
+    <Build Include="dbo\Tables\Facturas.sql" />
+    <Build Include="dbo\Tables\OrdenesDeDespacho.sql" />
+    <Build Include="dbo\Tables\Resolucion.sql" />
+    <Build Include="dbo\Tables\Terceros.sql" />
+    <Build Include="dbo\Tables\TipoIdentificacion.sql" />
+    <Build Include="StoredProcedures\FacturaOrdenesDeDespacho.sql" />
+    <Build Include="types\OrdenesDeDespachoType.sql" />
+    <Build Include="StoredProcedures\GetOrdenesDeDespacho.sql" />
+    <Build Include="StoredProcedures\GetTerceros.sql" />
+    <Build Include="StoredProcedures\GetUserByGuid.sql" />
+    <Build Include="StoredProcedures\GetUserGuidByUserNPass.sql" />
+    <Build Include="StoredProcedures\GetUsuarios.sql" />
+    <Build Include="StoredProcedures\SaveOrUpdateUser.sql" />
+    <Build Include="types\UsuarioType.sql" />
+    <Build Include="Schemas\Admin.sql" />
+    <Build Include="admin\Usuario.sql" />
+    <Build Include="StoredProcedures\GetFacturas.sql" />
+    <Build Include="StoredProcedures\SetConsecutivoFacturaPendiente.sql" />
+    <Build Include="StoredProcedures\GetFacturaByEstado.sql" />
+    <Build Include="StoredProcedures\UpdateOrCreateTerceros.sql" />
+    <Build Include="types\TerceroType.sql" />
+    <Build Include="StoredProcedures\UpdateConsecutivoResolucion.sql" />
+    <Build Include="StoredProcedures\AgregarFactura.sql" />
+    <Build Include="types\FacturaType.sql" />
+    <Build Include="StoredProcedures\AgregarOrdenDespacho.sql" />
+    <Build Include="StoredProcedures\GetTipoIdentificacionIdByTexto.sql" />
+    <Build Include="StoredProcedures\GetTercero.sql" />
+    <Build Include="dbo\Tables\ObjetoImprimir.sql" />
+    <Build Include="dbo\Tables\IdTerceroActualizado.sql" />
+    <Build Include="StoredProcedures\AddFacturasImprimir.sql" />
+    <Build Include="StoredProcedures\AddOrdenesImprimir.sql" />
+    <Build Include="StoredProcedures\GetTercerosActualizados.sql" />
+    <Build Include="StoredProcedures\GetFacturasImprimir.sql" />
+    <Build Include="StoredProcedures\GetOrdenesImprimir.sql" />
+    <Build Include="types\Entity.sql" />
+    <Build Include="StoredProcedures\AnularFacturas.sql" />
+    <Build Include="StoredProcedures\AnularOrdenesDeDespacho.sql" />
+    <Build Include="types\EntityTableType.sql" />
+    <Build Include="dbo\Tables\Estaciones.sql" />
+    <Build Include="types\EstacionType.sql" />
+    <Build Include="types\ResolucionType.sql" />
+    <Build Include="StoredProcedures\HabilitarResolucion.sql" />
+    <Build Include="StoredProcedures\GetResolucionActiva.sql" />
+    <Build Include="StoredProcedures\AddNuevaResolucion.sql" />
+    <Build Include="StoredProcedures\GetOrdenesDeDespachoByFactura.sql" />
+    <Build Include="StoredProcedures\GetEstaciones.sql" />
+    <Build Include="dbo\Tables\Usuario.sql" />
+    <Build Include="StoredProcedures\AgregarOActualizarEstacion.sql" />
+    <Build Include="StoredProcedures\BorrarEstacion.sql" />
+    <Build Include="StoredProcedures\GetEstacion.sql" />
+    <Build Include="types\FacturaFechaReporteType.sql" />
+    <Build Include="StoredProcedures\AgregarFechaReporteFactura.sql" />
+    <Build Include="StoredProcedures\GetTiposIdentificaciones.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <RefactorLog Include="FacturacionelectronicaCore.Database.refactorlog" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="FacturacionelectronicaCore.Database.publish.xml" />
+  </ItemGroup>
+</Project>

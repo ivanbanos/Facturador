@@ -1,0 +1,4 @@
+﻿CREATE TYPE [dbo].[Entity] AS TABLE
+(
+	[Guid] UNIQUEIDENTIFIER NOT NULL
+)

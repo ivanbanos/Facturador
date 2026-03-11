@@ -1,0 +1,27 @@
+﻿CREATE TABLE [dbo].[Terceros]
+(
+	[Id] INT NOT NULL PRIMARY KEY IDENTITY,	
+    [Guid] UNIQUEIDENTIFIER NOT NULL,
+	Nombre NVARCHAR(250) NOT NULL,
+	Segundo NVARCHAR(250) NOT NULL default 'No',
+	Apellidos NVARCHAR(250) NOT NULL default 'No',
+	TipoPersona int default 0,
+	ResponsabilidadTributaria int default 0,
+	Municipio NVARCHAR(250) NOT NULL default 'No',
+	Departamento NVARCHAR(250) NOT NULL default 'No',
+	Direccion NVARCHAR(250) NULL,
+	Pais NVARCHAR(250) NULL,
+	CodigoPostal NVARCHAR(250) NULL,
+	Celular NVARCHAR(250) NULL,
+	Telefono NVARCHAR(250) NULL,
+	Telefono2 NVARCHAR(250) NULL,
+	Correo NVARCHAR(250) NULL,
+	Correo2 NVARCHAR(250) NULL,
+	Vendedor NVARCHAR(250) NULL,
+	Comentarios NVARCHAR(500) NULL,
+	TipoIdentificacion INT NOT NULL,
+	Identificacion NVARCHAR(250) NOT NULL,
+	IdLocal Int  NULL,
+	IdContable int null,
+    CONSTRAINT [FK_Terceros_TipoIdentificacion] FOREIGN KEY ([TipoIdentificacion]) REFERENCES [TipoIdentificacion]([Id])
+)

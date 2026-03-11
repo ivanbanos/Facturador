@@ -1,0 +1,1 @@
+var SERVER_URL = "https://cootranshuila.api.sigesmas.com";

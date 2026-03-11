@@ -29,8 +29,8 @@ namespace ManejadorSurtidor
         private readonly ISicomConection _sicomConection;
         private readonly IFidelizacion _fidelizacion;
         private readonly Islas _islas;
-        private readonly Dictionary<int, int> _reposoConsecutivoVendiendo = new Dictionary<int, int>();
-        private const int MIN_REPOSO_CONSECUTIVO_FIN_VENTA = 2;
+        private readonly Dictionary<int, int> _reposoConsecutivoValidarFinVenta = new Dictionary<int, int>();
+        private const int MIN_REPOSO_CONSECUTIVO_VALIDAR_FIN = 5;
         public OperadorCara(Logger logger, IEnumerable<SurtidorSiges> surtidores, IEstacionesRepositorio estacionesRepositorio, IOptions<Sicom> options, ISicomConection sicomConection, IMessageProducer messageProducer, IFidelizacion fidelizacion, Islas islas)
         {
             _sicomConection = sicomConection;
@@ -213,7 +213,7 @@ namespace ManejadorSurtidor
 
             try
             {
-                if (surtidor.mangueras.Any(x => x.Estado == "Desautorizar" || x.Estado == "BuscarBoton" || (x.Estado == "Colgada" && x.Vendiendo)))
+                if (surtidor.mangueras.Any(x => x.Estado == "Desautorizar" || x.Estado == "BuscarBoton" || x.Estado == "ValidarFinVenta" || (x.Estado == "Colgada" && x.Vendiendo)))
                 {
                     foreach (var manguera in surtidor.mangueras)
                     {
@@ -243,10 +243,54 @@ namespace ManejadorSurtidor
                 case "BuscarBoton":
                     await ManejarEstadoBuscarBotonAsync(surtidor, manguera, stoppingToken);
                     break;
+                case "ValidarFinVenta":
+                    await ManejarEstadoValidarFinVentaAsync(surtidor, manguera, stoppingToken);
+                    break;
                 case "Colgada":
                     await ManejarEstadoColgadaAsync(surtidor, manguera, stoppingToken);
                     break;
             }
+        }
+
+        private async Task ManejarEstadoValidarFinVentaAsync(SurtidorSiges surtidor, MangueraSiges manguera, CancellationToken stoppingToken)
+        {
+            if (!manguera.Vendiendo)
+            {
+                manguera.Estado = "Desautorizar";
+                ReiniciarReposoValidarFinVenta(manguera.Id);
+                return;
+            }
+
+            var operationId = CrearOperacionVentaId(surtidor, manguera);
+            _logger.Log(NLog.LogLevel.Info, $"[{operationId}] Inicio validación segura de fin de venta por reposo. Surtidor {surtidor.Numero}, manguera {manguera.Ubicacion}, referenciaUltimaVenta {manguera.NuevaVenta}, referenciaTotalizador {manguera.NuevoTotalizador}");
+
+            await LeerUltimaVentaConEsperaAsync(surtidor, manguera, stoppingToken);
+            var ultimaVenta1 = manguera.ultimaVenta;
+            await LeerTotalizadorConEsperaAsync(surtidor, manguera, stoppingToken);
+            var totalizador1 = manguera.totalizador;
+
+            await Task.Delay(1200, stoppingToken);
+
+            await LeerUltimaVentaConEsperaAsync(surtidor, manguera, stoppingToken);
+            var ultimaVenta2 = manguera.ultimaVenta;
+            await LeerTotalizadorConEsperaAsync(surtidor, manguera, stoppingToken);
+            var totalizador2 = manguera.totalizador;
+
+            var ventaEstable = !CambioVenta(ultimaVenta1, ultimaVenta2);
+            var totalizadorEstable = !CambioTotalizador(totalizador1, totalizador2);
+            var evidenciaDeVenta = CambioVenta(ultimaVenta2, manguera.NuevaVenta) || CambioTotalizador(totalizador2, manguera.NuevoTotalizador);
+
+            if (ventaEstable && totalizadorEstable && evidenciaDeVenta)
+            {
+                _logger.Log(NLog.LogLevel.Warn, $"[{operationId}] Fin de venta confirmado por estabilidad en reposo. ultimaVenta1 {ultimaVenta1}, ultimaVenta2 {ultimaVenta2}, totalizador1 {totalizador1}, totalizador2 {totalizador2}");
+                manguera.Estado = "Colgada";
+                ReiniciarReposoValidarFinVenta(manguera.Id);
+                return;
+            }
+
+            _logger.Log(NLog.LogLevel.Info, $"[{operationId}] Validación de fin descartada. Continúa vendiendo. ventaEstable {ventaEstable}, totalizadorEstable {totalizadorEstable}, evidenciaDeVenta {evidenciaDeVenta}, ultimaVenta1 {ultimaVenta1}, ultimaVenta2 {ultimaVenta2}, totalizador1 {totalizador1}, totalizador2 {totalizador2}");
+            manguera.Estado = "Vendiendo";
+            ReiniciarReposoValidarFinVenta(manguera.Id);
         }
 
         private async Task ManejarEstadoDesautorizarAsync(SurtidorSiges surtidor, MangueraSiges manguera, CancellationToken stoppingToken)
@@ -350,7 +394,16 @@ namespace ManejadorSurtidor
                 {
                     await sendEstado(surtidor.Id, manguera.Ubicacion, "Total ultima venta " + manguera.ultimaVenta, surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
                     _logger.Log(NLog.LogLevel.Info, $"[{operationId}] Decision GUARDAR venta. motivo {resultado.motivo}, mangueraId {manguera.Id}, idrom {manguera.Vehiculo.idrom}, valorVenta {manguera.ultimaVenta}, totalizadorConfirmado {manguera.totalizador}");
-                    _estacionesRepositorio.AgregarVenta(manguera.Id, manguera.ultimaVenta, manguera.Vehiculo.idrom);
+                    try
+                    {
+                        _estacionesRepositorio.AgregarVenta(manguera.Id, manguera.ultimaVenta, manguera.Vehiculo.idrom);
+                        _logger.Log(NLog.LogLevel.Info, $"[{operationId}] Venta persistida en BD. mangueraId {manguera.Id}, idrom {manguera.Vehiculo.idrom}, valorVenta {manguera.ultimaVenta}");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Log(NLog.LogLevel.Error, $"[{operationId}] Error persistiendo venta en BD. mangueraId {manguera.Id}, idrom {manguera.Vehiculo.idrom}, valorVenta {manguera.ultimaVenta}. Error: {ex.Message}");
+                        throw;
+                    }
                     await Fidelizar(manguera.Id);
                     manguera.NuevaVenta = manguera.ultimaVenta;
                 }
@@ -379,12 +432,7 @@ namespace ManejadorSurtidor
 
             _logger.Log(NLog.LogLevel.Info, $"[{operationId}] Inicia validacion de venta. totalizadorAnterior {totalizadorAnterior}, ultimaVentaAnterior {ultimaVentaAnterior}, ultimaVentaObjetivo {ultimaVentaObjetivo}");
 
-            if (ultimaVentaObjetivo < ultimaVentaAnterior)
-            {
-                return (false, "ultima_venta_decreciente");
-            }
-
-            if (ultimaVentaObjetivo > ultimaVentaAnterior)
+            if (CambioVenta(ultimaVentaObjetivo, ultimaVentaAnterior))
             {
                 _logger.Log(NLog.LogLevel.Info, $"[{operationId}] Venta validada por cambio de ultimaVenta sin validacion de totalizador. ultimaVentaAnterior {ultimaVentaAnterior}, ultimaVentaObjetivo {ultimaVentaObjetivo}");
                 return (true, "ultima_venta_distinta");
@@ -955,22 +1003,24 @@ namespace ManejadorSurtidor
 
             if ((estadoPar.Contains("00") || estadoPar.Contains("20")) && mangueraPar.Vendiendo)
             {
-                var reposos = IncrementarReposoConsecutivo(mangueraPar.Id);
-                if (reposos >= MIN_REPOSO_CONSECUTIVO_FIN_VENTA)
+                var reposos = IncrementarReposoValidarFinVenta(mangueraPar.Id);
+                if (reposos >= MIN_REPOSO_CONSECUTIVO_VALIDAR_FIN)
                 {
-                    _logger.Log(NLog.LogLevel.Warn, $"Manguera Par en vendiendo confirmó estado de reposo {estadoPar} ({reposos}/{MIN_REPOSO_CONSECUTIVO_FIN_VENTA}). Se fuerza Colgada para ejecutar fin de venta en surtidor {surtidor.Numero}.");
-                    mangueraPar.Estado = "Colgada";
-                    ReiniciarReposoConsecutivo(mangueraPar.Id);
+                    if (mangueraPar.Estado != "ValidarFinVenta")
+                    {
+                        _logger.Log(NLog.LogLevel.Warn, $"Estado {estadoPar} sostenido en manguera Par durante venta ({reposos}/{MIN_REPOSO_CONSECUTIVO_VALIDAR_FIN}). Se inicia ValidarFinVenta sin desautorizar. Surtidor {surtidor.Numero}.");
+                    }
+                    mangueraPar.Estado = "ValidarFinVenta";
                 }
             }
             else if ((estadoPar.Contains("00") || estadoPar.Contains("20")) && !mangueraPar.Vendiendo)
             {
-                ReiniciarReposoConsecutivo(mangueraPar.Id);
+                ReiniciarReposoValidarFinVenta(mangueraPar.Id);
                 mangueraPar.Estado = "Desautorizar";
             }
             if (estadoPar.Contains("B2") && !mangueraPar.Vendiendo)
             {
-                ReiniciarReposoConsecutivo(mangueraPar.Id);
+                ReiniciarReposoValidarFinVenta(mangueraPar.Id);
                 if (mangueraPar.Estado != "BuscarBoton")
                 {
                     _logger.Log(NLog.LogLevel.Info, $"Cambio estado manguera Par a BuscarBoton en surtidor {surtidor.Numero}");
@@ -979,28 +1029,34 @@ namespace ManejadorSurtidor
             }
             if (estadoPar.Contains("80"))
             {
-                ReiniciarReposoConsecutivo(mangueraPar.Id);
+                ReiniciarReposoValidarFinVenta(mangueraPar.Id);
                 mangueraPar.Estado = "Colgada";
+            }
+            else if (!(estadoPar.Contains("00") || estadoPar.Contains("20")))
+            {
+                ReiniciarReposoValidarFinVenta(mangueraPar.Id);
             }
 
             if ((estadoImPar.Contains("00") || estadoImPar.Contains("20")) && mangueraImpar.Vendiendo)
             {
-                var reposos = IncrementarReposoConsecutivo(mangueraImpar.Id);
-                if (reposos >= MIN_REPOSO_CONSECUTIVO_FIN_VENTA)
+                var reposos = IncrementarReposoValidarFinVenta(mangueraImpar.Id);
+                if (reposos >= MIN_REPOSO_CONSECUTIVO_VALIDAR_FIN)
                 {
-                    _logger.Log(NLog.LogLevel.Warn, $"Manguera Impar en vendiendo confirmó estado de reposo {estadoImPar} ({reposos}/{MIN_REPOSO_CONSECUTIVO_FIN_VENTA}). Se fuerza Colgada para ejecutar fin de venta en surtidor {surtidor.Numero}.");
-                    mangueraImpar.Estado = "Colgada";
-                    ReiniciarReposoConsecutivo(mangueraImpar.Id);
+                    if (mangueraImpar.Estado != "ValidarFinVenta")
+                    {
+                        _logger.Log(NLog.LogLevel.Warn, $"Estado {estadoImPar} sostenido en manguera Impar durante venta ({reposos}/{MIN_REPOSO_CONSECUTIVO_VALIDAR_FIN}). Se inicia ValidarFinVenta sin desautorizar. Surtidor {surtidor.Numero}.");
+                    }
+                    mangueraImpar.Estado = "ValidarFinVenta";
                 }
             }
             else if ((estadoImPar.Contains("00") || estadoImPar.Contains("20")) && mangueraImpar.Estado != "Vendiendo")
             {
-                ReiniciarReposoConsecutivo(mangueraImpar.Id);
+                ReiniciarReposoValidarFinVenta(mangueraImpar.Id);
                 mangueraImpar.Estado = "Desautorizar";
             }
             if (estadoImPar.Contains("B2") && !mangueraImpar.Vendiendo)
             {
-                ReiniciarReposoConsecutivo(mangueraImpar.Id);
+                ReiniciarReposoValidarFinVenta(mangueraImpar.Id);
                 if (mangueraImpar.Estado != "BuscarBoton")
                 {
                     _logger.Log(NLog.LogLevel.Info, $"Cambio estado manguera Impar a BuscarBoton en surtidor {surtidor.Numero}");
@@ -1009,28 +1065,32 @@ namespace ManejadorSurtidor
             }
             if (estadoImPar.Contains("80"))
             {
-                ReiniciarReposoConsecutivo(mangueraImpar.Id);
+                ReiniciarReposoValidarFinVenta(mangueraImpar.Id);
                 mangueraImpar.Estado = "Colgada";
             }
-
-        }
-
-        private int IncrementarReposoConsecutivo(int mangueraId)
-        {
-            if (!_reposoConsecutivoVendiendo.ContainsKey(mangueraId))
+            else if (!(estadoImPar.Contains("00") || estadoImPar.Contains("20")))
             {
-                _reposoConsecutivoVendiendo[mangueraId] = 0;
+                ReiniciarReposoValidarFinVenta(mangueraImpar.Id);
             }
 
-            _reposoConsecutivoVendiendo[mangueraId]++;
-            return _reposoConsecutivoVendiendo[mangueraId];
         }
 
-        private void ReiniciarReposoConsecutivo(int mangueraId)
+        private int IncrementarReposoValidarFinVenta(int mangueraId)
         {
-            if (_reposoConsecutivoVendiendo.ContainsKey(mangueraId))
+            if (!_reposoConsecutivoValidarFinVenta.ContainsKey(mangueraId))
             {
-                _reposoConsecutivoVendiendo[mangueraId] = 0;
+                _reposoConsecutivoValidarFinVenta[mangueraId] = 0;
+            }
+
+            _reposoConsecutivoValidarFinVenta[mangueraId]++;
+            return _reposoConsecutivoValidarFinVenta[mangueraId];
+        }
+
+        private void ReiniciarReposoValidarFinVenta(int mangueraId)
+        {
+            if (_reposoConsecutivoValidarFinVenta.ContainsKey(mangueraId))
+            {
+                _reposoConsecutivoValidarFinVenta[mangueraId] = 0;
             }
         }
 

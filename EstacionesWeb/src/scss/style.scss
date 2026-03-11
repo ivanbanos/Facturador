@@ -1,0 +1,134 @@
+// If you want to override variables do it here
+@import "variables";
+
+$enable-ltr: true;
+$enable-rtl: true;
+
+// Import CoreUI for React components library
+@import "@coreui/coreui/scss/coreui";
+
+// Import Chart.js custom tooltips styles
+@import "@coreui/chartjs/scss/coreui-chartjs";
+
+@import "layout";
+@import "example";
+
+// If you want to add custom CSS you can put it here.
+@import "custom";
+
+// Custom styles for Dashboard
+.hover-shadow {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-2px);
+  }
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.font-monospace {
+  font-family: var(--cui-font-monospace);
+}
+
+// Improved card animations
+.card {
+  transition: all 0.3s ease;
+}
+
+.border-primary {
+  border-color: var(--cui-primary) !important;
+  border-width: 2px !important;
+}
+
+// Toast improvements
+.toast {
+  z-index: 9999;
+}
+
+// Station card specific styles
+.station-card {
+  &.selected {
+    border-color: var(--cui-primary);
+    border-width: 2px;
+    box-shadow: 0 0.5rem 1rem rgba(var(--cui-primary-rgb), 0.15);
+    transform: translateY(-2px);
+  }
+  
+  .station-id {
+    font-size: 0.75rem;
+    word-break: break-all;
+  }
+}
+
+// Modal improvements
+.modal-header {
+  border-bottom: 1px solid var(--cui-border-color);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--cui-border-color);
+}
+
+// Report improvements
+.report-summary-card {
+  transition: transform 0.2s ease-in-out;
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.table-summary {
+  background-color: var(--cui-bg-subtle);
+  border-radius: var(--cui-border-radius);
+  
+  .fw-bold {
+    color: var(--cui-primary);
+  }
+}
+
+// Accordion improvements for reports
+.accordion-header {
+  .badge {
+    font-size: 0.75rem;
+  }
+}
+
+// Loading states
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+// Report cards
+.report-card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border: 1px solid var(--cui-border-color);
+  
+  .card-header {
+    background-color: var(--cui-bg-subtle);
+    border-bottom: 1px solid var(--cui-border-color);
+  }
+  
+  .table {
+    margin-bottom: 0;
+  }
+}
+
+// Print styles
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .report-card {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+}

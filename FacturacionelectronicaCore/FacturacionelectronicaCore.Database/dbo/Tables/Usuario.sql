@@ -1,0 +1,8 @@
+﻿CREATE TABLE [admin].[Usuario]
+(
+	[Id] INT NOT NULL PRIMARY KEY IDENTITY, 
+    [Guid] UNIQUEIDENTIFIER NOT NULL, 
+    [Nombre] NVARCHAR(50) NOT NULL, 
+    [Usuario] NVARCHAR(50) NOT NULL, 
+    [Contrasena] NVARCHAR(MAX) NOT NULL
+)

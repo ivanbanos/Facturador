@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UserSecretsId>dotnet-SigesServicio-9F72393E-79DF-41AB-A8EA-D8C7D8029112</UserSecretsId>
+	</PropertyGroup>
+
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="5.1.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="NLog.Web.AspNetCore" Version="5.3.11" />
+		<PackageReference Include="Polly" Version="8.6.1" />
+		<PackageReference Include="QrCode.Net" Version="0.4.0" />
+		<PackageReference Include="System.Drawing.Common" Version="8.0.7" />
+		<PackageReference Include="System.IO.Ports" Version="8.0.0" />
+		<PackageReference Include="RabbitMQ.Client" Version="7.0.0" /> 
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<ProjectReference Include="..\FactoradorEstacionesModelo\FactoradorEstacionesModelo.csproj" />
+		<ProjectReference Include="..\FacturadorEstacionesRepositorio\FacturadorEstacionesRepositorio.csproj" />
+	</ItemGroup>
+</Project>
