@@ -36,12 +36,9 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
         }
 
-        // Normalize incoming DateTime to the server storage timezone (UTC in production).
-        // Behavior:
-        //  - If input is UTC, returns it unchanged.
-        //  - If input is Local, converts with ToUniversalTime().
-        //  - If input is Unspecified (common in date-only UI payloads), applies ServerTimeOffsetHours.
-        //  - If ServerTimeOffsetHours is null for Unspecified values, returns the original value.
+        // Normalize incoming search DateTime using configured ServerTimeOffsetHours.
+        // This is applied even when payload values arrive as UTC (with trailing Z),
+        // so date-only searches map correctly to stored reporting boundaries.
         private DateTime? ConvertToServerTime(DateTime? input)
         {
             if (!input.HasValue) return null;
@@ -50,23 +47,13 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             {
                 var value = input.Value;
 
-                if (value.Kind == DateTimeKind.Utc)
-                {
-                    return value;
-                }
-
-                if (value.Kind == DateTimeKind.Local)
-                {
-                    return value.ToUniversalTime();
-                }
-
                 if (_alegra == null || !_alegra.ServerTimeOffsetHours.HasValue)
                 {
                     return value;
                 }
 
                 var offset = _alegra.ServerTimeOffsetHours.GetValueOrDefault(0);
-                return DateTime.SpecifyKind(value.AddHours(offset), DateTimeKind.Utc);
+                return value.AddHours(offset);
             }
             catch
             {
@@ -77,19 +64,24 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
 
         private DateTime ConvertFromServerTimeForSearchResult(DateTime input)
         {
-            if (_alegra == null || !_alegra.ServerTimeOffsetHoursSearch.HasValue)
+            try
             {
-                return input;
+                var utcValue = input.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(input, DateTimeKind.Utc)
+                    : input.ToUniversalTime();
+
+                if (_alegra == null || !_alegra.ServerTimeOffsetHoursSearch.HasValue)
+                {
+                    return DateTime.SpecifyKind(utcValue, DateTimeKind.Unspecified);
+                }
+
+                var adjusted = utcValue.AddHours(_alegra.ServerTimeOffsetHoursSearch.Value);
+                return DateTime.SpecifyKind(adjusted, DateTimeKind.Unspecified);
             }
-
-            var offset = _alegra.ServerTimeOffsetHoursSearch.Value;
-
-            if (input.Kind == DateTimeKind.Local)
+            catch
             {
-                return input;
+                return DateTime.SpecifyKind(input, DateTimeKind.Unspecified);
             }
-
-            return input.AddHours(offset);
         }
 
 

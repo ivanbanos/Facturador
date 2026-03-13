@@ -70,10 +70,10 @@ namespace EnviadorInformacionService
                 // {
                 //     Logger.Warn("canastillaService no esta inicializado. No se iniciaran hilos de canastilla.");
                 // }
-                siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
-                siesaThread.Start();
-                // siesaCanastillaThread = new Thread(new ThreadStart(protocoloSiesaCanastilla.Ejecutar));
-                // siesaCanastillaThread.Start();
+                // siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
+                // siesaThread.Start();
+                siesaCanastillaThread = new Thread(new ThreadStart(protocoloSiesaCanastilla.Ejecutar));
+                siesaCanastillaThread.Start();
 
             }
             catch (Exception ex)
@@ -110,11 +110,7 @@ namespace EnviadorInformacionService
                 if (siesaCanastillaThread != null)
                 {
                     siesaCanastillaThread.Abort();
-                }
-                //enviadorProsoftThread.Abort();
-                //siesaCanastillaThread.Abort();
-                // siesaThread.Abort();
-                //canastillaServiceThread.Abort(); canastillaWebServiceThread.Abort();    
+                }   
             }
             catch (Exception ex)
             {

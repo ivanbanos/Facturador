@@ -82,7 +82,8 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
             var paramList = new DynamicParameters();
             
-            // Definir fecha mínima válida (ej: año 2000) para detectar FechaReporte sin inicializar
+            // FechaReporte is the source of truth for reporting filters.
+            // Keep fallback to Fecha only when FechaReporte is clearly uninitialized.
             var fechaMinimaValida = new DateTime(2000, 1, 1);
             
             if (fechaInicial != null)
@@ -105,7 +106,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             if (fechaFinal != null)
             {
                 paramList.Add("FechaFinal", fechaFinal);
-                
+
                 // (FechaReporte >= fechaMinimaValida AND FechaReporte < fechaFinal+1) OR (FechaReporte < fechaMinimaValida AND Fecha < fechaFinal+1)
                 var fechaFilter = Builders<OrdenesMongo>.Filter.Or(
                     Builders<OrdenesMongo>.Filter.And(
