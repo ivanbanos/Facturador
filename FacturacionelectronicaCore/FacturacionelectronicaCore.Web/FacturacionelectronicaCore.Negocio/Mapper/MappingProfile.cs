@@ -20,6 +20,7 @@ namespace EstacionesServicio.Negocio.Mapper
             CreateMap<Modelo.OrdenesDeDespachoGuids, Repositorio.Entities.OrdenesDeDespachoGuids>();
             CreateMap<Modelo.FacturasEntity, FacturasEntity>();
             CreateMap<FacturacionelectronicaCore.Negocio.Modelo.Estacion, FacturacionelectronicaCore.Repositorio.Entities.Estacion>().ReverseMap();
+            CreateMap<FacturacionelectronicaCore.Negocio.Modelo.CombustibleEstacion, FacturacionelectronicaCore.Repositorio.Entities.CombustibleEstacion>().ReverseMap();
             CreateMap<FacturacionelectronicaCore.Negocio.Modelo.FacturaFechaReporte, FacturacionelectronicaCore.Repositorio.Entities.FacturaFechaReporte>().ReverseMap();
             CreateMap<FacturacionelectronicaCore.Negocio.Modelo.FacturaCanastilla, FacturacionelectronicaCore.Repositorio.Entities.FacturaCanastilla>().ReverseMap();
             CreateMap<FacturacionelectronicaCore.Negocio.Modelo.CanastillaFactura, FacturacionelectronicaCore.Repositorio.Entities.CanastillaFactura>().ReverseMap();

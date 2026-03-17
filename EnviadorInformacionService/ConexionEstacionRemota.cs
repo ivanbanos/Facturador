@@ -1,6 +1,7 @@
 ﻿using EnviadorInformacionService.Models;
 using EnviadorInformacionService.Models.Externos;
 using FactoradorEstacionesModelo.Objetos;
+using FactoradorEstacionesModelo.Siges;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
 using FacturacionelectronicaCore.Web.Controllers;
@@ -411,6 +412,23 @@ namespace EnviadorInformacionService
                 var response = client.GetAsync($"{url}{path}").Result;
                 response.EnsureSuccessStatusCode();
                 return response.Content.ReadAsStringAsync().Result;
+            }
+        }
+
+        public IEnumerable<Combustible> GetCombustiblesEstacion(Guid estacion, string token)
+        {
+            using (var client = new HttpClient())
+            {
+                var path = $"/api/Estaciones/{estacion}/Combustibles";
+
+                client.Timeout = new TimeSpan(0, 0, 0, 5, 0);
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+
+                var response = client.GetAsync($"{url}{path}").Result;
+                response.EnsureSuccessStatusCode();
+                var responseBody = response.Content.ReadAsStringAsync().Result;
+                return JsonConvert.DeserializeObject<IEnumerable<Combustible>>(responseBody);
             }
         }
     }

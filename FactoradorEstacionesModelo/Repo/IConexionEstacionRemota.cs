@@ -41,5 +41,6 @@ namespace FacturadorEstacionesPOSWinForm.Repo
         int ObtenerParaImprimir(Guid idEstacion, string token);
         ResolucionElectronica GetResolucionElectronica(string token);
         string GetInfoFacturaElectronicaCanastilla(int facturasCanastillaId, Guid estacionFuente, string v);
+        IEnumerable<Combustible> GetCombustiblesEstacion(Guid estacion, string token);
     }
 }

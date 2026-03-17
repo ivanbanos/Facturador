@@ -51,6 +51,16 @@ namespace EnviadorInformacion
         private void EnviarFacturas()
         {
             string token = _conexionEstacionRemota.getToken();
+            try
+            {
+                var combustibles = _conexionEstacionRemota.GetCombustiblesEstacion(estacionFuente, token);
+                _estacionesRepositorio.ActualizarPreciosCombustibles(combustibles);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"No fue posible sincronizar combustibles: {ex.Message}");
+            }
+
             var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadas();
             if (facturas.Any(x=>x.Manguera!=null))
             {

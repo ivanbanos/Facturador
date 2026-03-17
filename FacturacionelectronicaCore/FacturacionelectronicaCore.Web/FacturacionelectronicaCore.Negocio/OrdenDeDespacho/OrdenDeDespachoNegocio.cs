@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using FacturasEntity = EstacionesServicio.Modelo.FacturasEntity;
 
 namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
@@ -24,9 +25,10 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         private readonly IFacturacionElectronicaFacade _alegraFacade;
         private readonly Alegra _alegra;
         private readonly IValidadorGuidAFacturaElectronica _validadorGuidAFacturaElectronica;
+        private readonly ICombustiblesEstacionRepository _combustiblesEstacionRepository;
 
         public OrdenDeDespachoNegocio(IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio,
-                                       IMapper mapper, IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, ITerceroRepositorio terceroRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica)
+                                       IMapper mapper, IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, ITerceroRepositorio terceroRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, ICombustiblesEstacionRepository combustiblesEstacionRepository)
         {
             _ordenDeDespachoRepositorio = ordenDeDespachoRepositorio;
             _mapper = mapper;
@@ -34,6 +36,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             _alegra = alegra.Value;
             _terceroRepositorio = terceroRepositorio;
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
+            _combustiblesEstacionRepository = combustiblesEstacionRepository;
         }
 
         // Normalize incoming search DateTime using configured ServerTimeOffsetHours.
@@ -84,6 +87,166 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             }
         }
 
+        private bool DebeNormalizarPrecioLegacy(decimal precio)
+        {
+            return _alegra != null && _alegra.NormalizarPrecioLegacyDiv10 && precio > 20000;
+        }
+
+        private bool EsSilog2()
+        {
+            return string.Equals(_alegra?.Proveedor, "SILOG2", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private async Task<int> NormalizarFalsosNegativosSilog2Async(IEnumerable<Repositorio.Entities.OrdenDeDespacho> ordenes)
+        {
+            if (!EsSilog2() || ordenes == null)
+            {
+                return 0;
+            }
+
+            var normalizadas = 0;
+            foreach (var orden in ordenes)
+            {
+                if (orden == null || string.IsNullOrWhiteSpace(orden.guid))
+                {
+                    continue;
+                }
+
+                if (!TryBuildOkFromSilogFalseNegative(orden.idFacturaElectronica, out var idNormalizado))
+                {
+                    continue;
+                }
+
+                if (string.Equals(orden.idFacturaElectronica, idNormalizado, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                await _ordenDeDespachoRepositorio.SetIdFacturaElectronicaOrdenesdeDespacho(idNormalizado, orden.guid);
+                orden.idFacturaElectronica = idNormalizado;
+                normalizadas++;
+            }
+
+            return normalizadas;
+        }
+
+        private static bool TryBuildOkFromSilogFalseNegative(string idFacturaElectronica, out string idNormalizado)
+        {
+            idNormalizado = null;
+
+            if (string.IsNullOrWhiteSpace(idFacturaElectronica))
+            {
+                return false;
+            }
+
+            if (!idFacturaElectronica.StartsWith("Error:", StringComparison.OrdinalIgnoreCase)
+                || idFacturaElectronica.IndexOf("Factura generada exitosamente", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return false;
+            }
+
+            var json = ExtractFirstJsonObject(idFacturaElectronica);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return false;
+            }
+
+            try
+            {
+                var parsed = JObject.Parse(json);
+                var cufe = parsed["cufe"]?.ToString();
+                if (string.IsNullOrWhiteSpace(cufe))
+                {
+                    return false;
+                }
+
+                var currentOutput = parsed["message"]?["currentOutput"] as JObject;
+                var prefijo = currentOutput?["prefijo"]?.ToString()
+                              ?? currentOutput?["prefijoResolucion"]?.ToString()
+                              ?? string.Empty;
+                var numero = currentOutput?["numero"]?.ToString()
+                             ?? currentOutput?["numeroResolucion"]?.ToString()
+                             ?? string.Empty;
+
+                var prefijoConsecutivo = string.Concat(prefijo?.Trim(), numero?.Trim());
+                if (string.IsNullOrWhiteSpace(prefijoConsecutivo))
+                {
+                    return false;
+                }
+
+                idNormalizado = $"Ok:{prefijoConsecutivo}:{cufe}";
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string ExtractFirstJsonObject(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return null;
+            }
+
+            var start = text.IndexOf('{');
+            if (start < 0)
+            {
+                return null;
+            }
+
+            var depth = 0;
+            var inString = false;
+            var escaped = false;
+
+            for (var i = start; i < text.Length; i++)
+            {
+                var ch = text[i];
+
+                if (inString)
+                {
+                    if (escaped)
+                    {
+                        escaped = false;
+                    }
+                    else if (ch == '\\')
+                    {
+                        escaped = true;
+                    }
+                    else if (ch == '"')
+                    {
+                        inString = false;
+                    }
+
+                    continue;
+                }
+
+                if (ch == '"')
+                {
+                    inString = true;
+                    continue;
+                }
+
+                if (ch == '{')
+                {
+                    depth++;
+                    continue;
+                }
+
+                if (ch == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                    {
+                        return text.Substring(start, i - start + 1);
+                    }
+                }
+            }
+
+            return null;
+        }
+
 
 
         /// <inheritdoc />
@@ -97,6 +260,9 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
 
                 var ordenesDeDespacho = await _ordenDeDespachoRepositorio.GetOrdenesDeDespacho(fechaInicialServer,
                         fechaFinalServer, filtroOrdenDeDespacho.Identificacion, filtroOrdenDeDespacho.NombreTercero, filtroOrdenDeDespacho.Estacion);
+
+                await NormalizarFalsosNegativosSilog2Async(ordenesDeDespacho);
+
                 var ordenes = _mapper.Map<IEnumerable<Repositorio.Entities.OrdenDeDespacho>, IEnumerable<Modelo.OrdenDeDespacho>>(ordenesDeDespacho);
 
                 var nombresPorIdentificacion = new Dictionary<string, string>();
@@ -129,7 +295,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                             }
                         }
                     }
-                    if (factura.Precio > 20000)
+                    if (DebeNormalizarPrecioLegacy(Convert.ToDecimal(factura.Precio)))
                     {
 
                         factura.Precio /= 10;
@@ -251,7 +417,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 return null;
             }
             var factura = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity);
-            if (factura.Precio > 20000)
+            if (DebeNormalizarPrecioLegacy(Convert.ToDecimal(factura.Precio)))
             {
 
                 factura.Precio /= 10;
@@ -270,7 +436,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
 
             foreach (var orden in ordenes)
             {
-                if (orden.Precio > 20000)
+                if (DebeNormalizarPrecioLegacy(Convert.ToDecimal(orden.Precio)))
                 {
 
                     orden.Precio /= 10;
@@ -339,12 +505,20 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         public async Task<List<string>> ReenviarOrdenesDespachoPorIdVentaLocal(List<int> idVentaLocalList, Guid estacion)
         {
             var resultados = new List<string>();
+            var esSilog2 = string.Equals(_alegra?.Proveedor, "SILOG2", StringComparison.OrdinalIgnoreCase);
             foreach (var idVentaLocal in idVentaLocalList)
             {
                 var ordenes = await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorIdVentaLocal(idVentaLocal, estacion);
                 foreach (var orden in ordenes)
                 {
-                    if (orden != null && (_alegra.EnviaCreditos || (!orden.FormaDePago.ToLower().Contains("dir") && !orden.FormaDePago.ToLower().Contains("calibra") && !orden.FormaDePago.ToLower().Contains("consum") && !orden.FormaDePago.ToLower().Contains("puntos"))) && (string.IsNullOrEmpty(orden.idFacturaElectronica) || orden.idFacturaElectronica.StartsWith("error") || orden.idFacturaElectronica.Contains("Bad Request")))
+                    if (orden != null
+                        && (_alegra.EnviaCreditos || (!orden.FormaDePago.ToLower().Contains("dir") && !orden.FormaDePago.ToLower().Contains("calibra") && !orden.FormaDePago.ToLower().Contains("consum") && !orden.FormaDePago.ToLower().Contains("puntos")))
+                        && (esSilog2
+                            ? (string.IsNullOrWhiteSpace(orden.idFacturaElectronica)
+                                || !orden.idFacturaElectronica.StartsWith("Ok", StringComparison.OrdinalIgnoreCase))
+                            : (string.IsNullOrEmpty(orden.idFacturaElectronica)
+                                || orden.idFacturaElectronica.StartsWith("error")
+                                || orden.idFacturaElectronica.Contains("Bad Request"))))
                     {
                         var ordenModelo = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(orden);
                         ordenModelo.Tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(
@@ -374,14 +548,33 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             // Normalize the provided range to server timezone before querying
             var fechaInicialServer = ConvertToServerTime(fechaInicial);
             var fechaFinalServer = ConvertToServerTime(fechaFinal);
+            var esSilog2 = string.Equals(_alegra?.Proveedor, "SILOG2", StringComparison.OrdinalIgnoreCase);
             var ordenes = await _ordenDeDespachoRepositorio.GetOrdenesDeDespacho(fechaInicialServer, fechaFinalServer, null, null, estacion);
 
             if (ordenes != null)
             {
                 foreach (var orden in ordenes)
                 {
-                    if (orden.idFacturaElectronica == null) continue;
-                    if (orden.idFacturaElectronica.StartsWith("error") || orden.idFacturaElectronica.Contains("Bad Request"))
+                    if (esSilog2)
+                    {
+                        if (string.IsNullOrWhiteSpace(orden.idFacturaElectronica) || !orden.idFacturaElectronica.StartsWith("Ok", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var ordenModelo = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(orden);
+                            var terceroModelo = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(
+                                (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(orden.Identificacion)).FirstOrDefault());
+
+                            orden.idFacturaElectronica = await _alegraFacade.GenerarFacturaElectronica(ordenModelo, terceroModelo, estacion);
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
+                    else if (orden.idFacturaElectronica == null)
+                    {
+                        continue;
+                    }
+                    else if (orden.idFacturaElectronica.StartsWith("error") || orden.idFacturaElectronica.Contains("Bad Request"))
                     {
                         var ordenModelo = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(orden);
                         var terceroModelo = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(
@@ -455,14 +648,24 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 var ordenes = await GetOrdenesDeDespacho(filtroFactura).ConfigureAwait(true);
                 if (!ordenes.Any())
                 {
-                    return null;
+                    return new ReporteFiscal
+                    {
+                        ConsolidadoOrdenesAnuladas = new List<ConsolidadoCombustible>(),
+                        TotalDeOrdenes = 0,
+                        ConsolidadosOrdenes = new List<ConsolidadoCombustible>(),
+                        consolidadoClienteOrdenes = new List<ConsolidadoCliente>(),
+                        TotalOrdenesAnuladas = 0,
+                        ConsolidadoFormaPagoOrdenes = new List<ConsolidadoFormaPago>(),
+                    };
                 }
+
+                var preciosEstacion = await GetPreciosCombustiblesEstacion(filtroFactura?.Estacion ?? Guid.Empty).ConfigureAwait(false);
 
                 var reporte = new ReporteFiscal
                 {
-                    ConsolidadoOrdenesAnuladas = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(EsOrdenAnuladaParaReporte)),
+                    ConsolidadoOrdenesAnuladas = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(EsOrdenAnuladaParaReporte), preciosEstacion),
                     TotalDeOrdenes = !ordenes.Any() ? 0 : ordenes.Count(),
-                    ConsolidadosOrdenes = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => !EsOrdenAnuladaParaReporte(orden))),
+                    ConsolidadosOrdenes = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => !EsOrdenAnuladaParaReporte(orden)), preciosEstacion),
                     consolidadoClienteOrdenes = !ordenes.Any() ? new List<ConsolidadoCliente>() : GetConsolidadosOrdenesCliente(ordenes),
                     TotalOrdenesAnuladas = !ordenes.Any() ? 0 : ordenes.Count(EsOrdenAnuladaParaReporte),
                     ConsolidadoFormaPagoOrdenes = !ordenes.Any() ? new List<ConsolidadoFormaPago>() : GetConsolidadoFormaPagoOrdenes(ordenes),
@@ -518,23 +721,68 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
 
 
 
-        private IEnumerable<ConsolidadoCombustible> GetConsolidadosOrdenes(IEnumerable<Modelo.OrdenDeDespacho> ordenes)
+        private async Task<Dictionary<string, decimal>> GetPreciosCombustiblesEstacion(Guid estacion)
+        {
+            var precios = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+
+            if (estacion == Guid.Empty)
+            {
+                return precios;
+            }
+
+            var combustibles = await _combustiblesEstacionRepository.GetCombustiblesEstacion(estacion).ConfigureAwait(false);
+            foreach (var combustible in combustibles ?? Enumerable.Empty<FacturacionelectronicaCore.Repositorio.Entities.CombustibleEstacion>())
+            {
+                var clave = (combustible.Combustible ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(clave) || combustible.Precio <= 0)
+                {
+                    continue;
+                }
+
+                precios[clave] = combustible.Precio;
+            }
+
+            return precios;
+        }
+
+        private IEnumerable<ConsolidadoCombustible> GetConsolidadosOrdenes(IEnumerable<Modelo.OrdenDeDespacho> ordenes, IDictionary<string, decimal> preciosEstacion)
         {
             var consolidados = new List<ConsolidadoCombustible>();
             foreach (var orden in ordenes)
             {
-                if (!consolidados.Any(consolidado => consolidado.Combustible == orden.Combustible))
+                var combustible = (orden.Combustible ?? string.Empty).Trim();
+
+                if (!consolidados.Any(consolidado => consolidado.Combustible.Equals(combustible, StringComparison.OrdinalIgnoreCase)))
                 {
                     consolidados.Add(new ConsolidadoCombustible
                     {
-                        Combustible = orden.Combustible,
+                        Combustible = combustible,
                         Cantidad = 0,
-                        Total = 0
+                        Total = 0,
+                        Precio = 0,
+                        PrecioActual = 0
                     });
                 }
-                var consolidado = consolidados.First(consolidado => consolidado.Combustible == orden.Combustible);
+                var consolidado = consolidados.First(consolidado => consolidado.Combustible.Equals(combustible, StringComparison.OrdinalIgnoreCase));
                 consolidado.Cantidad += Convert.ToDecimal(orden.Cantidad);
                 consolidado.Total += Convert.ToDecimal(orden.Total);
+
+                var precioPromedio = consolidado.Cantidad > 0
+                    ? Math.Round(consolidado.Total / consolidado.Cantidad, 3)
+                    : 0;
+
+                consolidado.Precio = precioPromedio;
+
+                if (preciosEstacion != null
+                    && preciosEstacion.TryGetValue(combustible, out var precioGuardado)
+                    && precioGuardado > 0)
+                {
+                    consolidado.PrecioActual = precioGuardado;
+                }
+                else
+                {
+                    consolidado.PrecioActual = precioPromedio;
+                }
             }
 
             return consolidados;

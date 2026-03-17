@@ -14,3 +14,11 @@
     [IdEstadoActual] INT NOT NULL, 
     CONSTRAINT [FK_Estaciones_ToTable] FOREIGN KEY ([IdEstadoActual]) REFERENCES [Estados]([Id])
 )
+GO
+
+IF COL_LENGTH('dbo.Estaciones', 'EsGas') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[Estaciones]
+    ADD [EsGas] BIT NOT NULL
+        CONSTRAINT [DF_Estaciones_EsGas] DEFAULT 0;
+END

@@ -1,5 +1,6 @@
 ﻿using EnviadorInformacionService.Models;
 using FactoradorEstacionesModelo.Objetos;
+using FactoradorEstacionesModelo.Siges;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
 using System.Collections.Generic;
@@ -27,6 +28,7 @@ namespace FacturadorEstacionesRepositorio
         Turno ObtenerTurnoIslaPorVenta(int ventaId);
         IEnumerable<ObjetoImprimir> GetObjetoImprimir();
         CuposRequest GetInfoCupos();
+        void ActualizarPreciosCombustibles(IEnumerable<Combustible> combustibles);
 
     }
 }

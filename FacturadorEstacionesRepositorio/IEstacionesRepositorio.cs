@@ -76,5 +76,6 @@ namespace FacturadorEstacionesRepositorio
         void MarcarTercerosEnviadosASiesa(IEnumerable<int> ids);
         string ObtenerAuxiliarContable(int codigoFormaPago, string combustible, bool v1, bool v2);
         void ActuralizarFacturasEnviadosSiesa(List<int> facturasEnviadas);
+        void ActualizarPreciosCombustibles(IEnumerable<Combustible> combustibles);
     }
 }

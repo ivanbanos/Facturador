@@ -112,12 +112,6 @@ namespace FacturacionelectronicaCore.Web.Controllers
         public async Task<ActionResult<ReporteFiscal>> GetConsolidado(FiltroBusqueda filtroFactura) 
         {
             var reporteFiscal = await _ordenDeDespachoNegocio.GetReporteFiscal(filtroFactura);
-
-            if (reporteFiscal == null)
-            {
-                return NotFound();
-            }
-
             return Ok(reporteFiscal);
         }
     }

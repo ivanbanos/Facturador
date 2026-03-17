@@ -15,8 +15,15 @@ import {
   CForm,
   CFormInput,
   CFormLabel,
+  CFormCheck,
   CBadge,
   CSpinner,
+  CTable,
+  CTableHead,
+  CTableHeaderCell,
+  CTableBody,
+  CTableRow,
+  CTableDataCell,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilPlus, cilLocationPin, cilPhone, cilContact, cilCalculator, cilCog } from '@coreui/icons'
@@ -30,7 +37,11 @@ const Dashboard = () => {
   const [estacionSeleccionada, setEstacionSeleccionada] = useState('')
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [showConfirmCombustibleModal, setShowConfirmCombustibleModal] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [combustibles, setCombustibles] = useState([])
+  const [combustiblePendiente, setCombustiblePendiente] = useState(null)
+  const [savingCombustible, setSavingCombustible] = useState(false)
   const [nuevaEstacion, setNuevaEstacion] = useState({
     nombre: '',
     nit: '',
@@ -41,6 +52,7 @@ const Dashboard = () => {
     linea2: '',
     linea3: '',
     linea4: '',
+    esGas: false,
   })
   const estacionService = new EstacionService()
 
@@ -97,15 +109,91 @@ const Dashboard = () => {
   const handleEstacionSelect = (estacion) => {
     setEstacionSeleccionada(estacion.guid)
     updateLocalStorage(estacion)
+    fetchCombustibles(estacion.guid)
     toastRef.current?.addMessage(`Estación "${estacion.nombre}" seleccionada`, 'success')
   }
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
+    const { name, value, type, checked } = e.target
     setNuevaEstacion((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === 'checkbox' ? checked : value,
     }))
+  }
+
+  const fetchCombustibles = async (estacionGuid = estacionSeleccionada) => {
+    if (!estacionGuid) {
+      setCombustibles([])
+      return
+    }
+
+    try {
+      const response = await estacionService.getCombustibles(estacionGuid)
+      if (response === 'fail') {
+        navigate('/Login', { replace: true })
+        return
+      }
+      setCombustibles(Array.isArray(response) ? response : [])
+    } catch (error) {
+      console.error('Error loading combustibles:', error)
+      toastRef.current?.addMessage('Error al cargar combustibles de la estación', 'error')
+    }
+  }
+
+  const handleCombustiblePrecioChange = (index, value) => {
+    setCombustibles((prev) => {
+      const updated = [...prev]
+      const parsed = Number(value)
+      updated[index] = {
+        ...updated[index],
+        precio: Number.isFinite(parsed) ? parsed : 0,
+      }
+      return updated
+    })
+  }
+
+  const abrirConfirmacionCombustible = (combustible) => {
+    if (!estacionSeleccionada) {
+      toastRef.current?.addMessage('Debe seleccionar una estación', 'warning')
+      return
+    }
+
+    if (!combustible?.combustible || !(combustible.precio > 0)) {
+      toastRef.current?.addMessage('El combustible y el precio son obligatorios', 'warning')
+      return
+    }
+
+    setCombustiblePendiente(combustible)
+    setShowConfirmCombustibleModal(true)
+  }
+
+  const confirmarActualizacionCombustible = async () => {
+    if (!combustiblePendiente) {
+      setShowConfirmCombustibleModal(false)
+      return
+    }
+
+    setSavingCombustible(true)
+    try {
+      const response = await estacionService.actualizarCombustible(
+        estacionSeleccionada,
+        combustiblePendiente,
+      )
+      if (response === 'fail') {
+        navigate('/Login', { replace: true })
+        return
+      }
+
+      toastRef.current?.addMessage('Precio de combustible actualizado correctamente', 'success')
+      setShowConfirmCombustibleModal(false)
+      setCombustiblePendiente(null)
+      await fetchCombustibles(estacionSeleccionada)
+    } catch (error) {
+      console.error('Error updating combustible:', error)
+      toastRef.current?.addMessage('No fue posible actualizar el combustible', 'error')
+    } finally {
+      setSavingCombustible(false)
+    }
   }
 
   const handleSaveEstacion = async () => {
@@ -140,6 +228,7 @@ const Dashboard = () => {
           linea2: '',
           linea3: '',
           linea4: '',
+          esGas: false,
         })
         fetchEstaciones() // Reload stations
       }
@@ -164,12 +253,19 @@ const Dashboard = () => {
       linea2: '',
       linea3: '',
       linea4: '',
+      esGas: false,
     })
   }
 
   useEffect(() => {
     fetchEstaciones()
   }, [])
+
+  useEffect(() => {
+    if (estacionSeleccionada) {
+      fetchCombustibles(estacionSeleccionada)
+    }
+  }, [estacionSeleccionada])
 
   if (loading) {
     return (
@@ -283,6 +379,63 @@ const Dashboard = () => {
             Crear Primera Estación
           </CButton>
         </div>
+      )}
+
+      {estacionSeleccionada && (
+        <CCard className="mb-4">
+          <CCardHeader>
+            <strong>Precios de combustibles por estación</strong>
+          </CCardHeader>
+          <CCardBody>
+            <CTable responsive hover>
+              <CTableHead>
+                <CTableRow>
+                  <CTableHeaderCell>Combustible</CTableHeaderCell>
+                  <CTableHeaderCell>Tipo</CTableHeaderCell>
+                  <CTableHeaderCell>Precio</CTableHeaderCell>
+                  <CTableHeaderCell className="text-end">Acción</CTableHeaderCell>
+                </CTableRow>
+              </CTableHead>
+              <CTableBody>
+                {combustibles.length === 0 && (
+                  <CTableRow>
+                    <CTableDataCell colSpan={4} className="text-center text-medium-emphasis">
+                      No hay combustibles configurados para esta estación.
+                    </CTableDataCell>
+                  </CTableRow>
+                )}
+                {combustibles.map((combustible, index) => (
+                  <CTableRow key={`${combustible.combustible}-${index}`}>
+                    <CTableDataCell>{combustible.combustible}</CTableDataCell>
+                    <CTableDataCell>
+                      <CBadge color={combustible.esGas ? 'warning' : 'primary'}>
+                        {combustible.esGas ? 'Gas' : 'Combustible'}
+                      </CBadge>
+                    </CTableDataCell>
+                    <CTableDataCell>
+                      <CFormInput
+                        type="number"
+                        min="0"
+                        step="0.001"
+                        value={combustible.precio ?? 0}
+                        onChange={(e) => handleCombustiblePrecioChange(index, e.target.value)}
+                      />
+                    </CTableDataCell>
+                    <CTableDataCell className="text-end">
+                      <CButton
+                        color="primary"
+                        size="sm"
+                        onClick={() => abrirConfirmacionCombustible(combustible)}
+                      >
+                        Guardar
+                      </CButton>
+                    </CTableDataCell>
+                  </CTableRow>
+                ))}
+              </CTableBody>
+            </CTable>
+          </CCardBody>
+        </CCard>
       )}
 
       {/* Modal para Nueva Estación */}
@@ -410,6 +563,16 @@ const Dashboard = () => {
                 placeholder="Línea adicional 4 (opcional)"
               />
             </div>
+
+            <div className="mb-3">
+              <CFormCheck
+                id="esGas"
+                name="esGas"
+                checked={nuevaEstacion.esGas}
+                onChange={handleInputChange}
+                label="La estación opera con gas (GNVC/G.N.V.C/Gas)"
+              />
+            </div>
           </CForm>
         </CModalBody>
         <CModalFooter>
@@ -431,6 +594,41 @@ const Dashboard = () => {
                 <CIcon icon={cilContact} className="me-2" />
                 Guardar Estación
               </>
+            )}
+          </CButton>
+        </CModalFooter>
+      </CModal>
+
+      <CModal
+        visible={showConfirmCombustibleModal}
+        onClose={() => setShowConfirmCombustibleModal(false)}
+      >
+        <CModalHeader>
+          <CModalTitle>Confirmar actualización</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          {combustiblePendiente
+            ? `¿Está seguro de actualizar ${combustiblePendiente.combustible} a ${Number(
+                combustiblePendiente.precio || 0,
+              ).toLocaleString('es-CO')}?`
+            : '¿Está seguro de actualizar el precio del combustible?'}
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={() => setShowConfirmCombustibleModal(false)}>
+            Cancelar
+          </CButton>
+          <CButton
+            color="primary"
+            onClick={confirmarActualizacionCombustible}
+            disabled={savingCombustible}
+          >
+            {savingCombustible ? (
+              <>
+                <CSpinner size="sm" className="me-2" />
+                Guardando...
+              </>
+            ) : (
+              'Sí, guardar'
             )}
           </CButton>
         </CModalFooter>

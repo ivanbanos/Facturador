@@ -200,6 +200,33 @@
     <Compile Include="ProtocoloSiesaCanastilla.cs" />
     <Compile Include="ProtocoloSiesa_Marcador.cs" />
     <Compile Include="RequestEnviarFacturasCanastilla.cs" />
+    <Compile Include="..\FactoradorEstacionesModelo\Siges\CaraSiges.cs">
+      <Link>Siges\CaraSiges.cs</Link>
+    </Compile>
+    <Compile Include="..\FactoradorEstacionesModelo\Siges\Combustible.cs">
+      <Link>Siges\Combustible.cs</Link>
+    </Compile>
+    <Compile Include="..\FactoradorEstacionesModelo\Siges\FacturaSiges.cs">
+      <Link>Siges\FacturaSiges.cs</Link>
+    </Compile>
+    <Compile Include="..\FactoradorEstacionesModelo\Siges\FormaPagoSiges.cs">
+      <Link>Siges\FormaPagoSiges.cs</Link>
+    </Compile>
+    <Compile Include="..\FactoradorEstacionesModelo\Siges\MangueraSiges.cs">
+      <Link>Siges\MangueraSiges.cs</Link>
+    </Compile>
+    <Compile Include="..\FactoradorEstacionesModelo\Siges\SurtidorSiges.cs">
+      <Link>Siges\SurtidorSiges.cs</Link>
+    </Compile>
+    <Compile Include="..\FactoradorEstacionesModelo\Siges\TurnoSiges.cs">
+      <Link>Siges\TurnoSiges.cs</Link>
+    </Compile>
+    <Compile Include="..\FactoradorEstacionesModelo\Siges\TurnoSurtidor.cs">
+      <Link>Siges\TurnoSurtidor.cs</Link>
+    </Compile>
+    <Compile Include="..\FactoradorEstacionesModelo\Siges\VehiculoSuic.cs">
+      <Link>Siges\VehiculoSuic.cs</Link>
+    </Compile>
     <Compile Include="Service1.cs">
       <SubType>Component</SubType>
     </Compile>

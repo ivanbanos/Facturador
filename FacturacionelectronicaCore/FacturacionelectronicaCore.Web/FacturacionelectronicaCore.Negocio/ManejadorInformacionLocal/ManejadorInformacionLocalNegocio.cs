@@ -27,6 +27,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         private readonly IFacturacionElectronicaFacade _alegraFacade;
         private readonly IFacturaCanastillaRepository _facturaCanastillaRepository;
         private readonly ICanastillaRepositorio _canastillaRepositorio;
+        private readonly ICombustiblesEstacionRepository _combustiblesEstacionRepository;
         private readonly IValidadorGuidAFacturaElectronica _validadorGuidAFacturaElectronica;
         private readonly Alegra _alegra;
 
@@ -36,7 +37,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         public ManejadorInformacionLocalNegocio(ITerceroRepositorio tercerosRepositorio, IMapper mapper, IResolucionRepositorio resolucionRepositorio,
                 IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio,
                 IApiContabilidad apiContabilidad, ITipoIdentificacionRepositorio tipoIdentificacionRepositorio,
-                IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, IFacturaCanastillaRepository facturaCanastillaRepository, ICanastillaRepositorio canastillaRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, IEstacionesRepository estacionesRepository)
+                IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, IFacturaCanastillaRepository facturaCanastillaRepository, ICanastillaRepositorio canastillaRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, IEstacionesRepository estacionesRepository, ICombustiblesEstacionRepository combustiblesEstacionRepository)
         {
             _terceroRepositorio = tercerosRepositorio;
             _resolucionRepositorio = resolucionRepositorio;
@@ -51,6 +52,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             _canastillaRepositorio = canastillaRepositorio;
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
             _estacionesRepository = estacionesRepository;
+            _combustiblesEstacionRepository = combustiblesEstacionRepository;
         }
 
         public async Task EnviarOrdenesDespacho(IEnumerable<Modelo.OrdenDeDespacho> ordenDeDespachos, Guid estacion)
@@ -70,6 +72,15 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                 }
                 try
                 {
+                    if (!string.IsNullOrWhiteSpace(x.Combustible) && x.Precio > 0)
+                    {
+                        await _combustiblesEstacionRepository.UpsertCombustibleEstacion(
+                            estacion,
+                            x.Combustible.Trim(),
+                            Convert.ToDecimal(x.Precio),
+                            EsCombustibleGas(x.Combustible)).ConfigureAwait(false);
+                    }
+
                     if (_alegra.MultiplicarPorDies)
                     {
                         x.Precio = _alegra.MultiplicarPorDies ? x.Precio * 10 : x.Precio;
@@ -206,6 +217,22 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                     _ordenesEnviadasCache.TryRemove(cacheKey, out removed);
                 }
             }
+        }
+
+        private static bool EsCombustibleGas(string combustible)
+        {
+            if (string.IsNullOrWhiteSpace(combustible))
+            {
+                return false;
+            }
+
+            var normalizado = combustible
+                .Trim()
+                .ToLowerInvariant()
+                .Replace(".", string.Empty)
+                .Replace(" ", string.Empty);
+
+            return normalizado.Contains("gnvc") || normalizado.Contains("gas");
         }
 
         public async Task<IEnumerable<Modelo.Tercero>> GetTercerosActualizados(Guid estacion)

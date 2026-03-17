@@ -91,6 +91,14 @@ const OrdenesDespacho = () => {
       return
     }
 
+    if (fechaIni > fechaFin) {
+      toastRef.current?.addMessage(
+        'La fecha inicial no puede ser mayor que la fecha final',
+        'error',
+      )
+      return
+    }
+
     setLoading(true)
     try {
       const response = await ordenesService.getOrdenesByDateRange(fechaIni, fechaFin)
@@ -199,6 +207,20 @@ const OrdenesDespacho = () => {
     return orden.formaDePago || orden.formaPago || orden.FormaDePago || 'N/A'
   }
 
+  const handleFechaInicialChange = (value) => {
+    setFechaInicial(value)
+    if (fechaFinal && value > fechaFinal) {
+      setFechaFinal(value)
+    }
+  }
+
+  const handleFechaFinalChange = (value) => {
+    setFechaFinal(value)
+    if (fechaInicial && value < fechaInicial) {
+      setFechaInicial(value)
+    }
+  }
+
   // Filtrar órdenes por término de búsqueda y por el checkbox sin facturar
   const filteredOrdenes = ordenes
     .filter(
@@ -248,12 +270,13 @@ const OrdenesDespacho = () => {
         // Encabezado de la tabla
         [
           { text: 'ID Transacción', style: 'tableHeader' },
-          { text: 'Fecha', style: 'tableHeader' },
+          { text: 'Fecha y Hora', style: 'tableHeader' },
           { text: 'Cliente', style: 'tableHeader' },
           { text: 'Forma de Pago', style: 'tableHeader' },
           { text: 'Combustible', style: 'tableHeader' },
           { text: 'Placa', style: 'tableHeader' },
           { text: 'Cantidad', style: 'tableHeader' },
+          { text: 'Precio', style: 'tableHeader' },
           { text: 'ID Factura', style: 'tableHeader' },
           { text: 'Estado', style: 'tableHeader' },
           { text: 'Total', style: 'tableHeader' },
@@ -271,6 +294,7 @@ const OrdenesDespacho = () => {
             orden.combustible || 'N/A',
             orden.placa || 'N/A',
             orden.cantidad || '0',
+            formatCurrency(orden.precio),
             idFactura,
             getEstadoDisplay(orden.estado),
             formatCurrency(orden.total),
@@ -353,7 +377,19 @@ const OrdenesDespacho = () => {
           {
             table: {
               headerRows: 1,
-              widths: ['auto', 'auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+              widths: [
+                'auto',
+                'auto',
+                '*',
+                'auto',
+                'auto',
+                'auto',
+                'auto',
+                'auto',
+                'auto',
+                'auto',
+                'auto',
+              ],
               body: tableRows,
             },
             layout: {
@@ -457,13 +493,14 @@ const OrdenesDespacho = () => {
       const ordenesData = [
         [
           'ID Transacción',
-          'Fecha',
+          'Fecha y Hora',
           'Cliente',
           'Identificación',
           'Forma de Pago',
           'Combustible',
           'Placa',
           'Cantidad',
+          'Precio',
           'Consecutivo Factura',
           'CUFE',
           'Estado Factura',
@@ -477,13 +514,22 @@ const OrdenesDespacho = () => {
 
           return [
             orden.numeroTransaccion || orden.idVentaLocal || 'N/A',
-            orden.fecha ? new Date(orden.fecha).toLocaleDateString('es-ES') : 'N/A',
+            orden.fecha
+              ? new Date(orden.fecha).toLocaleString('es-ES', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : 'N/A',
             orden.nombreTercero || 'N/A',
             orden.identificacion || 'N/A',
             getFormaPago(orden),
             orden.combustible || 'N/A',
             orden.placa || 'N/A',
             orden.cantidad || 0,
+            orden.precio || 0,
             isValidFactura ? facturaInfo.consecutivo || 'N/A' : 'N/A',
             isValidFactura ? facturaInfo.cufe || 'N/A' : 'N/A',
             isValidFactura ? facturaInfo.estado || 'N/A' : 'N/A',
@@ -506,6 +552,7 @@ const OrdenesDespacho = () => {
         { width: 15 }, // Combustible
         { width: 12 }, // Placa
         { width: 10 }, // Cantidad
+        { width: 12 }, // Precio
         { width: 18 }, // Consecutivo Factura
         { width: 35 }, // CUFE
         { width: 15 }, // Estado Factura
@@ -641,7 +688,8 @@ const OrdenesDespacho = () => {
                   type="date"
                   id="fechaInicial"
                   value={fechaInicial}
-                  onChange={(e) => setFechaInicial(e.target.value)}
+                  max={fechaFinal || undefined}
+                  onChange={(e) => handleFechaInicialChange(e.target.value)}
                 />
               </div>
             </CCol>
@@ -655,7 +703,8 @@ const OrdenesDespacho = () => {
                   type="date"
                   id="fechaFinal"
                   value={fechaFinal}
-                  onChange={(e) => setFechaFinal(e.target.value)}
+                  min={fechaInicial || undefined}
+                  onChange={(e) => handleFechaFinalChange(e.target.value)}
                 />
               </div>
             </CCol>

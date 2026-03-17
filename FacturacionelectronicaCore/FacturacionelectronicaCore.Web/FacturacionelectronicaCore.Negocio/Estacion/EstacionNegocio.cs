@@ -11,12 +11,15 @@ namespace FacturacionelectronicaCore.Negocio.Estacion
     public class EstacionNegocio : IEstacionNegocio
     {
         private readonly IEstacionesRepository _estacionesRepository;
+        private readonly ICombustiblesEstacionRepository _combustiblesEstacionRepository;
         private readonly IMapper _mapper;
 
         public EstacionNegocio(IEstacionesRepository estacionesRepository,
+                                ICombustiblesEstacionRepository combustiblesEstacionRepository,
                                 IMapper mapper)
         {
             _estacionesRepository = estacionesRepository;
+            _combustiblesEstacionRepository = combustiblesEstacionRepository;
             _mapper = mapper;
         }
 
@@ -73,6 +76,26 @@ namespace FacturacionelectronicaCore.Negocio.Estacion
             {
                 throw;
             }
+        }
+
+        public async Task<IEnumerable<Modelo.CombustibleEstacion>> GetCombustiblesEstacion(Guid estacionGuid)
+        {
+            var combustibles = await _combustiblesEstacionRepository.GetCombustiblesEstacion(estacionGuid).ConfigureAwait(false);
+            return _mapper.Map<IEnumerable<Repositorio.Entities.CombustibleEstacion>, IEnumerable<Modelo.CombustibleEstacion>>(combustibles);
+        }
+
+        public Task UpsertCombustibleEstacion(Guid estacionGuid, Modelo.CombustibleEstacion combustible)
+        {
+            if (combustible == null || string.IsNullOrWhiteSpace(combustible.Combustible))
+            {
+                throw new ArgumentException("Combustible invalido");
+            }
+
+            return _combustiblesEstacionRepository.UpsertCombustibleEstacion(
+                estacionGuid,
+                combustible.Combustible,
+                combustible.Precio,
+                combustible.EsGas);
         }
     }
 }

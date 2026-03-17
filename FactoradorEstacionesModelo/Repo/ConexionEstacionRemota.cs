@@ -480,5 +480,22 @@ namespace EnviadorInformacionService
                 return response.Content.ReadAsStringAsync().Result;
             }
         }
+
+        public IEnumerable<Combustible> GetCombustiblesEstacion(Guid estacion, string token)
+        {
+            using (var client = new HttpClient())
+            {
+                var path = $"/api/Estaciones/{estacion}/Combustibles";
+
+                client.Timeout = new TimeSpan(0, 0, 0, 5, 0);
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+
+                var response = client.GetAsync($"{_infoEstacion.Url}{path}").Result;
+                response.EnsureSuccessStatusCode();
+                var responseBody = response.Content.ReadAsStringAsync().Result;
+                return JsonConvert.DeserializeObject<IEnumerable<Combustible>>(responseBody);
+            }
+        }
     }
 }

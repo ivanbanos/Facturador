@@ -50,6 +50,24 @@ class EstacionService {
     }
   }
 
+  async getCombustibles(idEstacion) {
+    try {
+      return await this.httpService.get(`${this.url}/${idEstacion}/Combustibles`)
+    } catch (error) {
+      console.error(`Error getting combustibles for estacion ${idEstacion}:`, error)
+      throw error
+    }
+  }
+
+  async actualizarCombustible(idEstacion, combustible) {
+    try {
+      return await this.httpService.post(`${this.url}/${idEstacion}/Combustibles`, combustible)
+    } catch (error) {
+      console.error(`Error updating combustible for estacion ${idEstacion}:`, error)
+      throw error
+    }
+  }
+
   guardarSeleccion(estacion) {
     localStorage.setItem(this.ESTACION_KEY, estacion.guid)
     this.setItem(this.ESTACION_NAME, estacion.nombre)

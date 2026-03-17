@@ -9,16 +9,23 @@ const ImprimirFactura = async (ultimaFactura, inpresiones) => {
       ultimaFactura?.codigoFormaPago2 !== null &&
       ultimaFactura?.codigoFormaPago2 !== undefined
         ? Number(ultimaFactura.codigoFormaPago2)
-        : "";
+        : null;
     const total1 =
       ultimaFactura?.total1 !== null && ultimaFactura?.total1 !== undefined
         ? Number(ultimaFactura.total1)
-        : "";
+        : null;
     const total2 =
       ultimaFactura?.total2 !== null && ultimaFactura?.total2 !== undefined
         ? Number(ultimaFactura.total2)
-        : "";
+        : null;
     const impresiones = Number(inpresiones) > 0 ? Number(inpresiones) : 1;
+    console.log("[ImprimirFactura] ultimaFactura:", {
+      facturaPOSId: ultimaFactura?.facturaPOSId,
+      codigoFormaPago: ultimaFactura?.codigoFormaPago,
+      codigoFormaPago2: ultimaFactura?.codigoFormaPago2,
+      total1: ultimaFactura?.total1,
+      total2: ultimaFactura?.total2,
+    });
     const response = await fetch(
       window.SERVER_URL +
         "/api/Facturas/Imprimir/" +
@@ -35,14 +42,11 @@ const ImprimirFactura = async (ultimaFactura, inpresiones) => {
         encodeURIComponent(placa) +
         "&NumeroTransaccion=" +
         encodeURIComponent(numeroTransaccion) +
-        "&FormaPago2=" +
-        encodeURIComponent(formaPago2) +
-        "&total1=" +
-        encodeURIComponent(total1) +
-        "&total2=" +
-        encodeURIComponent(total2) +
         "&impresiones=" +
-        impresiones,
+        impresiones +
+        (formaPago2 !== null ? "&FormaPago2=" + formaPago2 : "") +
+        (total1 !== null ? "&total1=" + total1 : "") +
+        (total2 !== null ? "&total2=" + total2 : ""),
       {
         method: "POST",
         mode: "cors",

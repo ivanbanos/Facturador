@@ -9,9 +9,9 @@ BEGIN
 
 		MERGE [dbo].[Estaciones] AS TARGET
 		USING (select [Guid],[linea1],[linea2],[linea3],[linea4],[Direccion],
-						[Nit],[Nombre],[Razon],[Telefono] FROM @estaciones)
+						[Nit],[Nombre],[Razon],[Telefono],[EsGas] FROM @estaciones)
 			AS Source ([Guid],[linea1],[linea2],[linea3],[linea4],[Direccion],
-						[Nit],[Nombre],[Razon],[Telefono])
+						[Nit],[Nombre],[Razon],[Telefono],[EsGas])
 		ON (Source.[Guid] = Target.[Guid])
 		WHEN MATCHED THEN
 			UPDATE SET Target.[linea1] = Source.Nombre,
@@ -22,10 +22,11 @@ BEGIN
 			Target.[Nit] = Source.[Nit],
 			Target.[Nombre] = Source.[Nombre],
 			Target.[Razon] = Source.[Razon],
-			Target.[Telefono] = Source.[Telefono]
+			Target.[Telefono] = Source.[Telefono],
+			Target.[EsGas] = Source.[EsGas]
 		WHEN NOT MATCHED BY TARGET THEN
 			INSERT ([Guid],[linea1],[linea2],[linea3],[linea4],[Direccion],
-						[Nit],[Nombre],[Razon],[Telefono],[IdEstadoActual])
+						[Nit],[Nombre],[Razon],[Telefono],[EsGas],[IdEstadoActual])
 			VALUES(newID(),Source.[linea1],Source.[linea2],Source.[linea3],Source.[linea4],Source.[Direccion],
-					Source.[Nit],Source.[Nombre],Source.[Razon],Source.[Telefono], @estadoActivoId);
+					Source.[Nit],Source.[Nombre],Source.[Razon],Source.[Telefono],Source.[EsGas], @estadoActivoId);
 	END

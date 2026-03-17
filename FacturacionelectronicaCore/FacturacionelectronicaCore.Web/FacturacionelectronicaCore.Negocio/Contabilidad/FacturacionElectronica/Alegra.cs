@@ -71,6 +71,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         // Format: "yyyy-MM-dd" or "yyyy-MM-ddTHH:mm:ss"
         public DateTime? WorkerStartDate { get; set; }
         public int? ServerTimeOffsetHoursSearch { get; set; }
+
+        // Enables legacy normalization that divides monetary values by 10 when price > 20000.
+        // Keep disabled for stations that already store correct prices.
+        public bool NormalizarPrecioLegacyDiv10 { get; set; }
     }
 
     public class EstacionCombustibles

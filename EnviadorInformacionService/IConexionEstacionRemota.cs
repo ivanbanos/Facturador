@@ -1,6 +1,7 @@
 ﻿using EnviadorInformacionService.Models;
 using EnviadorInformacionService.Models.Externos;
 using FactoradorEstacionesModelo.Objetos;
+using FactoradorEstacionesModelo.Siges;
 using FacturacionelectronicaCore.Repositorio.Entities;
 using ReporteFacturas;
 using System;
@@ -30,5 +31,6 @@ namespace EnviadorInformacionService
         void SubirTurno(FacturacionelectronicaCore.Negocio.Modelo.Turno turno, Guid estacionFuente, string token);
         void SubirInfoCupos(CuposRequest cuposInfo, Guid estacionFuente, string token);
         string GetInfoFacturaElectronicaCanastilla(int consecutivo, Guid estacionFuente, string v);
+        IEnumerable<Combustible> GetCombustiblesEstacion(Guid estacion, string token);
     }
 }

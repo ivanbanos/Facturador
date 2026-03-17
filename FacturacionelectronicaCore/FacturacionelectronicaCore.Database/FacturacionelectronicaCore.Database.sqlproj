@@ -105,6 +105,7 @@
     <Build Include="StoredProcedures\AnularOrdenesDeDespacho.sql" />
     <Build Include="types\EntityTableType.sql" />
     <Build Include="dbo\Tables\Estaciones.sql" />
+    <Build Include="dbo\Tables\CombustiblesEstacion.sql" />
     <Build Include="types\EstacionType.sql" />
     <Build Include="types\ResolucionType.sql" />
     <Build Include="StoredProcedures\HabilitarResolucion.sql" />
@@ -116,6 +117,8 @@
     <Build Include="StoredProcedures\AgregarOActualizarEstacion.sql" />
     <Build Include="StoredProcedures\BorrarEstacion.sql" />
     <Build Include="StoredProcedures\GetEstacion.sql" />
+    <Build Include="StoredProcedures\GetCombustiblesEstacion.sql" />
+    <Build Include="StoredProcedures\UpsertCombustibleEstacion.sql" />
     <Build Include="types\FacturaFechaReporteType.sql" />
     <Build Include="StoredProcedures\AgregarFechaReporteFactura.sql" />
     <Build Include="StoredProcedures\GetTiposIdentificaciones.sql" />

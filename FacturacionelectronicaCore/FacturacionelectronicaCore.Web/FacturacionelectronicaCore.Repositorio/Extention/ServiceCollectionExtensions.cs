@@ -23,6 +23,7 @@ namespace EstacionesServicio.Respositorio.Extention
             services.AddScoped<IResolucionRepositorio, ResolucionRepositorio>();
             services.AddScoped<ITipoIdentificacionRepositorio, TipoIdentificacionRepositorio>();
             services.AddScoped<IEstacionesRepository, EstacionesRepository>();
+            services.AddScoped<ICombustiblesEstacionRepository, CombustiblesEstacionRepository>();
             services.AddScoped<ICanastillaRepositorio, CanastillaRepositorio>();
             services.AddScoped<IFacturaCanastillaRepository, FacturaCanastillaRepository>();
             services.AddScoped<IEmpleadoRepositorio, EmpleadoRepositorio>();

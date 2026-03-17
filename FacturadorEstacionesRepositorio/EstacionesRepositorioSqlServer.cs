@@ -1131,5 +1131,24 @@ namespace FacturadorEstacionesRepositorio
             DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ActuralizarEnviadasSiesaSiges",
                          parameters);
         }
+
+        public void ActualizarPreciosCombustibles(IEnumerable<Combustible> combustibles)
+        {
+            if (combustibles == null)
+            {
+                return;
+            }
+
+            foreach (var combustible in combustibles.Where(x => x != null && !string.IsNullOrWhiteSpace(x.Descripcion) && x.Precio > 0))
+            {
+                LoadDataTableFromStoredProc(_connectionString.EstacionSiges, "ActualizarPrecioCombustible",
+                    new Dictionary<string, object>
+                    {
+                        {"@descripcion", combustible.Descripcion.Trim() },
+                        {"@precio", combustible.Precio },
+                        {"@esGas", combustible.EsGas }
+                    });
+            }
+        }
     }
 }

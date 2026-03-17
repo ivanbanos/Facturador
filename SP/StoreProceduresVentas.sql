@@ -13,6 +13,81 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='CombustiblePrecioEstacion' and xtype='U')
+BEGIN
+	create table dbo.CombustiblePrecioEstacion(
+		Id INT PRIMARY KEY IDENTITY (1, 1),
+		descripcion VARCHAR(100) NOT NULL,
+		precio FLOAT NOT NULL,
+		esGas BIT NOT NULL CONSTRAINT DF_CombustiblePrecioEstacion_EsGas DEFAULT 0,
+		fechaActualizacion DATETIME NOT NULL CONSTRAINT DF_CombustiblePrecioEstacion_Fecha DEFAULT GETDATE()
+	);
+END
+GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerCombustibles')
+	DROP PROCEDURE [dbo].[ObtenerCombustibles]
+GO
+CREATE procedure [dbo].[ObtenerCombustibles]
+as
+begin try
+	set nocount on;
+	select descripcion as Descripcion, precio as Precio, esGas as EsGas, fechaActualizacion
+	from dbo.CombustiblePrecioEstacion
+	order by descripcion;
+end try
+begin catch
+	declare 
+		@errorMessage varchar(2000),
+		@errorProcedure varchar(255),
+		@errorLine int;
+
+	select  
+		@errorMessage = error_message(),
+		@errorProcedure = error_procedure(),
+		@errorLine = error_line();
+
+	raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ActualizarPrecioCombustible')
+	DROP PROCEDURE [dbo].[ActualizarPrecioCombustible]
+GO
+CREATE procedure [dbo].[ActualizarPrecioCombustible]
+(
+	@descripcion varchar(100),
+	@precio float,
+	@esGas bit = 0
+)
+as
+begin try
+	set nocount on;
+
+	update dbo.CombustiblePrecioEstacion
+	set precio = @precio,
+		esGas = @esGas,
+		fechaActualizacion = GETDATE()
+	where LTRIM(RTRIM(LOWER(descripcion))) = LTRIM(RTRIM(LOWER(@descripcion)));
+
+	if @@ROWCOUNT = 0
+	begin
+		insert into dbo.CombustiblePrecioEstacion(descripcion, precio, esGas)
+		values(@descripcion, @precio, @esGas);
+	end
+end try
+begin catch
+	declare 
+		@errorMessage varchar(2000),
+		@errorProcedure varchar(255),
+		@errorLine int;
+
+	select  
+		@errorMessage = error_message(),
+		@errorProcedure = error_procedure(),
+		@errorLine = error_line();
+
+	raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerCaras')
 	DROP PROCEDURE [dbo].[ObtenerCaras]
 GO
@@ -240,7 +315,8 @@ CREATE procedure [dbo].[AgregarFacturaPorIdVenta]
 as
 begin try
     set nocount on;
-	declare @terceroId int, @Placa varchar(50), @Kilometraje varchar(50), @COD_FOR_PAG smallint, @fecha datetime;
+	declare @terceroId int, @Placa varchar(50), @Kilometraje varchar(50), @COD_FOR_PAG smallint, @fecha datetime,
+			@descripcionCombustible varchar(100), @precioCombustible float;
 
 	
 	declare @COD_CLI varchar(15), @identificacion varchar(50);
@@ -255,6 +331,13 @@ begin try
 	where i.CONSECUTIVO = @ventaId
 	
 	select @identificacion = nit from CLIENTES WHERE @COD_CLI = COD_CLI
+
+	select top(1)
+		@descripcionCombustible = a.DESCRIPCION,
+		@precioCombustible = convert(float, i.PRECIO_UNI)
+	from VENTAS i
+	left join ARTICULO a on a.COD_ART = i.COD_ART
+	where i.CONSECUTIVO = @ventaId
 
 
     select @terceroId = terceroId
@@ -322,6 +405,16 @@ begin try
 			select @terceroId = SCOPE_IDENTITY()
 			end
 		end
+	end
+
+	if @descripcionCombustible is not null and @precioCombustible > 0
+	begin
+		exec [dbo].[ActualizarPrecioCombustible] @descripcionCombustible, @precioCombustible,
+			case
+				when lower(replace(replace(@descripcionCombustible, '.', ''), ' ', '')) like '%gnvc%'
+					or lower(@descripcionCombustible) like '%gas%'
+				then 1 else 0
+			end;
 	end
     exec Facturacion_Electronica.dbo.CrearFactura @ventaId, @terceroId, @Placa, @Kilometraje, @COD_FOR_PAG, @fecha
 end try

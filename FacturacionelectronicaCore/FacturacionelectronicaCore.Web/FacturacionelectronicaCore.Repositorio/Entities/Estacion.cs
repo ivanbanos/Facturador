@@ -14,5 +14,6 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         public string Nombre { get; set; }
         public string Razon { get; set; }
         public string Telefono { get; set; }
+        public bool EsGas { get; set; }
     }
 }

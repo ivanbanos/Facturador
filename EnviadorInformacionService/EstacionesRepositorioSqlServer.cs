@@ -978,6 +978,25 @@ DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidel
 
         }
 
+        public void ActualizarPreciosCombustibles(IEnumerable<FactoradorEstacionesModelo.Siges.Combustible> combustibles)
+        {
+            if (combustibles == null)
+            {
+                return;
+            }
+
+            foreach (var combustible in combustibles.Where(x => x != null && !string.IsNullOrWhiteSpace(x.Descripcion) && x.Precio > 0))
+            {
+                LoadDataTableFromStoredProc(_connectionString.estacion, "ActualizarPrecioCombustible",
+                    new Dictionary<string, object>
+                    {
+                        {"@descripcion", combustible.Descripcion.Trim() },
+                        {"@precio", combustible.Precio },
+                        {"@esGas", combustible.EsGas }
+                    });
+            }
+        }
+
         /// <summary>
         /// Obtiene el último turno cerrado por isla.
         /// </summary>

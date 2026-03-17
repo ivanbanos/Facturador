@@ -42,6 +42,14 @@ BEGIN
     IdEstado int NOT NULL
 );
 END
+IF NOT EXISTS (
+    SELECT *
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'Combustible' AND COLUMN_NAME = 'EsGas'
+)
+BEGIN
+    ALTER TABLE Combustible ADD EsGas bit NOT NULL CONSTRAINT DF_Combustible_EsGas DEFAULT 0;
+END
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Manguera' and xtype='U')
 BEGIN
     create table dbo.Manguera(
@@ -220,6 +228,69 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerCombustibles')
+	DROP PROCEDURE [dbo].[ObtenerCombustibles]
+GO
+CREATE procedure [dbo].[ObtenerCombustibles]
+as
+begin try
+    set nocount on;
+	select Id, descripcion as Descripcion, precio as Precio, EsGas
+	from dbo.Combustible
+	where IdEstado != 1
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ActualizarPrecioCombustible')
+	DROP PROCEDURE [dbo].[ActualizarPrecioCombustible]
+GO
+CREATE procedure [dbo].[ActualizarPrecioCombustible]
+(
+	@descripcion varchar(100),
+	@precio float,
+	@esGas bit = 0
+)
+as
+begin try
+    set nocount on;
+
+	update Combustible
+	set precio = @precio,
+		EsGas = @esGas
+	where LTRIM(RTRIM(LOWER(descripcion))) = LTRIM(RTRIM(LOWER(@descripcion)));
+
+	if @@ROWCOUNT = 0
+	begin
+		insert into Combustible(descripcion, precio, IdEstado, EsGas)
+		values(@descripcion, @precio, 0, @esGas);
+	end
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
 drop procedure [AgregarVenta]
 GO
 CREATE procedure [dbo].[AgregarVenta]
@@ -250,6 +321,23 @@ begin try
 	where Manguera.Id = @IdManguera
 
 	select @VentaId = @@Identity
+
+    declare @descripcionCombustible varchar(100), @precioCombustible float;
+    select @descripcionCombustible = c.descripcion,
+            @precioCombustible = c.precio
+    from Manguera m
+    inner join Combustible c on c.Id = m.IdCombustible
+    where m.Id = @IdManguera;
+
+    if @descripcionCombustible is not null and @precioCombustible > 0
+    begin
+        exec [dbo].[ActualizarPrecioCombustible] @descripcionCombustible, @precioCombustible,
+            case
+                when lower(replace(replace(@descripcionCombustible, '.', ''), ' ', '')) like '%gnvc%'
+                    or lower(@descripcionCombustible) like '%gas%'
+                then 1 else 0
+            end;
+    end
 
     declare @terceroId int, @placa varchar(max), @kilometraje varchar(max), @COd_FOr_PAg int;
 	

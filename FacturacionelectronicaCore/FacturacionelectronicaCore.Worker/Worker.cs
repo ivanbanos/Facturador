@@ -2,7 +2,6 @@
 using FacturacionelectronicaCore.Negocio.OrdenDeDespacho;
 using EstacionesServicio.Modelo;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,28 +17,25 @@ namespace FacturacionelectronicaCore.Worker
 {
     public class Worker : BackgroundService
     {
-        private readonly ILogger<Worker> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly Alegra _alegraOptions;
 
         public Worker(
-            ILogger<Worker> logger,
             IServiceScopeFactory scopeFactory,
             IOptions<Alegra> alegra)
         {
-            _logger = logger;
             _scopeFactory = scopeFactory;
             _alegraOptions = alegra.Value;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Worker service starting...");
+            Console.WriteLine("Worker service starting...");
             
             // Start the actual work in a fire-and-forget manner to return control immediately
             _ = ProcessingLoop(stoppingToken);
             
-            _logger.LogInformation("Worker service started successfully.");
+            Console.WriteLine("Worker service started successfully.");
             
             // Keep the service running by waiting on the cancellation token
             try
@@ -48,7 +44,7 @@ namespace FacturacionelectronicaCore.Worker
             }
             catch (OperationCanceledException)
             {
-                _logger.LogInformation("Worker service shutdown requested.");
+                Console.WriteLine("Worker service shutdown requested.");
             }
         }
 
@@ -57,14 +53,14 @@ namespace FacturacionelectronicaCore.Worker
             try
             {
                 // Initial delay to ensure all dependencies are ready
-                _logger.LogInformation("ProcessingLoop starting with 15-second initialization delay...");
+                Console.WriteLine("ProcessingLoop starting with 15-second initialization delay...");
                 //await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
                 
                 while (!stoppingToken.IsCancellationRequested)
                 {
                 try
                 {
-                    _logger.LogInformation("Starting processing cycle for orders and facturas canastilla...");
+                    Console.WriteLine("Starting processing cycle for orders and facturas canastilla...");
                     
                     // Create a scope for scoped services
                     using var scope = _scopeFactory.CreateScope();
@@ -72,6 +68,7 @@ namespace FacturacionelectronicaCore.Worker
                     var estacionNegocio = scope.ServiceProvider.GetRequiredService<FacturacionelectronicaCore.Negocio.Estacion.IEstacionNegocio>();
                     var manejadorInformacionLocalNegocio = scope.ServiceProvider.GetRequiredService<FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal.IManejadorInformacionLocalNegocio>();
                     var facturaCanastillaNegocio = scope.ServiceProvider.GetRequiredService<IFacturaCanastillaNegocio>();
+                    var esSilog2 = string.Equals(_alegraOptions?.Proveedor, "SILOG2", StringComparison.OrdinalIgnoreCase);
                     
                     var estaciones = await estacionNegocio.GetEstaciones();
                     foreach (var estacion in estaciones)
@@ -123,34 +120,39 @@ namespace FacturacionelectronicaCore.Worker
                             totalOrdenesEncontradas += ordenes?.Count() ?? 0;
 
                             var ordenesAReenviar = ordenes?
-                                .Where(o => (
-                                    // No factura registrada yet or previously marked as error
-                                    string.IsNullOrEmpty(o.idFacturaElectronica)
-                                    || o.idFacturaElectronica.StartsWith("error", StringComparison.OrdinalIgnoreCase)
-                                    || !o.idFacturaElectronica.Contains(":", StringComparison.OrdinalIgnoreCase)
-                                    // Or the stored idFacturaElectronica contains an embedded provider invoice
-                                    // and the local IdVentaLocal appears more than once -> suspicious payload
-                                    || (o.idFacturaElectronica != null
-                                        && o.idFacturaElectronica.IndexOf("order_reference", StringComparison.OrdinalIgnoreCase) >= 0
-                                        && (o.idFacturaElectronica.IndexOf(o.IdVentaLocal.ToString(), StringComparison.OrdinalIgnoreCase)
-                                    == o.idFacturaElectronica.LastIndexOf(o.IdVentaLocal.ToString(), StringComparison.OrdinalIgnoreCase)
-                                    || o.idFacturaElectronica.IndexOf(o.IdVentaLocal.ToString(), StringComparison.OrdinalIgnoreCase) < 0)
+                                .Where(o =>
+                                    // SILOG2: only records starting with Ok are excluded from resend.
+                                    // Other providers keep the previous resend criteria.
+                                    (esSilog2
+                                        ? (string.IsNullOrWhiteSpace(o.idFacturaElectronica)
+                                            || !o.idFacturaElectronica.StartsWith("Ok", StringComparison.OrdinalIgnoreCase))
+                                        : (
+                                            string.IsNullOrEmpty(o.idFacturaElectronica)
+                                            || o.idFacturaElectronica.StartsWith("error", StringComparison.OrdinalIgnoreCase)
+                                            || !o.idFacturaElectronica.Contains(":", StringComparison.OrdinalIgnoreCase)
+                                            || (o.idFacturaElectronica != null
+                                                && o.idFacturaElectronica.IndexOf("order_reference", StringComparison.OrdinalIgnoreCase) >= 0
+                                                && (o.idFacturaElectronica.IndexOf(o.IdVentaLocal.ToString(), StringComparison.OrdinalIgnoreCase)
+                                                    == o.idFacturaElectronica.LastIndexOf(o.IdVentaLocal.ToString(), StringComparison.OrdinalIgnoreCase)
+                                                    || o.idFacturaElectronica.IndexOf(o.IdVentaLocal.ToString(), StringComparison.OrdinalIgnoreCase) < 0)
+                                            )
+                                        )
                                     )
-                                )
-                                // Exclude orders with "Error al gestionar la persona" error
-                                && !(o.idFacturaElectronica?.Contains("Error al gestionar la persona", StringComparison.OrdinalIgnoreCase) ?? false)
-                                 && !(o.idFacturaElectronica?.Contains("Ya existe una factura con este nroCruce", StringComparison.OrdinalIgnoreCase) ?? false)
-                                //
-                                // Exclude Crédito Directo payments (trim + case-insensitive)
-                                && !(o.FormaDePago?.Trim().Equals("Crédito Directo", StringComparison.OrdinalIgnoreCase) ?? false)
-                                && (_alegraOptions.EnviaCreditos || (!(o.FormaDePago?.ToLower().Contains("dir") ?? false) && !(o.FormaDePago?.ToLower().Contains("calibra") ?? false) && !(o.FormaDePago?.ToLower().Contains("consum") ?? false) && !(o.FormaDePago?.ToLower().Contains("puntos") ?? false))))
+                                    && (esSilog2
+                                        || (
+                                            !(o.idFacturaElectronica?.Contains("Error al gestionar la persona", StringComparison.OrdinalIgnoreCase) ?? false)
+                                            && !(o.idFacturaElectronica?.Contains("Ya existe una factura con este nroCruce", StringComparison.OrdinalIgnoreCase) ?? false)
+                                        ))
+                                    // Exclude Crédito Directo payments (trim + case-insensitive)
+                                    && !(o.FormaDePago?.Trim().Equals("Crédito Directo", StringComparison.OrdinalIgnoreCase) ?? false)
+                                    && (_alegraOptions.EnviaCreditos || (!(o.FormaDePago?.ToLower().Contains("dir") ?? false) && !(o.FormaDePago?.ToLower().Contains("calibra") ?? false) && !(o.FormaDePago?.ToLower().Contains("consum") ?? false) && !(o.FormaDePago?.ToLower().Contains("puntos") ?? false))))
                                 .Take(20) // Limit per month to avoid overwhelming the system
                                 .ToList();
 
                             if (ordenesAReenviar != null && ordenesAReenviar.Count > 0)
                             {
                                 totalOrdenesReenviadas += ordenesAReenviar.Count;
-                                _logger.LogInformation($"Estación: {estacion.Nombre} ({estacion.guid}) - Mes {fechaInicial:MM/yyyy} - Reenviando {JsonConvert.SerializeObject(ordenesAReenviar.Select(o => o.IdVentaLocal))} órdenes a facturación...");
+                                Console.WriteLine($"Estación: {estacion.Nombre} ({estacion.guid}) - Mes {fechaInicial:MM/yyyy} - Reenviando {JsonConvert.SerializeObject(ordenesAReenviar.Select(o => o.IdVentaLocal))} órdenes a facturación...");
                                 await manejadorInformacionLocalNegocio.EnviarOrdenesDespacho(ordenesAReenviar, estacion.guid);
                             }
 
@@ -159,22 +161,26 @@ namespace FacturacionelectronicaCore.Worker
                             totalCanastillasEncontradas += facturas?.Count() ?? 0;
 
                             var facturasAReenviar = facturas?
-                                .Where(f => (
-                                    // No factura registrada yet or previously marked as error
-                                    string.IsNullOrEmpty(f.idFacturaElectronica)
-                                    || f.idFacturaElectronica.StartsWith("error", StringComparison.OrdinalIgnoreCase)
-                                    // Or the stored idFacturaElectronica contains an embedded provider invoice
-                                    // and the local consecutivo appears more than once -> suspicious payload
-                                    || (f.idFacturaElectronica != null
-                                        && f.idFacturaElectronica.IndexOf("order_reference", StringComparison.OrdinalIgnoreCase) >= 0
-                                        && (f.idFacturaElectronica.IndexOf(f.consecutivo.ToString(), StringComparison.OrdinalIgnoreCase)
-                                    == f.idFacturaElectronica.LastIndexOf(f.consecutivo.ToString(), StringComparison.OrdinalIgnoreCase)
-                                    || f.idFacturaElectronica.IndexOf(f.consecutivo.ToString(), StringComparison.OrdinalIgnoreCase) < 0)
+                                .Where(f =>
+                                    // SILOG2: only records starting with Ok are excluded from resend.
+                                    // Other providers keep the previous resend criteria.
+                                    (esSilog2
+                                        ? (string.IsNullOrWhiteSpace(f.idFacturaElectronica)
+                                            || !f.idFacturaElectronica.StartsWith("Ok", StringComparison.OrdinalIgnoreCase))
+                                        : (
+                                            string.IsNullOrEmpty(f.idFacturaElectronica)
+                                            || f.idFacturaElectronica.StartsWith("error", StringComparison.OrdinalIgnoreCase)
+                                            || (f.idFacturaElectronica != null
+                                                && f.idFacturaElectronica.IndexOf("order_reference", StringComparison.OrdinalIgnoreCase) >= 0
+                                                && (f.idFacturaElectronica.IndexOf(f.consecutivo.ToString(), StringComparison.OrdinalIgnoreCase)
+                                                    == f.idFacturaElectronica.LastIndexOf(f.consecutivo.ToString(), StringComparison.OrdinalIgnoreCase)
+                                                    || f.idFacturaElectronica.IndexOf(f.consecutivo.ToString(), StringComparison.OrdinalIgnoreCase) < 0)
+                                            )
+                                        )
                                     )
-                                )
-                                // Exclude Crédito Directo payments (trim + case-insensitive)
-                                && !(f.codigoFormaPago?.Descripcion?.Trim().Equals("Crédito Directo", StringComparison.OrdinalIgnoreCase) ?? false)
-                                && (_alegraOptions.EnviaCreditos || (!(f.codigoFormaPago?.Descripcion?.ToLower().Contains("dir") ?? false) && !(f.codigoFormaPago?.Descripcion?.ToLower().Contains("calibra") ?? false) && !(f.codigoFormaPago?.Descripcion?.ToLower().Contains("consum") ?? false) && !(f.codigoFormaPago?.Descripcion?.ToLower().Contains("puntos") ?? false))))
+                                    // Exclude Crédito Directo payments (trim + case-insensitive)
+                                    && !(f.codigoFormaPago?.Descripcion?.Trim().Equals("Crédito Directo", StringComparison.OrdinalIgnoreCase) ?? false)
+                                    && (_alegraOptions.EnviaCreditos || (!(f.codigoFormaPago?.Descripcion?.ToLower().Contains("dir") ?? false) && !(f.codigoFormaPago?.Descripcion?.ToLower().Contains("calibra") ?? false) && !(f.codigoFormaPago?.Descripcion?.ToLower().Contains("consum") ?? false) && !(f.codigoFormaPago?.Descripcion?.ToLower().Contains("puntos") ?? false))))
                                 .Take(20) // Limit per month to avoid overwhelming the system
                                 .ToList();
 
@@ -183,7 +189,7 @@ namespace FacturacionelectronicaCore.Worker
                                 // Convert entities to models for AddFacturaCanastilla
                                 var facturasModelo = facturasAReenviar.Select(f => ConvertToModel(f)).ToList();
                                 totalCanastillasReenviadas += facturasAReenviar.Count;
-                                _logger.LogInformation($"Estación: {estacion.Nombre} ({estacion.guid}) - Mes {fechaInicial:MM/yyyy} - Reenviando {JsonConvert.SerializeObject(facturasAReenviar.Select(f => f.consecutivo))} facturas canastilla a facturación...");
+                                Console.WriteLine($"Estación: {estacion.Nombre} ({estacion.guid}) - Mes {fechaInicial:MM/yyyy} - Reenviando {JsonConvert.SerializeObject(facturasAReenviar.Select(f => f.consecutivo))} facturas canastilla a facturación...");
                                 await manejadorInformacionLocalNegocio.AddFacturaCanastilla(facturasModelo, estacion.guid);
                             }
 
@@ -197,25 +203,27 @@ namespace FacturacionelectronicaCore.Worker
                             }
                         }
 
-                        _logger.LogInformation($"Estación: {estacion.Nombre} ({estacion.guid}) - Total procesado: {totalOrdenesEncontradas} órdenes ({totalOrdenesReenviadas} reenviadas), {totalCanastillasEncontradas} canastillas ({totalCanastillasReenviadas} reenviadas) desde {startDate:yyyy-MM-dd}");
+                        Console.WriteLine($"Estación: {estacion.Nombre} ({estacion.guid}) - Total procesado: {totalOrdenesEncontradas} órdenes ({totalOrdenesReenviadas} reenviadas), {totalCanastillasEncontradas} canastillas ({totalCanastillasReenviadas} reenviadas) desde {startDate:yyyy-MM-dd}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error al obtener órdenes de despacho y facturas canastilla por estación");
+                    Console.WriteLine("Error al obtener órdenes de despacho y facturas canastilla por estación: " + ex.Message);
+                    Console.WriteLine(ex.StackTrace);
                 }
 
-                _logger.LogInformation("Processing cycle completed (orders and canastillas). Waiting 1 minutes before next cycle...");
+                Console.WriteLine("Processing cycle completed (orders and canastillas). Waiting 1 minutes before next cycle...");
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
             }
             catch (OperationCanceledException)
             {
-                _logger.LogInformation("ProcessingLoop was cancelled.");
+                Console.WriteLine("ProcessingLoop was cancelled.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fatal error in ProcessingLoop.");
+                Console.WriteLine("Fatal error in ProcessingLoop: " + ex.Message);
+                Console.WriteLine(ex.StackTrace);
             }
         }
 
@@ -298,5 +306,6 @@ namespace FacturacionelectronicaCore.Worker
                 resolucion = null
             };
         }
+
     }
 }

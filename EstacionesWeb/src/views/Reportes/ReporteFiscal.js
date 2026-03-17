@@ -78,6 +78,14 @@ const ReporteFiscal = () => {
       return
     }
 
+    if (fechaInicial > fechaFinal) {
+      toastRef.current?.addMessage(
+        'La fecha inicial no puede ser mayor que la fecha final',
+        'error',
+      )
+      return
+    }
+
     setLoading(true)
     try {
       let response = await ReporteFiscalCall(fechaInicial, fechaFinal)
@@ -142,18 +150,26 @@ const ReporteFiscal = () => {
         const combustibleData = [
           ['CONSOLIDADO POR COMBUSTIBLE'],
           [''],
-          ['Combustible', 'Cantidad (Gal)', 'Total ($)'],
+          ['Combustible', 'Precio', 'Precio Actual', 'Cantidad (Gal)', 'Total ($)'],
           ...reporteData.consolidadosOrdenes.map((item) => [
             (item.combustible || '').trim(),
+            item.precio || 0,
+            (item.precioActual ?? item.precio) || 0,
             item.cantidad?.toFixed(2) || '0.00',
             item.total || 0,
           ]),
           [''],
-          ['TOTAL', cantidadTotal.toFixed(2), totalOrdenes],
+          ['TOTAL', '', '', cantidadTotal.toFixed(2), totalOrdenes],
         ]
 
         const wsCombustible = XLSX.utils.aoa_to_sheet(combustibleData)
-        wsCombustible['!cols'] = [{ width: 20 }, { width: 15 }, { width: 15 }]
+        wsCombustible['!cols'] = [
+          { width: 20 },
+          { width: 15 },
+          { width: 15 },
+          { width: 15 },
+          { width: 15 },
+        ]
         XLSX.utils.book_append_sheet(wb, wsCombustible, 'Por Combustible')
       }
 
@@ -165,22 +181,32 @@ const ReporteFiscal = () => {
         const anuladasData = [
           ['ÓRDENES DE DESPACHO FACTURADAS'],
           [''],
-          ['Combustible', 'Cantidad (Gal)', 'Total ($)'],
+          ['Combustible', 'Precio', 'Precio Actual', 'Cantidad (Gal)', 'Total ($)'],
           ...reporteData.consolidadoOrdenesAnuladas.map((item) => [
             (item.combustible || '').trim(),
+            item.precio || 0,
+            (item.precioActual ?? item.precio) || 0,
             item.cantidad?.toFixed(2) || '0.00',
             item.total || 0,
           ]),
           [''],
           [
             'TOTAL',
+            '',
+            '',
             calcularCantidadTotal(reporteData.consolidadoOrdenesAnuladas).toFixed(2),
             totalOrdenesAnuladas,
           ],
         ]
 
         const wsAnuladas = XLSX.utils.aoa_to_sheet(anuladasData)
-        wsAnuladas['!cols'] = [{ width: 20 }, { width: 15 }, { width: 15 }]
+        wsAnuladas['!cols'] = [
+          { width: 20 },
+          { width: 15 },
+          { width: 15 },
+          { width: 15 },
+          { width: 15 },
+        ]
         XLSX.utils.book_append_sheet(wb, wsAnuladas, 'Facturadas')
       }
 
@@ -254,9 +280,11 @@ const ReporteFiscal = () => {
 
       // Crear tabla de consolidados por combustible
       const tablaCombustibles = [
-        ['Combustible', 'Cantidad (Gal)', 'Total ($)'],
+        ['Combustible', 'Precio', 'Precio Actual', 'Cantidad (Gal)', 'Total ($)'],
         ...(reporteData.consolidadosOrdenes || []).map((item) => [
           (item.combustible || '').trim(),
+          cop.format(item.precio || 0),
+          cop.format((item.precioActual ?? item.precio) || 0),
           item.cantidad?.toFixed(2) || '0.00',
           cop.format(item.total || 0),
         ]),
@@ -266,9 +294,11 @@ const ReporteFiscal = () => {
       const tablaAnuladas =
         reporteData.consolidadoOrdenesAnuladas?.length > 0
           ? [
-              ['Combustible', 'Cantidad (Gal)', 'Total ($)'],
+              ['Combustible', 'Precio', 'Precio Actual', 'Cantidad (Gal)', 'Total ($)'],
               ...(reporteData.consolidadoOrdenesAnuladas || []).map((item) => [
                 (item.combustible || '').trim(),
+                cop.format(item.precio || 0),
+                cop.format((item.precioActual ?? item.precio) || 0),
                 item.cantidad?.toFixed(2) || '0.00',
                 cop.format(item.total || 0),
               ]),
@@ -330,7 +360,7 @@ const ReporteFiscal = () => {
           {
             table: {
               headerRows: 1,
-              widths: ['*', 'auto', 'auto'],
+              widths: ['*', 'auto', 'auto', 'auto', 'auto'],
               body: tablaCombustibles,
             },
             layout: 'lightHorizontalLines',
@@ -346,7 +376,7 @@ const ReporteFiscal = () => {
                 {
                   table: {
                     headerRows: 1,
-                    widths: ['*', 'auto', 'auto'],
+                    widths: ['*', 'auto', 'auto', 'auto', 'auto'],
                     body: tablaAnuladas,
                   },
                   layout: 'lightHorizontalLines',
@@ -454,6 +484,9 @@ const ReporteFiscal = () => {
 
     if (isValidDate(selectedDate)) {
       setFechaInicial(selectedDate)
+      if (fechaFinal && selectedDate > fechaFinal) {
+        setFechaFinal(selectedDate)
+      }
     }
   }
   const handlefechaFinalSelectedChange = (event) => {
@@ -461,6 +494,9 @@ const ReporteFiscal = () => {
 
     if (isValidDate(selectedDate)) {
       setFechaFinal(selectedDate)
+      if (fechaInicial && selectedDate < fechaInicial) {
+        setFechaInicial(selectedDate)
+      }
     }
   }
 
@@ -492,6 +528,7 @@ const ReporteFiscal = () => {
                 <CFormInput
                   type="date"
                   value={fechaInicial}
+                  max={fechaFinal || undefined}
                   onChange={handlefechaInicialSelectedChange}
                 />
               </div>
@@ -505,6 +542,7 @@ const ReporteFiscal = () => {
                 <CFormInput
                   type="date"
                   value={fechaFinal}
+                  min={fechaInicial || undefined}
                   onChange={handlefechaFinalSelectedChange}
                 />
               </div>
@@ -672,6 +710,8 @@ const ReporteFiscal = () => {
                     <CTableHead>
                       <CTableRow>
                         <CTableHeaderCell>Combustible</CTableHeaderCell>
+                        <CTableHeaderCell className="text-end">Precio</CTableHeaderCell>
+                        <CTableHeaderCell className="text-end">Precio Actual</CTableHeaderCell>
                         <CTableHeaderCell className="text-end">Cantidad (Gal)</CTableHeaderCell>
                         <CTableHeaderCell className="text-end">Total</CTableHeaderCell>
                       </CTableRow>
@@ -681,6 +721,12 @@ const ReporteFiscal = () => {
                         <CTableRow key={index}>
                           <CTableDataCell>
                             <CBadge color="info">{(item.combustible || '').trim()}</CBadge>
+                          </CTableDataCell>
+                          <CTableDataCell className="text-end">
+                            {cop.format(item.precio || 0)}
+                          </CTableDataCell>
+                          <CTableDataCell className="text-end">
+                            {cop.format((item.precioActual ?? item.precio) || 0)}
                           </CTableDataCell>
                           <CTableDataCell className="text-end">
                             {item.cantidad?.toFixed(2) || '0.00'}
@@ -712,6 +758,8 @@ const ReporteFiscal = () => {
                       <CTableHead>
                         <CTableRow>
                           <CTableHeaderCell>Combustible</CTableHeaderCell>
+                          <CTableHeaderCell className="text-end">Precio</CTableHeaderCell>
+                          <CTableHeaderCell className="text-end">Precio Actual</CTableHeaderCell>
                           <CTableHeaderCell className="text-end">Cantidad (Gal)</CTableHeaderCell>
                           <CTableHeaderCell className="text-end">Total</CTableHeaderCell>
                         </CTableRow>
@@ -721,6 +769,12 @@ const ReporteFiscal = () => {
                           <CTableRow key={index}>
                             <CTableDataCell>
                               <CBadge color="danger">{(item.combustible || '').trim()}</CBadge>
+                            </CTableDataCell>
+                            <CTableDataCell className="text-end">
+                              {cop.format(item.precio || 0)}
+                            </CTableDataCell>
+                            <CTableDataCell className="text-end">
+                              {cop.format((item.precioActual ?? item.precio) || 0)}
                             </CTableDataCell>
                             <CTableDataCell className="text-end">
                               {item.cantidad?.toFixed(2) || '0.00'}

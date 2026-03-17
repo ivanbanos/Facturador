@@ -6,8 +6,10 @@ const ReporteFiscal = async (fechaInicial, fechaFinal) => {
     const estacionGuid = localStorage.getItem('estacionGuid')
 
     const body = {
-      fechaInicial: fechaInicial,
-      fechaFinal: fechaFinal,
+      fechaInicial: fechaInicial ? new Date(fechaInicial).toISOString() : null,
+      fechaFinal: fechaFinal ? new Date(fechaFinal).toISOString() : null,
+      identificacion: null,
+      nombreTercero: null,
       estacion: estacionGuid,
     }
 

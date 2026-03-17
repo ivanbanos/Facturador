@@ -63,5 +63,29 @@ namespace FacturacionelectronicaCore.Web.Controllers
 
             return Ok(response);
         }
+
+        [HttpGet("{guid}/Combustibles")]
+        public async Task<ActionResult<IEnumerable<CombustibleEstacion>>> GetCombustiblesEstacion(Guid guid)
+        {
+            if (guid == Guid.Empty)
+            {
+                return BadRequest();
+            }
+
+            var response = await _estacionNegocio.GetCombustiblesEstacion(guid);
+            return Ok(response);
+        }
+
+        [HttpPost("{guid}/Combustibles")]
+        public async Task<ActionResult> UpsertCombustibleEstacion(Guid guid, [FromBody] CombustibleEstacion combustible)
+        {
+            if (guid == Guid.Empty || combustible == null || string.IsNullOrWhiteSpace(combustible.Combustible))
+            {
+                return BadRequest();
+            }
+
+            await _estacionNegocio.UpsertCombustibleEstacion(guid, combustible);
+            return Ok();
+        }
     }
 }

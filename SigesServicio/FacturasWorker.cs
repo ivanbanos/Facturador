@@ -87,6 +87,16 @@ namespace SigesServicio
             string token = _conexionEstacionRemota.getToken();
             var estacionFuente = Guid.Parse(_infoEstacion.EstacionFuente);
 
+            try
+            {
+                var combustibles = _conexionEstacionRemota.GetCombustiblesEstacion(estacionFuente, token);
+                _estacionesRepositorio.ActualizarPreciosCombustibles(combustibles);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"No fue posible sincronizar combustibles: {ex.Message}");
+            }
+
             var ResolucionesRemota = _conexionEstacionRemota.GetResolucionEstacion(estacionFuente, token);
             var resolucion = _estacionesRepositorio.BuscarResolucionActiva(ResolucionesRemota);
 

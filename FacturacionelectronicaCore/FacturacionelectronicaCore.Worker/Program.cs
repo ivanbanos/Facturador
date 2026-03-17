@@ -12,6 +12,15 @@ var configuration = new ConfigurationBuilder()
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(configuration)
+    .WriteTo.Console(outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.File("Logs/worker-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 30,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+        shared: true)
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", Serilog.Events.LogEventLevel.Information)
     .CreateLogger();
 
 try
@@ -20,8 +29,9 @@ try
 
     var builder = Host.CreateApplicationBuilder(args);
     
-    // Add Serilog
-    builder.Services.AddSerilog();
+    // Clear default MEL providers and wire Serilog explicitly
+    builder.Logging.ClearProviders();
+    builder.Logging.AddSerilog(Log.Logger, dispose: true);
     
     builder.Services.AddFacturaElectronica(builder.Configuration);
     builder.Services.AddServicesDependencies(builder.Configuration);

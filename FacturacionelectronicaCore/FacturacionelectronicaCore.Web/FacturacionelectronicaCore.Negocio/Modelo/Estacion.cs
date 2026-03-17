@@ -14,5 +14,6 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public string linea3 { get; set; }
         public string linea4 { get; set; }
         public string Telefono { get; set; }
+        public bool EsGas { get; set; }
     }
 }

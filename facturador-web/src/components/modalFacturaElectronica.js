@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Button } from "react-bootstrap";
 import ImprimirFactura from "../Services/getServices/ImprimirFactura";
-import EnviarFacturaElectronica from "../Services/getServices/EnviarFacturaElectronica";
+import EnviarFacturaElectronica from "../Services/getServices/ImprimirFactura";
 import { Alert } from "react-bootstrap";
 import "./styles/modal.css";
 import GetUltimaFacturaPorCaraTexto from "../Services/getServices/GetUltimaFacturaPorCaraTexto";
