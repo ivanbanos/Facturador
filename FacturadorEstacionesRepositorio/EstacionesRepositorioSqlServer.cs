@@ -1087,7 +1087,7 @@ namespace FacturadorEstacionesRepositorio
                 {"@fechaInicio", desde },
                 {"@fechaFin", hasta }
             };
-            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnosPorFechas", parameters);
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnosPorFecha", parameters);
             return _convertidor.ConvertirTurnoSiges(dt);
         }
 

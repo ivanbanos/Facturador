@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @page {
+            size: A4;
+            margin: 18mm 12mm;
+        }
+
+        body {
+            font-family: "Segoe UI", "Calibri", sans-serif;
+            color: #1f2937;
+            background: #f5f7fb;
+            margin: 0;
+            padding: 0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .report {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+        }
+
+        h1 {
+            margin: 0;
+            color: #0f172a;
+            font-size: 22px;
+        }
+
+        h2 {
+            margin: 18px 0 8px 0;
+            color: #0b3a66;
+            font-size: 16px;
+            border-left: 4px solid #0ea5e9;
+            padding-left: 8px;
+        }
+
+        .subtitle,
+        .date-range,
+        .footer {
+            margin: 4px 0;
+            color: #475569;
+        }
+
+        .section {
+            margin-top: 10px;
+            margin-bottom: 14px;
+        }
+
+        .tableReporte {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 8px;
+            border: 1px solid #dbe2ea;
+        }
+
+        .tableReporte td,
+        .tableReporte th {
+            border: 1px solid #dbe2ea;
+            padding: 8px;
+        }
+
+        .tableReporte tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .tableReporte tr:hover {
+            background-color: #eef6ff;
+        }
+
+        .tableReporte th {
+            text-align: left;
+            background: linear-gradient(90deg, #0b3a66, #0f5a96);
+            color: white;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <main class="report">{body}</main>
+
+</body>
+</html>
+
+

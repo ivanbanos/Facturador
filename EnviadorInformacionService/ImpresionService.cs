@@ -171,6 +171,7 @@ namespace EnviadorInformacionService
                                         }
                                         break;
                                     case "Reimprimir":
+                                    case "ReimprimirCierre":
                                         {
                                             var turnoimprimir = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha, objetoImprimir.Isla, objetoImprimir.Numero);
                                             if (turnoimprimir == null)
