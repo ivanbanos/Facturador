@@ -68,5 +68,6 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         public string AutorizacionResolucion { get; set; }
         public string idFacturaElectronica { get; set; }
         public DateTime FechaReporte { get; set; }
+        public string TurnoGuid { get; set; }
     }
 }

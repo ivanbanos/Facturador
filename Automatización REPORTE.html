@@ -1,0 +1,1894 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 4.0 Transitional//EN">
+<!-- saved from url=(0057)http://localhost/Edsclodeweb/Procesos/PlanillaDiaria.aspx -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head id="ctl00_Head1"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Mimic Internet Explorer 7 -->
+    <meta http-equiv="X-UA-Compatible" content="IE=7.5"><title>Clode Automatización</title><link href="./Clode Automatización REPORTE CLODE_files/Estilo1.css" rel="stylesheet" type="text/css"><link href="./Clode Automatización REPORTE CLODE_files/css1.css" rel="stylesheet" type="text/css"><link href="./Clode Automatización REPORTE CLODE_files/Estilo1.css" rel="stylesheet" type="text/css"><link rel="stylesheet" type="text/css" href="./Clode Automatización REPORTE CLODE_files/normalize.css"><link href="./Clode Automatización REPORTE CLODE_files/foundation.min.css" rel="stylesheet"><link href="./Clode Automatización REPORTE CLODE_files/css" rel="stylesheet" type="text/css"><link rel="stylesheet" type="text/css" href="./Clode Automatización REPORTE CLODE_files/style.css">
+
+    <script src="./Clode Automatización REPORTE CLODE_files/jquery.min.js.descargar"></script>
+    <!-- [if lt IE 9] -->
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <!-- [endif] -->
+    <script type="text/javascript" src="./Clode Automatización REPORTE CLODE_files/main.js.descargar"></script>
+
+    <script language="javascript" type="text/javascript">
+        function PestanaActiva(objeto, objeto_izq) {
+            //document.getElementById(objeto).className = 'pestana_activa';
+            document.getElementById(objeto_izq).className = 'PanelMenuCabeza_Activa';
+        }
+    </script>
+    <script type="text/javascript">
+
+        function validarTeclaDigito(evt) {
+
+            // code is the decimal ASCII representation of the pressed key.
+            var code = (evt.which) ? evt.which : evt.keyCode;
+
+            if (code == 8) { // backspace.
+                return true;
+            } else if (code >= 48 && code <= 57) { // is a number.
+                return true;
+            } else { // other keys.
+                return false;
+            }
+        }
+    </script>
+    <script type="text/javascript">
+        function ConvertirMayuscula(e) {
+            e.value = e.value.toUpperCase();
+        }
+    </script>
+
+
+
+<link href="./Clode Automatización REPORTE CLODE_files/WebResource.axd" type="text/css" rel="stylesheet"><script type="text/javascript">var head = document.getElementsByTagName('HEAD')[0];if (head) {var linkElement = document.createElement('link');linkElement.type = 'text/css';linkElement.rel = 'stylesheet';linkElement.href = '/Edsclodeweb/WebResource.axd?d=E1so878Tqy9G3BsSXum0hTBaQap3J7fJPda9H2IHlpsimF7rlUYhvopSB4JuoYRvz0FHxn8licvWSwvbxhuw3PzphjoXANLXw4HB7m21jsMQKdqn8RCLAT-nVzEBd9mKwgv-WZPjmR0a7Hts4ub9TF19wlDvld7Zwb09wg-s89Q1&t=633718545220000000';head.appendChild(linkElement);}</script><link type="text/css" rel="stylesheet" href="./Clode Automatización REPORTE CLODE_files/WebResource.axd"><script type="text/javascript">Sys.Application.add_init(function() {
+    $create(Sys.UI._UpdateProgress, {"associatedUpdatePanelId":"ctl00_ContenidoMaestro1_UpdatePanelEspera","displayAfter":500,"dynamicLayout":true}, null, null, $get("ctl00_ContenidoMaestro1_UpdateProgressEspera"));
+});
+</script><script type="text/javascript">Sys.Application.add_init(function() {
+    $create(AjaxControlToolkit.CalendarBehavior, {"format":"dd/MM/yyyy","id":"ctl00_ContenidoMaestro1_txtFecha_CalendarExtender"}, null, null, $get("ctl00_ContenidoMaestro1_txtFecha"));
+});
+</script><script type="text/javascript">Sys.Application.add_init(function() {
+    $create(Sys.UI._UpdateProgress, {"associatedUpdatePanelId":"ctl00_ContenidoMaestro1_UpdatePanelAprobar","displayAfter":500,"dynamicLayout":true}, null, null, $get("ctl00_ContenidoMaestro1_UpdateProgressAprobar"));
+});
+</script><script type="text/javascript">Sys.Application.add_init(function() {
+    $create(AjaxControlToolkit.ModalPopupBehavior, {"BackgroundCssClass":"modalBackground","PopupControlID":"ctl00_ContenidoMaestro1_Mensaje1_pnlPopup","dynamicServicePath":"/Edsclodeweb/Procesos/PlanillaDiaria.aspx","id":"ctl00_ContenidoMaestro1_Mensaje1_mpeMensaje"}, null, null, $get("ctl00_ContenidoMaestro1_Mensaje1_pnlPopup"));
+});
+</script></head>
+<body>
+    <form name="aspnetForm" method="post" action="http://localhost/Edsclodeweb/Procesos/PlanillaDiaria.aspx" id="aspnetForm">
+<div>
+
+
+
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['aspnetForm'];
+if (!theForm) {
+    theForm = document.aspnetForm;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="./Clode Automatización REPORTE CLODE_files/WebResource(1).axd" type="text/javascript"></script>
+
+
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource.axd" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+if (typeof(Sys) === 'undefined') throw new Error('Error al cargar el marco de trabajo de cliente ASP.NET Ajax.');
+//]]>
+</script>
+
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(1).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(2).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(3).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(4).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(5).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(6).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(7).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(8).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(9).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(10).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(11).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(12).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(13).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(14).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(15).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(16).axd" type="text/javascript"></script>
+<script src="./Clode Automatización REPORTE CLODE_files/ScriptResource(17).axd" type="text/javascript"></script>
+<div>
+
+	
+	
+	
+</div>
+        <div class="page">
+            <div class="header">
+                <div class="title" style="height: 100%">
+                    <img id="ctl00_Image2" src="./Clode Automatización REPORTE CLODE_files/logo_Cliente.jpg" align="middle" style="border-color:White;height:100%;border-width:0px;">
+
+                </div>
+                <div class="title" style="height: 100%">
+                    <h1>Clode Tecnology S.A.S
+                    </h1>
+                    <h2>Sistema de Automatización EDS
+                    </h2>
+                </div>
+                <div class="title" style="height: 100%; background-color: black">
+                    <img id="ctl00_Image1" src="./Clode Automatización REPORTE CLODE_files/bannerclode.jpg" align="middle" style="border-color:White;height:100%;border-width:0px;">
+
+                </div>
+            </div>
+        </div>
+        <div>
+            <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl00$ScriptManager1', 'aspnetForm', ['tctl00$ContenidoMaestro1$UpdatePanel1','','tctl00$ContenidoMaestro1$UpdatePanelEspera','','tctl00$ContenidoMaestro1$UpdatePanelAprobar',''], [], [], 90, 'ctl00');
+//]]>
+</script>
+
+            <table cellpadding="0" cellspacing="0" class="ContenedorPrincipal" width="100%">
+                <tbody><tr>
+                    <td align="center" valign="top" class="Contenido">
+                        <table cellpadding="0" cellspacing="0" class="ContenedorSecundario" width="100%">
+                            <tbody><tr>
+                                <td class="Cabeza">
+                                    <!-- ESPACIO DE CABEZA -->
+                                    <table cellpadding="0" cellspacing="0" class="CabezaLogo">
+
+                                        <tbody><tr>
+                                            <td class="Logo"></td>
+                                            <td valign="bottom" align="left" style="width: 877px">
+                                                <!-- NAVEGADOR -->
+                                                <table cellpadding="0" cellspacing="0" width="100%">
+                                                    <tbody><tr>
+
+                                                        <td valign="top" align="center">
+                                                            <!-- LINKS -->
+                                                            <table cellpadding="4" cellspacing="1" class="ContenedorLinks">
+                                                                <tbody><tr>
+                                                                    <td>
+                                                                        <a href="http://localhost/Edsclodeweb/Procesos/PlanillaDiaria.aspx" class="Link1">
+                                                                            <span id="ctl00_lblRol">Administrador</span>
+                                                                        </a>
+                                                                    </td>
+                                                                    <td>
+                                                                        <a href="http://localhost/Edsclodeweb/Procesos/PlanillaDiaria.aspx" class="Link1">
+                                                                            <span id="ctl00_lblFecha">13-12-2023 8:57:25 a.&nbsp;m.</span>
+                                                                        </a>
+                                                                    </td>
+                                                                    <td>
+                                                                        <a href="http://localhost/Edsclodeweb/Procesos/PlanillaDiaria.aspx" class="Link1">
+                                                                            <span id="ctl00_lblUsuario">edwingomez</span>
+                                                                        </a>
+                                                                    </td>
+                                                                    <td>
+                                                                        <a id="ctl00_LnkCerrar" class="Link1" href="javascript:__doPostBack(&#39;ctl00$LnkCerrar&#39;,&#39;&#39;)">Cerrar Sesión</a>
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody></table>
+                                                            <!-- LINKS -->
+                                                        </td>
+                                                    </tr>
+                                                </tbody></table>
+                                                <!-- NAVEGADOR -->
+                                            </td>
+                                        </tr>
+                                    </tbody></table>
+                                    <!-- ESPACIO DE CABEZA -->
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="Contenido" style="width: 100%">
+                                    <!--CONTENIDO DE PAGINA-->
+                                    <table cellpadding="0" cellspacing="0" class="Contenido">
+                                        <tbody><tr>
+                                            <td class="Menu" valign="top">
+                                                <!--CONTENIDO DE MENU -->
+                                                <table cellpadding="0" cellspacing="0" width="100%">
+                                                    <tbody><tr>
+                                                        <td id="pesti1" class="PanelMenuCabeza" valign="middle">
+                                                            <div id="ctl00_PnlPanelControlCabeza">
+	
+                                                                Configuraciones
+                                                            
+</div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <div id="ctl00_PnlPanelControl" style="width: 100%; overflow-y: hidden; height: 0px; display: none;"><div id="" style="width: 100%; height: auto;">
+	
+                                                                <div>
+		<table class="GrillaMenu" cellspacing="0" rules="all" border="1" id="ctl00_grdPanelControl" style="border-collapse:collapse;">
+			<tbody><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl02_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl02_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/Articulos.aspx">Artículos</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl03_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl03_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/ArticuloCanastilla.aspx">Articulos Canastilla</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl04_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl04_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/ConfiguracionDescuento.aspx">Descuentos</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl05_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl05_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/Empleado.aspx">Empleados</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl06_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl06_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/EstructuraEDS.aspx">Estructura Estación</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl07_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl07_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/PagoVenta.aspx">Formas de Pago</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl08_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl08_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/InterfaceAutorizacion.aspx">Interfaces Autorización</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl09_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl09_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/InterfaceSurtidor.aspx">Interfaces Surtidor</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl10_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl10_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/ProgramacioPrecio.aspx">Programación de Precios</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl11_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl11_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/Puerto.aspx">Puertos</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl12_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl12_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/ResolucionesFacturacion.aspx">Resoluciones de Facturación</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl13_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl13_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/Rifa.aspx">Rifas</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl14_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl14_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/Rol.aspx">Rol</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdPanelControl_ctl15_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdPanelControl_ctl15_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/PanelDeControl/Usuario.aspx">Usuarios</a>
+                                                                            </td>
+			</tr>
+		</tbody></table>
+	</div>
+                                                            
+</div></div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td id="pesti2" class="PanelMenuCabeza" valign="middle">
+                                                            <div id="ctl00_PnlProcesosMenuCabeza">
+	
+                                                                Créditos
+                                                            
+</div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <div id="ctl00_PnlProcesos" style="width: 100%; overflow-y: hidden; height: 0px; display: none;"><div id="" style="width: 100%; height: auto;">
+	
+                                                                <div>
+		<table class="GrillaMenu" cellspacing="0" rules="all" border="1" id="ctl00_grdCreditosMenu" style="border-collapse:collapse;">
+			<tbody><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdCreditosMenu_ctl02_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdCreditosMenu_ctl02_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/Clientes/default.aspx">Clientes</a>
+                                                                            </td>
+			</tr>
+		</tbody></table>
+	</div>
+                                                            
+</div></div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td id="pesti3" class="PanelMenuCabeza" valign="middle">
+                                                            <div id="ctl00_PnlConsultasMenuCabeza">
+	
+                                                                Procesos
+                                                            
+</div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <div id="ctl00_PnlConsultasMenu" style="width: 100%; overflow-y: hidden; height: 0px; display: none;"><div id="" style="width: 100%; height: auto;">
+	
+                                                                <div>
+		<table class="GrillaMenu" cellspacing="0" rules="all" border="1" id="ctl00_grdProcesosMenu" style="border-collapse:collapse;">
+			<tbody><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdProcesosMenu_ctl02_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdProcesosMenu_ctl02_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/Procesos/PlanillaDiaria.aspx">Planilla Dia</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdProcesosMenu_ctl03_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdProcesosMenu_ctl03_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/Procesos/PlanillaTurno.aspx">Planilla Turno</a>
+                                                                            </td>
+			</tr>
+		</tbody></table>
+	</div>
+                                                            
+</div></div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td id="pesti4" class="PanelMenuCabeza" valign="middle">
+                                                            <br>
+                                                            <div id="ctl00_PnlReportesCabeza">
+	
+                                                                Reportes
+                                                            
+</div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <div id="ctl00_PnlReportesMenu" style="width: 100%; overflow-y: hidden; height: 0px; display: none;"><div id="" style="width: 100%; height: auto;">
+	
+                                                                <div>
+		<table class="GrillaMenu" cellspacing="0" rules="all" border="1" id="ctl00_grdReportesMenu" style="border-collapse:collapse;">
+			<tbody><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdReportesMenu_ctl02_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdReportesMenu_ctl02_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/Reportes/ReporteFacturacion.aspx">Facturación POS</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdReportesMenu_ctl03_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdReportesMenu_ctl03_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/Reportes/FiltroReportes.aspx">Generales</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdReportesMenu_ctl04_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdReportesMenu_ctl04_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/Reportes/ReporteCanastilla.aspx">Venta de Canastilla</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdReportesMenu_ctl05_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdReportesMenu_ctl05_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/Reportes/ReportesCliente.aspx">Ventas Por Clientes</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdReportesMenu_ctl06_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdReportesMenu_ctl06_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/Reportes/ReportesArticulo.aspx">Ventas Por Combustible</a>
+                                                                            </td>
+			</tr><tr class="FilaNormal">
+				<td>
+                                                                                <img id="ctl00_grdReportesMenu_ctl07_ImgFlecha" src="./Clode Automatización REPORTE CLODE_files/Arrow.png" style="border-width:0px;">
+                                                                            </td><td>
+                                                                                <a id="ctl00_grdReportesMenu_ctl07_hlkPagina" class="link_menu" href="http://localhost/Edsclodeweb/Reportes/ReportesFormaPago.aspx">Ventas Por Medio Pago</a>
+                                                                            </td>
+			</tr>
+		</tbody></table>
+	</div>
+                                                            
+</div></div>
+                                                        </td>
+                                                    </tr>
+                                                </tbody></table>
+                                                <!--CONTENIDO DE MENU -->
+                                            </td>
+                                            <td class="ContenidoPagina" valign="top">
+                                                <!-- * -->
+                                                <table cellpadding="0" cellspacing="0" class="ContenidoPaginaPanel">
+                                                    <tbody><tr class="PanelInformacion">
+                                                        <td style="width: 973px">
+                                                            <!-- Panel de Informacion -->
+                                                            <table cellpadding="0" cellspacing="0" class="PanelTituloPagina">
+                                                                <tbody><tr>
+                                                                    <td class="Icono">
+                                                                        <!-- Imagen 48 * 48 -->
+                                                                        <img id="ctl00_ImgImagenPagina" src="./Clode Automatización REPORTE CLODE_files/orden_com_cliente-48.png" style="border-width:0px;">
+                                                                        <!-- Imagen 48 * 48 -->
+                                                                    </td>
+                                                                    <td class="Titulo">
+                                                                        <!-- Titulo de Página -->
+                                                                        <span id="ctl00_LblMensajePagina">Sistema Integrado Para Estaciones de Servicio</span>
+                                                                        <!-- Titulo de Página -->
+                                                                    </td>
+                                                                    <td class="Detalle">
+                                                                        <!-- Detalle -->
+                                                                        <span id="ctl00_LblDescripcionPagina"></span>
+                                                                        <!-- Detalle -->
+                                                                    </td>
+                                                                    <td class="Volver">
+                                                                        <!-- Volver -->
+                                                                        <table cellpadding="1" cellspacing="1" width="100%">
+                                                                            <tbody><tr align="center">
+                                                                                <td>
+                                                                                    <a href="javascript:history.back(-1);" title="Ir la página anterior">
+                                                                                        <img alt="Volver" src="./Clode Automatización REPORTE CLODE_files/left.png" border="0"></a></td>
+                                                                                <td>
+                                                                                    <a href="http://localhost/Edsclodeweb/Inicio/Principal.aspx" title="Ir la página Principal">
+                                                                                        <img alt="Home" src="./Clode Automatización REPORTE CLODE_files/home.png" border="0"></a></td>
+                                                                                <td>
+                                                                                    <a href="http://localhost/Edsclodeweb/Manual/Manual_Usuario_Valeo%20Gas_Esp.pdf" title="Ayuda">
+                                                                                        <img alt="Help" src="./Clode Automatización REPORTE CLODE_files/Ayuda.png" border="0"></a></td>
+                                                                            </tr>
+                                                                        </tbody></table>
+                                                                        <!-- Volver -->
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody></table>
+                                                            <!-- Panel de Informacion -->
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="Separador">
+                                                        <td style="width: 973px"></td>
+                                                    </tr>
+                                                    <tr class="Pagina">
+                                                        <td style="width: 973px">
+                                                            <!-- PÁGINA -->
+                                                            
+  <style>
+        #BackgroundEspera
+        {
+            position: fixed;
+            top:0px;
+            bottom:0px;
+            left:0px;
+            right:0px;
+            overflow:hidden;
+            padding:0;
+            margin:0;
+            background-color:#F0F0F0;
+            filter: alpha(opacity=80);
+            opacity:0.8;
+            z-index:100000;
+        }
+                #BackgroundEsperaAprobar
+        {
+            position: fixed;
+            top:0px;
+            bottom:0px;
+            left:0px;
+            right:0px;
+            overflow:hidden;
+            padding:0;
+            margin:0;
+            background-color:#F0F0F0;
+            filter: alpha(opacity=80);
+            opacity:0.8;
+            z-index:100000;
+        }
+        #ProgressEspera {
+            position: fixed;
+            top: 40%;
+            left: 40%;
+            height: 20%;
+            width: 20%;
+            z-index: 100001;
+            background-color: #FFFFFF;
+            border: 3px solid Gray;
+            background-image: url('../Estilos/Estilo1/Imagenes/loading.gif');
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        #ProgressEsperaAprobar {
+            position: fixed;
+            top: 40%;
+            left: 40%;
+            height: 20%;
+            width: 20%;
+            z-index: 100001;
+            background-color: #FFFFFF;
+            border: 3px solid Gray;
+            background-image: url('../Estilos/Estilo1/Imagenes/loading.gif');
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+    </style>
+    <div id="ctl00_ContenidoMaestro1_UpdatePanel1">
+            <div style="width: 100%; text-align: left; border-width: 2px; border-bottom-style: solid; border-color: black">
+                <div style="border-width: 8px; width: 95%; border-color: black; background-color: aliceblue; text-align: center">
+                    <span style="color: black; font-weight: bold; text-align: center; font-size: x-large">PLANILLA DIA</span>
+                </div>
+
+                <table style="width: 100%; border-width: 2px; border-bottom-style: solid; border-color: black">
+                    <tbody><tr>
+                        <td style="width: 15%; height: 32px;">Fecha:</td>
+                        <td style="width: 35%; height: 32px">
+                            <input name="ctl00$ContenidoMaestro1$txtFecha" type="text" value="29/11/2023" id="ctl00_ContenidoMaestro1_txtFecha" style="width:60%;">
+                        </td>
+                        <td style="width: 15%; text-align: left; height: 32px;">
+                            <div id="ctl00_ContenidoMaestro1_UpdatePanelEspera">
+	
+                                    <input type="image" name="ctl00$ContenidoMaestro1$btnConsultar" id="ctl00_ContenidoMaestro1_btnConsultar" src="./Clode Automatización REPORTE CLODE_files/BUSKEDA_32.gif" style="border-width:0px;">
+                                    
+                                
+</div>
+                            <div id="ctl00_ContenidoMaestro1_UpdateProgressEspera" style="display:none;" role="status" aria-hidden="true">
+	
+                                    <div id="BackgroundEspera">
+                                        <div id="ProgressEspera" style="background-image:url()">
+                                            <h6>
+                                                <p style="text-align: center; color:blue"><b>Procesando, Espere por favor..<br>
+                                                </b></p>
+                                            </h6>
+                                        </div>
+                                    </div>
+                                
+</div>
+                            
+                        </td>
+                        <td style="width: 35%; height: 32px;">
+                            
+                        </td>
+                    </tr>
+
+
+                </tbody></table>
+            </div>
+            <br>
+
+
+
+            <div>
+                <span style="color: black; font-weight: bold">LECTURAS DE MANGUERAS</span>
+            </div>
+
+            <div style="border-width: 8px; width: 95%">
+                <table style="width: 100%">
+                    <tbody><tr>
+                        <td style="text-align: right">&nbsp;</td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 100%">
+                            <div style="overflow-x: auto; width: 100%">
+
+
+                                <div>
+	<table cellspacing="0" cellpadding="3" rules="cols" border="1" id="ctl00_ContenidoMaestro1_grdLecturasManguera" style="color:Black;background-color:White;border-color:#999999;border-width:1px;border-style:Solid;width:100%;border-collapse:collapse;">
+		<tbody><tr style="color:White;background-color:Black;font-weight:bold;">
+			<th scope="col">MANGUERA</th><th scope="col">LEC. INICIAL</th><th scope="col">LEC. FINAL</th><th scope="col">DIFERENCIA</th><th scope="col">VALOR</th>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl02_slblIdManguera">1</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl02_slblIdLectInicial">978,750.790</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl02_slblIdLectFinal">978,846.420</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl02_slblIdDiferencia">95.630</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl02_slblValorDiferencia">$ 1,367,413.370</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl03_slblIdManguera">2</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl03_slblIdLectInicial">13,555.230</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl03_slblIdLectFinal">13,556.230</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl03_slblIdDiferencia">1.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl03_slblValorDiferencia">$ 8,999.000</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl04_slblIdManguera">3</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl04_slblIdLectInicial">348,558.100</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl04_slblIdLectFinal">348,736.950</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl04_slblIdDiferencia">178.850</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl04_slblValorDiferencia">$ 2,557,376.150</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl05_slblIdManguera">4</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl05_slblIdLectInicial">128,986.890</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl05_slblIdLectFinal">129,021.560</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl05_slblIdDiferencia">34.670</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl05_slblValorDiferencia">$ 311,995.330</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl06_slblIdManguera">5</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl06_slblIdLectInicial">27,968.180</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl06_slblIdLectFinal">27,977.180</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl06_slblIdDiferencia">9.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl06_slblValorDiferencia">$ 80,991.000</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl07_slblIdManguera">6</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl07_slblIdLectInicial">910,965.660</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl07_slblIdLectFinal">911,076.200</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl07_slblIdDiferencia">110.540</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl07_slblValorDiferencia">$ 1,580,611.460</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl08_slblIdManguera">7</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl08_slblIdLectInicial">126,206.440</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl08_slblIdLectFinal">126,226.520</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl08_slblIdDiferencia">20.080</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl08_slblValorDiferencia">$ 180,699.920</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl09_slblIdManguera">8</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl09_slblIdLectInicial">587,291.440</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl09_slblIdLectFinal">587,424.490</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl09_slblIdDiferencia">133.050</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl09_slblValorDiferencia">$ 1,902,481.950</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl10_slblIdManguera">9</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl10_slblIdLectInicial">779,975.890</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl10_slblIdLectFinal">780,176.120</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl10_slblIdDiferencia">200.230</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl10_slblValorDiferencia">$ 2,863,088.770</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl11_slblIdManguera">10</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl11_slblIdLectInicial">261,984.790</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl11_slblIdLectFinal">262,046.580</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl11_slblIdDiferencia">61.790</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl11_slblValorDiferencia">$ 556,048.210</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl12_slblIdManguera">11</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl12_slblIdLectInicial">817,656.880</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl12_slblIdLectFinal">817,850.540</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl12_slblIdDiferencia">193.660</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl12_slblValorDiferencia">$ 2,769,144.340</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl13_slblIdManguera">12</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl13_slblIdLectInicial">212,583.100</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl13_slblIdLectFinal">212,644.760</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl13_slblIdDiferencia">61.660</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl13_slblValorDiferencia">$ 554,878.340</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl14_slblIdManguera">13</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl14_slblIdLectInicial">514,765.980</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl14_slblIdLectFinal">514,908.660</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl14_slblIdDiferencia">142.680</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl14_slblValorDiferencia">$ 1,283,977.320</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl15_slblIdManguera">14</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl15_slblIdLectInicial">117,118.170</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl15_slblIdLectFinal">117,311.210</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl15_slblIdDiferencia">193.040</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl15_slblValorDiferencia">$ 2,760,278.960</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl16_slblIdManguera">15</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl16_slblIdLectInicial">231,760.570</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl16_slblIdLectFinal">231,790.130</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl16_slblIdDiferencia">29.560</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl16_slblValorDiferencia">$ 266,010.440</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl17_slblIdManguera">16</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl17_slblIdLectInicial">505,867.280</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl17_slblIdLectFinal">506,117.260</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl17_slblIdDiferencia">249.980</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl17_slblValorDiferencia">$ 3,574,464.020</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl18_slblIdManguera">17</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl18_slblIdLectInicial">91,981.690</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl18_slblIdLectFinal">92,203.290</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl18_slblIdDiferencia">221.600</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl18_slblValorDiferencia">$ 3,168,658.400</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl19_slblIdManguera">18</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl19_slblIdLectInicial">416,135.670</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl19_slblIdLectFinal">416,205.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl19_slblIdDiferencia">69.330</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl19_slblValorDiferencia">$ 623,900.670</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl20_slblIdManguera">19</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl20_slblIdLectInicial">37,448.170</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl20_slblIdLectFinal">37,643.550</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl20_slblIdDiferencia">195.380</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl20_slblValorDiferencia">$ 2,793,738.620</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl21_slblIdManguera">20</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl21_slblIdLectInicial">405,474.590</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl21_slblIdLectFinal">405,605.290</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl21_slblIdDiferencia">130.700</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl21_slblValorDiferencia">$ 1,176,169.300</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl22_slblIdManguera">21</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl22_slblIdLectInicial">936,580.200</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl22_slblIdLectFinal">936,799.750</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl22_slblIdDiferencia">219.550</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl22_slblValorDiferencia">$ 1,975,730.450</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl23_slblIdManguera">22</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl23_slblIdLectInicial">642,094.110</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl23_slblIdLectFinal">642,342.470</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl23_slblIdDiferencia">248.360</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl23_slblValorDiferencia">$ 3,551,299.640</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl24_slblIdManguera">23</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl24_slblIdLectInicial">438,774.810</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl24_slblIdLectFinal">438,790.370</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl24_slblIdDiferencia">15.560</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl24_slblValorDiferencia">$ 140,024.440</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl25_slblIdManguera">24</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl25_slblIdLectInicial">581,983.830</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl25_slblIdLectFinal">582,361.890</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl25_slblIdDiferencia">378.060</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdLecturasManguera_ctl25_slblValorDiferencia">$ 5,405,879.940</span>
+                                            </td>
+		</tr><tr style="color:LightYellow;background-color:Black;font-weight:bold;">
+			<td align="right">Totales</td><td>&nbsp;</td><td>&nbsp;</td><td align="right">3,193.960</td><td align="right">$ 41,453,860.040</td>
+		</tr>
+	</tbody></table>
+</div>
+                        </div></td>
+
+                    </tr>
+                </tbody></table>
+            </div>
+
+            <div>
+                <span style="color: black; font-weight: bold">TURNOS TRABAJADOS</span>
+            </div>
+
+            <div style="border-width: 8px; width: 95%">
+                <table style="width: 100%">
+                    <tbody><tr>
+                        <td style="text-align: right">&nbsp;</td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 100%">
+                            <div style="overflow-x: auto; width: 100%">
+
+
+                                <div>
+	<table cellspacing="0" cellpadding="3" rules="cols" border="1" id="ctl00_ContenidoMaestro1_grdTurnos" style="color:Black;background-color:White;border-color:#999999;border-width:1px;border-style:Solid;width:100%;border-collapse:collapse;">
+		<tbody><tr style="color:White;background-color:Black;font-weight:bold;">
+			<th scope="col">ID.TURNO</th><th scope="col">ISLA</th><th scope="col">NUMERO</th><th scope="col">ID. EMPLEADO</th><th scope="col">EMPLEADO</th><th scope="col">HORA INICIO</th><th scope="col">HORA FINAL</th>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl02_slblIdTurno">130684</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl02_slblIdTurno">1</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl02_slblIdTurno">1</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl02_slblIdTurno">3314</span>
+                                            </td><td align="left">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl02_slblIdTurno" style="display:inline-block;width:300px;">CESAR AUGUSTO MONSALVE             </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl02_slblSubTotalCombustible">05:48:19</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl02_slblDescCombustible">13:49:44</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl03_slblIdTurno">130694</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl03_slblIdTurno">1</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl03_slblIdTurno">2</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl03_slblIdTurno">6737</span>
+                                            </td><td align="left">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl03_slblIdTurno" style="display:inline-block;width:300px;">ANDRES FELIPE VERA CORZO           </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl03_slblSubTotalCombustible">13:52:19</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl03_slblDescCombustible">21:52:23</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl04_slblIdTurno">130685</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl04_slblIdTurno">2</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl04_slblIdTurno">1</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl04_slblIdTurno">3314</span>
+                                            </td><td align="left">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl04_slblIdTurno" style="display:inline-block;width:300px;">CESAR AUGUSTO MONSALVE             </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl04_slblSubTotalCombustible">05:48:44</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl04_slblDescCombustible">13:48:04</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl05_slblIdTurno">130695</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl05_slblIdTurno">2</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl05_slblIdTurno">2</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl05_slblIdTurno">6737</span>
+                                            </td><td align="left">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl05_slblIdTurno" style="display:inline-block;width:300px;">ANDRES FELIPE VERA CORZO           </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl05_slblSubTotalCombustible">13:52:35</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl05_slblDescCombustible">21:54:37</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl06_slblIdTurno">130686</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl06_slblIdTurno">3</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl06_slblIdTurno">1</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl06_slblIdTurno">0333</span>
+                                            </td><td align="left">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl06_slblIdTurno" style="display:inline-block;width:300px;">ERIKA PATRICIA SANDOVAL            </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl06_slblSubTotalCombustible">05:49:09</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl06_slblDescCombustible">13:46:54</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl07_slblIdTurno">130691</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl07_slblIdTurno">3</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl07_slblIdTurno">2</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl07_slblIdTurno">2325</span>
+                                            </td><td align="left">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl07_slblIdTurno" style="display:inline-block;width:300px;">SEBASTIAN MORALES ORDUZ            </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl07_slblSubTotalCombustible">13:48:43</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl07_slblDescCombustible">22:02:39</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl08_slblIdTurno">130688</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl08_slblIdTurno">4</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl08_slblIdTurno">1</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl08_slblIdTurno">0333</span>
+                                            </td><td align="left">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl08_slblIdTurno" style="display:inline-block;width:300px;">ERIKA PATRICIA SANDOVAL            </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl08_slblSubTotalCombustible">05:49:41</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl08_slblDescCombustible">13:47:48</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl09_slblIdTurno">130693</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl09_slblIdTurno">4</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl09_slblIdTurno">2</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl09_slblIdTurno">2325</span>
+                                            </td><td align="left">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl09_slblIdTurno" style="display:inline-block;width:300px;">SEBASTIAN MORALES ORDUZ            </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl09_slblSubTotalCombustible">13:49:15</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl09_slblDescCombustible">22:04:04</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl10_slblIdTurno">130687</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl10_slblIdTurno">5</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl10_slblIdTurno">1</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl10_slblIdTurno">7149</span>
+                                            </td><td align="left">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl10_slblIdTurno" style="display:inline-block;width:300px;">DIANA CAROLINA RODRIGUEZ           </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl10_slblSubTotalCombustible">05:49:25</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl10_slblDescCombustible">13:45:27</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl11_slblIdTurno">130690</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl11_slblIdTurno">5</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl11_slblIdTurno">2</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl11_slblIdTurno">7456</span>
+                                            </td><td align="left">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl11_slblIdTurno" style="display:inline-block;width:300px;">LILIANA MARCELA MEDINA RANGEL      </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl11_slblSubTotalCombustible">13:47:16</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl11_slblDescCombustible">22:00:44</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl12_slblIdTurno">130689</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl12_slblIdTurno">6</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl12_slblIdTurno">1</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl12_slblIdTurno">7149</span>
+                                            </td><td align="left">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl12_slblIdTurno" style="display:inline-block;width:300px;">DIANA CAROLINA RODRIGUEZ           </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl12_slblSubTotalCombustible">05:49:56</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl12_slblDescCombustible">13:46:08</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl13_slblIdTurno">130692</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl13_slblIdTurno">6</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl13_slblIdTurno">2</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl13_slblIdTurno">7456</span>
+                                            </td><td align="left">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl13_slblIdTurno" style="display:inline-block;width:300px;">LILIANA MARCELA MEDINA RANGEL      </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl13_slblSubTotalCombustible">13:48:59</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTurnos_ctl13_slblDescCombustible">22:02:23</span>
+                                            </td>
+		</tr>
+	</tbody></table>
+</div>
+                        </div></td>
+
+                    </tr>
+                </tbody></table>
+            </div>
+
+
+
+
+            <br>
+            <div>
+                <span style="color: black; font-weight: bold">CONSOLIDADO DE TURNOS</span>
+            </div>
+
+            <div style="border-width: 8px; width: 95%">
+                <table style="width: 100%">
+                    <tbody><tr>
+                        <td style="text-align: right">&nbsp;</td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 100%">
+                            <div style="overflow-x: auto; width: 100%">
+
+
+                                <div>
+	<table cellspacing="0" cellpadding="3" rules="cols" border="1" id="ctl00_ContenidoMaestro1_grdConsolidado" style="color:Black;background-color:White;border-color:#999999;border-width:1px;border-style:Solid;width:100%;border-collapse:collapse;">
+		<tbody><tr style="color:White;background-color:Black;font-weight:bold;">
+			<th scope="col">ID. TURNO</th><th scope="col">VOL. COMB.</th><th scope="col">SUBTOT. VTA. COMB.</th><th scope="col">DESC. VTA. COMB.</th><th scope="col">VTA. DE CALIBRACION</th><th scope="col">TOT. VTA. COMB.</th><th scope="col">TOT. VTA. CANASTILLA</th><th scope="col">TOT. CONSIGS.</th><th scope="col">TOT. VTA. NO EFECTIVO</th><th scope="col">DIF. EFECTIVO</th>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl02_slblIdTurno">130684</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl02_slblSubVolCombustible">143.670</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl02_slblSubTotalCombustible">$ 1,988,988.330</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl02_slblDescCombustible">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl02_slblDescVtaCalibracion">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl02_slblTotalCombustible">$ 1,988,988.330</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl02_slblTotalCanastilla">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl02_slblTotalConsignaciones">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl02_slblTotalVentaNE">$ 10,000.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl02_slblDifEfectivo">$ 1,978,988.330</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl03_slblIdTurno">130694</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl03_slblSubVolCombustible">166.480</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl03_slblSubTotalCombustible">$ 2,256,795.520</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl03_slblDescCombustible">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl03_slblDescVtaCalibracion">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl03_slblTotalCombustible">$ 2,256,795.520</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl03_slblTotalCanastilla">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl03_slblTotalConsignaciones">$ 3,000,000.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl03_slblTotalVentaNE">$ 398,973.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl03_slblDifEfectivo">-$ 1,142,177.480</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl04_slblIdTurno">130685</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl04_slblSubVolCombustible">119.190</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl04_slblSubTotalCombustible">$ 1,555,473.810</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl04_slblDescCombustible">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl04_slblDescVtaCalibracion">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl04_slblTotalCombustible">$ 1,555,473.810</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl04_slblTotalCanastilla">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl04_slblTotalConsignaciones">$ 3,000,000.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl04_slblTotalVentaNE">$ 100,690.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl04_slblDifEfectivo">-$ 1,545,216.190</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl05_slblIdTurno">130695</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl05_slblSubVolCombustible">153.480</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl05_slblSubTotalCombustible">$ 2,189,310.520</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl05_slblDescCombustible">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl05_slblDescVtaCalibracion">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl05_slblTotalCombustible">$ 2,189,310.520</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl05_slblTotalCanastilla">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl05_slblTotalConsignaciones">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl05_slblTotalVentaNE">$ 297,185.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl05_slblDifEfectivo">$ 1,892,125.520</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl06_slblIdTurno">130686</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl06_slblSubVolCombustible">302.610</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl06_slblSubTotalCombustible">$ 3,828,873.390</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl06_slblDescCombustible">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl06_slblDescVtaCalibracion">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl06_slblTotalCombustible">$ 3,828,873.390</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl06_slblTotalCanastilla">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl06_slblTotalConsignaciones">$ 4,000,000.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl06_slblTotalVentaNE">$ 1,001,033.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl06_slblDifEfectivo">-$ 1,172,159.610</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl07_slblIdTurno">130691</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl07_slblSubVolCombustible">214.730</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl07_slblSubTotalCombustible">$ 2,914,286.270</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl07_slblDescCombustible">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl07_slblDescVtaCalibracion">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl07_slblTotalCombustible">$ 2,914,286.270</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl07_slblTotalCanastilla">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl07_slblTotalConsignaciones">$ 3,500.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl07_slblTotalVentaNE">$ 170,687.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl07_slblDifEfectivo">$ 2,740,099.270</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl08_slblIdTurno">130688</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl08_slblSubVolCombustible">328.870</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl08_slblSubTotalCombustible">$ 4,160,216.130</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl08_slblDescCombustible">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl08_slblDescVtaCalibracion">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl08_slblTotalCombustible">$ 4,160,216.130</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl08_slblTotalCanastilla">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl08_slblTotalConsignaciones">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl08_slblTotalVentaNE">$ 652,078.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl08_slblDifEfectivo">$ 3,508,138.130</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl09_slblIdTurno">130693</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl09_slblSubVolCombustible">286.390</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl09_slblSubTotalCombustible">$ 3,724,514.610</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl09_slblDescCombustible">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl09_slblDescVtaCalibracion">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl09_slblTotalCombustible">$ 3,724,514.610</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl09_slblTotalCanastilla">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl09_slblTotalConsignaciones">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl09_slblTotalVentaNE">$ 210,009.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl09_slblDifEfectivo">$ 3,514,505.610</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl10_slblIdTurno">130687</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl10_slblSubVolCombustible">296.510</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl10_slblSubTotalCombustible">$ 3,691,246.490</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl10_slblDescCombustible">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl10_slblDescVtaCalibracion">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl10_slblTotalCombustible">$ 3,691,246.490</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl10_slblTotalCanastilla">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl10_slblTotalConsignaciones">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl10_slblTotalVentaNE">$ 71,974.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl10_slblDifEfectivo">$ 3,619,272.490</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl11_slblIdTurno">130690</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl11_slblSubVolCombustible">320.500</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl11_slblSubTotalCombustible">$ 4,071,220.500</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl11_slblDescCombustible">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl11_slblDescVtaCalibracion">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl11_slblTotalCombustible">$ 4,071,220.500</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl11_slblTotalCanastilla">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl11_slblTotalConsignaciones">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl11_slblTotalVentaNE">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl11_slblDifEfectivo">$ 4,071,220.500</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl12_slblIdTurno">130689</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl12_slblSubVolCombustible">505.500</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl12_slblSubTotalCombustible">$ 6,477,717.500</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl12_slblDescCombustible">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl12_slblDescVtaCalibracion">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl12_slblTotalCombustible">$ 6,477,717.500</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl12_slblTotalCanastilla">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl12_slblTotalConsignaciones">$ 5,500,000.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl12_slblTotalVentaNE">$ 510,161.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl12_slblDifEfectivo">$ 467,556.500</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl13_slblIdTurno">130692</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl13_slblSubVolCombustible">356.030</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl13_slblSubTotalCombustible">$ 4,595,216.970</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl13_slblDescCombustible">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl13_slblDescVtaCalibracion">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl13_slblTotalCombustible">$ 4,595,216.970</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl13_slblTotalCanastilla">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl13_slblTotalConsignaciones">$ 5,000,000.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl13_slblTotalVentaNE">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdConsolidado_ctl13_slblDifEfectivo">-$ 404,783.030</span>
+                                            </td>
+		</tr><tr style="color:LightYellow;background-color:Black;font-weight:bold;">
+			<td align="right">Totales</td><td align="right">3,193.960</td><td align="right">41,453,860.040</td><td align="right">0.000</td><td align="right">$ 0.000</td><td align="right">$ 41,453,860.040</td><td align="right">$ 0.000</td><td align="right">$ 20,503,500.000</td><td align="right">$ 3,422,790.000</td><td align="right">$ 17,527,570.040</td>
+		</tr>
+	</tbody></table>
+</div>
+                        </div></td>
+
+                    </tr>
+                </tbody></table>
+            </div>
+            <br>
+
+            <div>
+                <span style="color: black; font-weight: bold">RESUMEN POR COMBUSTIBLE</span>
+            </div>
+            <div style="border-width: 8px; width: 95%">
+                <table style="width: 100%">
+                    <tbody><tr>
+                        <td style="text-align: right">&nbsp;</td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 100%">
+                            <div style="overflow-x: auto; width: 100%">
+
+
+                                <div>
+	<table cellspacing="0" cellpadding="3" rules="cols" border="1" id="ctl00_ContenidoMaestro1_grdResumenCombustible" style="color:Black;background-color:White;border-color:#999999;border-width:1px;border-style:Solid;width:100%;border-collapse:collapse;">
+		<tbody><tr style="color:White;background-color:Black;font-weight:bold;">
+			<th scope="col">IDARTICULO</th><th scope="col">NOMBRE</th><th scope="col">NUMERO</th><th scope="col">VOLUMEN</th><th scope="col">SUBTOTAL</th><th scope="col">DESCUENTO</th><th scope="col">TOTAL</th>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl02_slblIdArticulo">2</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl02_slblIdArticulo">G. CORRIENTE                            </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl02_slblIdNumero">24</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl02_slblIdVolumen">2398.380</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl02_slblIdSubTotal">$ 34,294,435.620</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl02_slblIdDescuento">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl02_slblIdTotal">$ 34,294,435.620</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl03_slblIdArticulo">1</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl03_slblIdArticulo">DIESEL                                  </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl03_slblIdNumero">24</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl03_slblIdVolumen">795.580</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl03_slblIdSubTotal">$ 7,159,424.420</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl03_slblIdDescuento">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenCombustible_ctl03_slblIdTotal">$ 7,159,424.420</span>
+                                            </td>
+		</tr><tr style="color:LightYellow;background-color:Black;font-weight:bold;">
+			<td align="right">Totales</td><td>&nbsp;</td><td align="right">48</td><td align="right">3,193.960</td><td align="right">$ 41,453,860.040</td><td align="right">$ 0.000</td><td align="right">$ 41,453,860.040</td>
+		</tr>
+	</tbody></table>
+</div>
+                        </div></td>
+
+                    </tr>
+                </tbody></table>
+            </div>
+
+            <div>
+                <span style="color: black; font-weight: bold">RESUMEN POR TANQUE</span>
+            </div>
+
+            <div style="border-width: 8px; width: 95%">
+                <table style="width: 100%">
+                    <tbody><tr>
+                        <td style="text-align: right">&nbsp;</td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 100%">
+                            <div style="overflow-x: auto; width: 100%">
+
+
+                                <div>
+	<table cellspacing="0" cellpadding="3" rules="cols" border="1" id="ctl00_ContenidoMaestro1_grdTanques" style="color:Black;background-color:White;border-color:#999999;border-width:1px;border-style:Solid;width:100%;border-collapse:collapse;">
+		<tbody><tr style="color:White;background-color:Black;font-weight:bold;">
+			<th scope="col">IDTANQUE</th><th scope="col">COMBUSTIBLE</th><th scope="col">NUMERO</th><th scope="col">VOLUMEN</th><th scope="col">SUBTOTAL</th><th scope="col">DESCUENTO</th><th scope="col">TOTAL</th>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl02_slblIdTanque">1</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl02_slblIdArticulo">G. CORRIENTE                            </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl02_slblIdNumero">24</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl02_slblIdVolumen">2398.380</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl02_slblIdSubTotal">$ 34,294,435.620</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl02_slblIdDescuento">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl02_slblIdTotal">$ 34,294,435.620</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl03_slblIdTanque">2</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl03_slblIdArticulo">DIESEL                                  </span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl03_slblIdNumero">24</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl03_slblIdVolumen">795.580</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl03_slblIdSubTotal">$ 7,159,424.420</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl03_slblIdDescuento">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdTanques_ctl03_slblIdTotal">$ 7,159,424.420</span>
+                                            </td>
+		</tr><tr style="color:LightYellow;background-color:Black;font-weight:bold;">
+			<td align="right">Totales</td><td>&nbsp;</td><td align="right">48</td><td align="right">3,193.960</td><td align="right">$ 41,453,860.040</td><td align="right">$ 0.000</td><td align="right">$ 41,453,860.040</td>
+		</tr>
+	</tbody></table>
+</div>
+                        </div></td>
+
+                    </tr>
+                </tbody></table>
+            </div>
+
+
+
+            <br>
+            <div>
+                <span style="color: black; font-weight: bold">RESUMEN POR FORMAPAGO COMBUSTIBLE</span>
+            </div>
+
+            <div style="border-width: 8px; width: 95%">
+                <table style="width: 100%">
+                    <tbody><tr>
+                        <td style="text-align: right">&nbsp;</td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 100%">
+                            <div style="overflow-x: auto; width: 100%">
+
+
+                                <div>
+	<table cellspacing="0" cellpadding="3" rules="cols" border="1" id="ctl00_ContenidoMaestro1_grdResumenFormaPago" style="color:Black;background-color:White;border-color:#999999;border-width:1px;border-style:Solid;width:100%;border-collapse:collapse;">
+		<tbody><tr style="color:White;background-color:Black;font-weight:bold;">
+			<th scope="col">IDFORMAPAGO</th><th scope="col">NOMBRE</th><th scope="col">NUMERO</th><th scope="col">VOLUMEN</th><th scope="col">SUBTOTAL</th><th scope="col">DESCUENTO</th><th scope="col">TOTAL</th>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl02_slblIdFormaPago">1</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl02_slblIdArticulo">EFECTIVO</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl02_slblIdNumero">1115</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl02_slblIdVolumen">2880.080</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl02_slblIdSubTotal">$ 38,035,482.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl02_slblIdDescuento">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl02_slblIdTotal">$ 38,035,482.000</span>
+                                            </td>
+		</tr><tr style="background-color:#CCCCCC;">
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl03_slblIdFormaPago">3</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl03_slblIdArticulo">CREDITO DIRECTO</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl03_slblIdNumero">32</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl03_slblIdVolumen">305.891</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl03_slblIdSubTotal">$ 3,350,798.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl03_slblIdDescuento">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl03_slblIdTotal">$ 3,350,798.000</span>
+                                            </td>
+		</tr><tr>
+			<td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl04_slblIdFormaPago">2</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl04_slblIdArticulo">ANTICIPO</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl04_slblIdNumero">1</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl04_slblIdVolumen">8.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl04_slblIdSubTotal">$ 71,992.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl04_slblIdDescuento">$ 0.000</span>
+                                            </td><td align="right">
+                                                <span id="ctl00_ContenidoMaestro1_grdResumenFormaPago_ctl04_slblIdTotal">$ 71,992.000</span>
+                                            </td>
+		</tr><tr style="color:LightYellow;background-color:Black;font-weight:bold;">
+			<td align="right">Totales</td><td>&nbsp;</td><td align="right">1,148</td><td align="right">3,193.971</td><td align="right">$ 41,458,272.000</td><td align="right">$ 0.000</td><td align="right">$ 41,458,272.000</td>
+		</tr>
+	</tbody></table>
+</div>
+                        </div></td>
+
+                    </tr>
+                </tbody></table>
+            </div>
+
+
+            <br>
+
+            <div>
+                <span style="color: black; font-weight: bold">FACTURAS DE CANASTILLA</span>
+            </div>
+            <div style="border-width: 8px; width: 95%">
+                <table style="width: 100%">
+                    <tbody><tr>
+                        <td style="text-align: right">&nbsp;</td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 100%">
+                            <div>
+	<table cellspacing="0" cellpadding="3" rules="cols" border="1" id="ctl00_ContenidoMaestro1_grdVentasCanastilla" style="color:Black;background-color:White;border-color:#999999;border-width:1px;border-style:Solid;width:100%;border-collapse:collapse;">
+		<tbody><tr>
+			<td>No hay resultados.</td>
+		</tr>
+	</tbody></table>
+</div>
+
+                        </td>
+                        <td>
+                    </td></tr>
+                </tbody></table>
+            </div>
+
+            <div>
+                <span style="color: black; font-weight: bold">APROBACION</span>
+            </div>
+            <div style="border-width: 8px; width: 95%; border-bottom-style: solid; border-color: blue">
+                <table style="width: 100%" border="1">
+                    <tbody><tr>
+                        <td style="width: 25%; height: 32px; text-align: left">Aprobador:</td>
+
+                        <td style="width: 75%; height: 32px; text-align: left">
+                            <input name="ctl00$ContenidoMaestro1$txtAprobador" type="text" id="ctl00_ContenidoMaestro1_txtAprobador" style="width:60%;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 25%; height: 32px; text-align: left">Observaciones:</td>
+
+                        <td style="width: 75%; height: 32px; text-align: left">
+                            <input name="ctl00$ContenidoMaestro1$txtObser" type="text" id="ctl00_ContenidoMaestro1_txtObser" style="height:55px;width:90%;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 25%; height: 32px; text-align: left">Aprobar:</td>
+
+                        <td style="text-align: left; height: 51px;width: 75%">
+
+                            <div id="ctl00_ContenidoMaestro1_UpdatePanelAprobar">
+	
+                                    <input type="image" name="ctl00$ContenidoMaestro1$imgBtnAprobar" id="ctl00_ContenidoMaestro1_imgBtnAprobar" src="./Clode Automatización REPORTE CLODE_files/Aprobacion valeo gas_32.png" style="height:50px;width:67px;border-width:0px;">
+                                    
+                                
+</div>
+                            <div id="ctl00_ContenidoMaestro1_UpdateProgressAprobar" style="display:none;" role="status" aria-hidden="true">
+	
+                                    <div id="BackgroundEsperaAprobar">
+                                        <div id="ProgressEsperaAprobar">
+                                            <h6>
+                                                <p style="text-align: center; color:blue"><b>Procesando Aprobación, Espere por favor..<br>
+                                                </b></p>
+                                            </h6>
+                                        </div>
+                                    </div>
+                                
+</div>
+                            
+
+                            
+                        </td>
+
+                    </tr>
+
+                    <tr>
+                        <td style="width: 25%; height: 32px; text-align: left">Resultado:</td>
+
+
+                        <td style="width: 75%; height: 32px; text-align: left">
+                            <span id="ctl00_ContenidoMaestro1_lblResultadoAprobacion" style="display:inline-block;height:55px;width:90%;"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                    </tr>
+
+
+                </tbody></table>
+
+            </div>
+
+
+            
+<link href="./Clode Automatización REPORTE CLODE_files/Estilo1.css" rel="stylesheet" type="text/css">
+
+
+
+<div id="ctl00_ContenidoMaestro1_Mensaje1_pnlPopup" class="modalPopup" style="display: none; position: fixed; z-index: 100001; left: 754px; top: 363px;">
+	
+    <table cellpadding="1" cellspacing="1" class="TablaPopup">
+        <tbody><tr class="Cabeza">
+            <td id="ctl00_ContenidoMaestro1_Mensaje1_tdCaption" colspan="2" align="left">
+                <span id="ctl00_ContenidoMaestro1_Mensaje1_lblCaption"></span>
+            </td>
+	
+        </tr>
+        <tr height="20">
+        <td colspan="2"></td>
+        </tr>
+        <tr>
+            <td style="width: 60px" valign="middle" align="center">
+                <img id="ctl00_ContenidoMaestro1_Mensaje1_imgInfo" src="./Clode Automatización REPORTE CLODE_files/Info-48x48.png" style="border-width:0px;">
+            </td>
+            <td valign="middle" align="left">
+                <span id="ctl00_ContenidoMaestro1_Mensaje1_lblMessage" class="EtiquetaMensaje"></span>
+            </td>
+        </tr>
+        <tr height="20">
+        <td colspan="2"></td>
+        </tr>
+        <tr>
+            <td colspan="2" align="center">
+                  <input type="image" name="ctl00$ContenidoMaestro1$Mensaje1$ImgAceptar" id="ctl00_ContenidoMaestro1_Mensaje1_ImgAceptar" onmouseout="this.src=&#39;../Estilos/Estilo1/Imagenes/Boton_AzulClaro_Aceptar_nrm.png&#39;" onmouseover="this.src=&#39;../Estilos/Estilo1/Imagenes/Boton_AzulClaro_Aceptar_ovr.png&#39;" src="./Clode Automatización REPORTE CLODE_files/Boton_AzulClaro_Aceptar_nrm.png" onclick="fnClickOK(&#39;ctl00$ContenidoMaestro1$Mensaje1$ImgAceptar&#39;,&#39;&#39;);" style="border-width:0px;">&nbsp;
+                
+            </td>
+        </tr>
+    </tbody></table>
+
+</div>
+
+<script type="text/javascript">
+        function fnClickOK(sender, e)
+        {
+            __doPostBack(sender,e);
+        }
+</script>
+
+
+        <div id="ctl00_ContenidoMaestro1_Mensaje1_mpeMensaje_backgroundElement" class="modalBackground" style="display: none; position: fixed; left: 0px; top: 0px; z-index: 10000; width: 1508px; height: 2109px;"></div></div>
+
+                                                            <!-- PÁGINA -->
+                                                        </td>
+                                                    </tr>
+                                                </tbody></table>
+                                                <!-- * -->
+                                            </td>
+                                        </tr>
+                                    </tbody></table>
+                                    <!--CONTENIDO DE PAGINA-->
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="Pie">
+                                    <!-- CONTENIDO DE PIE -->
+                                    <table cellpadding="1" cellspacing="1" width="100%">
+                                        <tbody><tr>
+
+                                            <td width="100%">
+                                                <div class="footer">
+                                                    <br>
+                                                    Versión 1.0.00 [Aviso Legal] [Privacidad]
+                                                    <a id="ctl00_HyperLink1" href="http://www.c-sharpcorner.com/" target="_blank" style="color:#007FFF;text-decoration: none"> Clode Tecnology </a>
+                                                    Todos los Derechos Reservados.
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody></table>
+                                    <!-- CONTENDEOR PIE -->
+                                </td>
+                            </tr>
+                        </tbody></table>
+                        <!-- CONTENIDO DE PIE -->
+                    </td>
+                </tr>
+            </tbody></table>
+            <input type="hidden" name="ctl00$ClpPanelControl_ClientState" id="ctl00_ClpPanelControl_ClientState" value="true">
+            <input type="hidden" name="ctl00$ClpProcesos_ClientState" id="ctl00_ClpProcesos_ClientState" value="true">
+            <input type="hidden" name="ctl00$CollapsiblePanelExtender3_ClientState" id="ctl00_CollapsiblePanelExtender3_ClientState" value="true">
+            <input type="hidden" name="ctl00$ClpReportes_ClientState" id="ctl00_ClpReportes_ClientState" value="true">
+            
+<link href="./Clode Automatización REPORTE CLODE_files/Estilo1.css" rel="stylesheet" type="text/css">
+
+
+
+<div id="ctl00_Mensaje1_pnlPopup" class="modalPopup" style="display: none; position: fixed; z-index: 100001; left: 754px; top: 363px;">
+	
+    <table cellpadding="1" cellspacing="1" class="TablaPopup">
+        <tbody><tr class="Cabeza">
+            <td id="ctl00_Mensaje1_tdCaption" colspan="2" align="left">
+                <span id="ctl00_Mensaje1_lblCaption"></span>
+            </td>
+	
+        </tr>
+        <tr height="20">
+        <td colspan="2"></td>
+        </tr>
+        <tr>
+            <td style="width: 60px" valign="middle" align="center">
+                <img id="ctl00_Mensaje1_imgInfo" src="./Clode Automatización REPORTE CLODE_files/Info-48x48.png" style="border-width:0px;">
+            </td>
+            <td valign="middle" align="left">
+                <span id="ctl00_Mensaje1_lblMessage" class="EtiquetaMensaje"></span>
+            </td>
+        </tr>
+        <tr height="20">
+        <td colspan="2"></td>
+        </tr>
+        <tr>
+            <td colspan="2" align="center">
+                  <input type="image" name="ctl00$Mensaje1$ImgAceptar" id="ctl00_Mensaje1_ImgAceptar" onmouseout="this.src=&#39;../Estilos/Estilo1/Imagenes/Boton_AzulClaro_Aceptar_nrm.png&#39;" onmouseover="this.src=&#39;../Estilos/Estilo1/Imagenes/Boton_AzulClaro_Aceptar_ovr.png&#39;" src="./Clode Automatización REPORTE CLODE_files/Boton_AzulClaro_Aceptar_nrm.png" onclick="fnClickOK(&#39;ctl00$Mensaje1$ImgAceptar&#39;,&#39;&#39;);" style="border-width:0px;">&nbsp;
+                
+            </td>
+        </tr>
+    </tbody></table>
+
+</div>
+
+<script type="text/javascript">
+        function fnClickOK(sender, e)
+        {
+            __doPostBack(sender,e);
+        }
+</script>
+        <div id="ctl00_Mensaje1_mpeMensaje_backgroundElement" class="modalBackground" style="display: none; position: fixed; left: 0px; top: 0px; z-index: 10000; width: 1508px; height: 2109px;"></div></div>
+    
+
+<script type="text/javascript">
+//<![CDATA[
+Sys.Application.add_init(function() {
+    $create(Sys.UI._UpdateProgress, {"associatedUpdatePanelId":"ctl00_ContenidoMaestro1_UpdatePanelEspera","displayAfter":500,"dynamicLayout":true}, null, null, $get("ctl00_ContenidoMaestro1_UpdateProgressEspera"));
+});
+Sys.Application.add_init(function() {
+    $create(AjaxControlToolkit.CalendarBehavior, {"format":"dd/MM/yyyy","id":"ctl00_ContenidoMaestro1_txtFecha_CalendarExtender"}, null, null, $get("ctl00_ContenidoMaestro1_txtFecha"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.UI._UpdateProgress, {"associatedUpdatePanelId":"ctl00_ContenidoMaestro1_UpdatePanelAprobar","displayAfter":500,"dynamicLayout":true}, null, null, $get("ctl00_ContenidoMaestro1_UpdateProgressAprobar"));
+});
+Sys.Application.add_init(function() {
+    $create(AjaxControlToolkit.ModalPopupBehavior, {"BackgroundCssClass":"modalBackground","PopupControlID":"ctl00_ContenidoMaestro1_Mensaje1_pnlPopup","dynamicServicePath":"/Edsclodeweb/Procesos/PlanillaDiaria.aspx","id":"ctl00_ContenidoMaestro1_Mensaje1_mpeMensaje"}, null, null, $get("ctl00_ContenidoMaestro1_Mensaje1_pnlPopup"));
+});
+Sys.Application.add_init(function() {
+    $create(AjaxControlToolkit.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_ClpPanelControl_ClientState","CollapseControlID":"ctl00_PnlPanelControlCabeza","Collapsed":true,"CollapsedText":"(Show Details...)","ExpandControlID":"ctl00_PnlPanelControlCabeza","ExpandedText":"(Hide Details...)","ImageControlID":"ctl00_Image1","SuppressPostBack":true,"TextLabelID":"Label1","id":"ctl00_ClpPanelControl"}, null, null, $get("ctl00_PnlPanelControl"));
+});
+Sys.Application.add_init(function() {
+    $create(AjaxControlToolkit.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_ClpProcesos_ClientState","CollapseControlID":"ctl00_PnlProcesosMenuCabeza","Collapsed":true,"CollapsedText":"(Show Details...)","ExpandControlID":"ctl00_PnlProcesosMenuCabeza","ExpandedText":"(Hide Details...)","ImageControlID":"ctl00_Image1","SuppressPostBack":true,"TextLabelID":"Label1","id":"ctl00_ClpProcesos"}, null, null, $get("ctl00_PnlProcesos"));
+});
+Sys.Application.add_init(function() {
+    $create(AjaxControlToolkit.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_CollapsiblePanelExtender3_ClientState","CollapseControlID":"ctl00_PnlConsultasMenuCabeza","Collapsed":true,"CollapsedText":"(Show Details...)","ExpandControlID":"ctl00_PnlConsultasMenuCabeza","ExpandedText":"(Hide Details...)","ImageControlID":"ctl00_Image1","SuppressPostBack":true,"TextLabelID":"Label1","id":"ctl00_CollapsiblePanelExtender3"}, null, null, $get("ctl00_PnlConsultasMenu"));
+});
+Sys.Application.add_init(function() {
+    $create(AjaxControlToolkit.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_ClpReportes_ClientState","CollapseControlID":"ctl00_PnlReportesCabeza","Collapsed":true,"CollapsedText":"(Show Details...)","ExpandControlID":"ctl00_PnlReportesCabeza","ExpandedText":"(Hide Details...)","ImageControlID":"ctl00_Image1","SuppressPostBack":true,"TextLabelID":"Label1","id":"ctl00_ClpReportes"}, null, null, $get("ctl00_PnlReportesMenu"));
+});
+Sys.Application.add_init(function() {
+    $create(AjaxControlToolkit.ModalPopupBehavior, {"BackgroundCssClass":"modalBackground","PopupControlID":"ctl00_Mensaje1_pnlPopup","dynamicServicePath":"/Edsclodeweb/Procesos/PlanillaDiaria.aspx","id":"ctl00_Mensaje1_mpeMensaje"}, null, null, $get("ctl00_Mensaje1_pnlPopup"));
+});
+//]]>
+</script>
+<span style="display: none !important;"><input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value=""></span><span style="display: none !important;"><input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value=""></span><span style="display: none !important;"><input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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"></span><span style="display: none !important;"><input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="6EE8C636"></span><span style="display: none !important;"><input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value=""></span><span style="display: none !important;"><input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="KBz0mbb/KmnWv8It8Ab0Sk2RFRJ9ER9AeJopBYmMRLVP5uloHOBlwNkMvliqLXtmwgomPd9Wk2bD+OqMk+4CLfPAgWP9lvYQfL7qYt6n+avfYoiejtVxBlZsCe/mhJg9aqljDjCQaPRg63ITgZtUbtIvCzIKS530XYAAnlQTqOkDkkuONksLt8VdPzMcEsstPeL1XDeWuU47xTqGUvBTfHJ0OX0tDWoxjJWbGPYiOiVY4ct5n2Zp1BNNE3tNCF9yvmtLuUdXp8eNGc6ypKv/jHvuhrYSMWNxgmuLFTNSQvGNcgHOodIBwyG6eoNbpX2C++00SPfcs1Vtt0dJ92ScVTyTlyMjDDoiOt43FQoiusQuPT78DlOIy9NFHYzJ42aN"></span><span style="display: none !important;"><input type="hidden" name="__AjaxControlToolkitCalendarCssLoaded" id="__AjaxControlToolkitCalendarCssLoaded" value=""></span></form>
+
+
+</body></html>

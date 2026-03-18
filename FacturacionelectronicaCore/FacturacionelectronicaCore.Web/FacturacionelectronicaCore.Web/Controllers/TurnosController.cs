@@ -31,6 +31,19 @@ namespace FacturacionelectronicaCore.Web.Controllers
             return Ok(result);
         }
 
+        [HttpPost("GetTurnoReporteDia")]
+        public async Task<ActionResult<IEnumerable<TurnoReporte>>> GetDia(FiltroTurnoDia filtro)
+        {
+            var result = await _turnoNegocio.GetDia(filtro);
+
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
+        }
+
 
         [HttpPost]
         public async Task<ActionResult<int>> AddOrUpdate(Turno turno)

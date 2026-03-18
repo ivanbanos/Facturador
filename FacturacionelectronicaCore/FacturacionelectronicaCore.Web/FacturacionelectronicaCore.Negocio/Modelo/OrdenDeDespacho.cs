@@ -39,6 +39,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public decimal SubTotal { get; set; }
         public DateTime FechaProximoMantenimiento { get; set; }
         public string Vendedor { get; set; }
+        public string TurnoGuid { get; set; }
 
         public Tercero Tercero { get; set; }
         public string idFacturaElectronica { get; set; }

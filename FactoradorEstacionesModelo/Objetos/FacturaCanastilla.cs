@@ -24,5 +24,6 @@ namespace EnviadorInformacionService.Models
 		public float descuento { get; set; }
 		public float iva { get; set; }
 		public float total { get; set; }
+		public string TurnoGuid { get; set; }
 	}
 }

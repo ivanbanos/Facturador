@@ -31,7 +31,21 @@ namespace FacturadorApiSP.Application.Commands
             var turnoA = await _databaseHandler.ObtenerTurnoPorIsla(request.Isla, cancellationToken);
             if(turnoA == null)
             {
-                await _databaseHandler.MandarImprimirObjeto(request.Isla, DateTime.Now.Date, 0, "CierreCanastilla");
+                var fechaInicioBusqueda = DateTime.Now.Date.AddDays(-2);
+                var fechaFinBusqueda = DateTime.Now.Date;
+                var turnos = await _databaseHandler.GetTurnosByFechas(fechaInicioBusqueda, fechaFinBusqueda);
+                var turnoFallback = turnos
+                    .Where(x => string.Equals((x.Isla ?? string.Empty).Trim(), request.Isla.ToString(), StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(x => x.FechaApertura)
+                    .FirstOrDefault();
+
+                if (turnoFallback == null || turnoFallback.numero <= 0)
+                {
+                    _logger.LogWarning("No se encontro turno valido para imprimir cierre canastilla en isla {Isla}", request.Isla);
+                    return "No se encontro turno valido para imprimir";
+                }
+
+                await _databaseHandler.MandarImprimirObjeto(request.Isla, turnoFallback.FechaApertura, turnoFallback.numero, "CierreCanastilla");
             } else
             {
                 await _databaseHandler.MandarImprimirObjeto(request.Isla, turnoA.FechaApertura, turnoA.numero, "CierreCanastilla");

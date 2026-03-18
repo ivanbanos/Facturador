@@ -34,4 +34,49 @@ const FiltrarInfoTurnos = async (fechaInicial, fechaFinal) => {
   }
 }
 
+export const FiltrarInfoTurnosDia = async ({
+  fecha,
+  empleado,
+  isla,
+  numeroTurno,
+  surtidor,
+  manguera,
+  combustible,
+}) => {
+  try {
+    const httpService = new HttpService()
+    const estacionGuid = localStorage.getItem('estacionGuid')
+
+    const token = localStorage.getItem('token')
+    if (!token) {
+      console.error('No token found in localStorage')
+      return 'fail'
+    }
+
+    const body = {
+      fecha,
+      estacion: estacionGuid,
+      empleado: empleado || null,
+      isla: isla || null,
+      numeroTurno: numeroTurno || null,
+      surtidor: surtidor || null,
+      manguera: manguera || null,
+      combustible: combustible || null,
+    }
+
+    const url = `${window.SERVER_URL}/Turnos/GetTurnoReporteDia`
+    const response = await httpService.post(url, body)
+
+    if (response === 'fail') {
+      console.error('Authentication failed for FiltrarInfoTurnosDia')
+      return 'fail'
+    }
+
+    return response
+  } catch (error) {
+    console.error('FiltrarInfoTurnosDia error:', error)
+    return 'fail'
+  }
+}
+
 export default FiltrarInfoTurnos

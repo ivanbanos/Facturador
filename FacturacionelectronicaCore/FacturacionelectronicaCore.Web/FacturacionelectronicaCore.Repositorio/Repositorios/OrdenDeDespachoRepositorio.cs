@@ -52,6 +52,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                     .Set(x => x.NombreTercero, factura.NombreTercero)
                     .Set(x => x.Placa, factura.Placa)
                     .Set(x => x.idFacturaElectronica, factura.idFacturaElectronica)
+                    .Set(x => x.TurnoGuid, factura.TurnoGuid)
                     .Set(x => x.FormaDePago, factura.FormaDePago)
                     .Set(x => x.FormaDePago2, factura.FormaDePago2)
                     .Set(x => x.Total1, factura.Total1)

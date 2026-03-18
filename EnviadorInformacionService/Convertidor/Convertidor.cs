@@ -9,6 +9,10 @@ using System.Data;
 using System.Linq;
 using Factura = FactoradorEstacionesModelo.Objetos.Factura;
 using Resolucion = FactoradorEstacionesModelo.Objetos.Resolucion;
+using SigesCombustible = FactoradorEstacionesModelo.Siges.Combustible;
+using SigesManguera = FactoradorEstacionesModelo.Siges.MangueraSiges;
+using SigesTurno = FactoradorEstacionesModelo.Siges.TurnoSiges;
+using SigesTurnoSurtidor = FactoradorEstacionesModelo.Siges.TurnoSurtidor;
 using Tercero = FactoradorEstacionesModelo.Objetos.Tercero;
 
 namespace FactoradorEstacionesModelo.Convertidor
@@ -232,6 +236,55 @@ namespace FactoradorEstacionesModelo.Convertidor
             List<int> response = new List<int>();
             return dt1.AsEnumerable().Select(dr => dr.Field<int>("ventaId")).ToList();
         }
+
+        public IEnumerable<SigesTurno> ConvertirTurnoSiges(DataTable dt)
+        {
+            List<SigesTurno> response = new List<SigesTurno>();
+            foreach (var dr in dt.AsEnumerable())
+            {
+                response.Add(
+                new SigesTurno()
+                {
+                    Id = dr.Field<int>("Id"),
+                    Empleado = dr.Field<string>("Nombre"),
+                    Isla = dr.Field<string>("Isla"),
+                    IdEstado = dr.Field<int>("IdEstado"),
+                    FechaApertura = dr.Field<DateTime>("FechaApertura"),
+                    FechaCierre = dr.Field<DateTime?>("FechaCierre"),
+                    Numero = dt.Columns.Contains("Numero") ? Convert.ToInt32(dr["Numero"]) : 0
+                });
+            }
+
+            return response;
+        }
+
+        public List<SigesTurnoSurtidor> ConvertirTurnoSurtidoresSiges(DataTable dt)
+        {
+            List<SigesTurnoSurtidor> response = new List<SigesTurnoSurtidor>();
+
+            response.AddRange(
+                dt.AsEnumerable().Select(dr => new SigesTurnoSurtidor()
+                {
+                    Apertura = dr.Field<double>("Apertura"),
+                    Cierre = dr.Field<double?>("Cierre"),
+                    Combustible = new SigesCombustible()
+                    {
+                        Id = dr.Field<int>("IdCombustible"),
+                        Descripcion = dr.Field<string>("combustible"),
+                        Precio = dr.Field<double>("precio")
+                    },
+                    Manguera = new SigesManguera()
+                    {
+                        Id = dr.Field<int>("Id"),
+                        Descripcion = dr.Field<string>("descripcion"),
+                        Ubicacion = dr.Field<string>("ubicacion")
+                    },
+                })
+            );
+
+            return response;
+        }
+
         public IEnumerable<FormasPagos> ConvertirFormasPagos(DataTable dt)
         {
             List<FormasPagos> response = new List<FormasPagos>();
@@ -323,6 +376,9 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.terceroId.tipoIdentificacionS = dr.Field<string>("descripcion");
                     fc.Empleado = dr.Field<string>("Vendedor");
                     fc.Isla = dr.Field<string>("isla");
+                    fc.TurnoGuid = dr.Table.Columns.Contains("turnoguid") && !dr.IsNull("turnoguid")
+                        ? dr.Field<string>("turnoguid")
+                        : null;
                     fc.Placa = dr.IsNull("placa") ? string.Empty : dr.Field<string>("placa");
 
 

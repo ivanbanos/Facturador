@@ -316,7 +316,8 @@ as
 begin try
     set nocount on;
 	declare @terceroId int, @Placa varchar(50), @Kilometraje varchar(50), @COD_FOR_PAG smallint, @fecha datetime,
-			@descripcionCombustible varchar(100), @precioCombustible float;
+			@descripcionCombustible varchar(100), @precioCombustible float,
+			@turnoGuid varchar(50), @fechaTurno int, @numeroTurno int, @islaTurno int;
 
 	
 	declare @COD_CLI varchar(15), @identificacion varchar(50);
@@ -326,9 +327,31 @@ begin try
 	@Kilometraje = i.KIL_ACT,
 	@COD_FOR_PAG = i.COD_FOR_PAG,
 	@COD_CLI = i.COD_CLI,
-	@fecha = dbo.Finteger(i.FECHA_REAL) + dbo.HINTEGER(i.hora)
+	@fecha = dbo.Finteger(i.FECHA_REAL) + dbo.HINTEGER(i.hora),
+	@fechaTurno = i.FECHA_REAL,
+	@numeroTurno = i.NUM_TUR,
+	@islaTurno = i.COD_ISL
 	from VENTAS i
 	where i.CONSECUTIVO = @ventaId
+
+	if @islaTurno is not null and (@fechaTurno is null or @numeroTurno is null)
+	begin
+		select top(1)
+			@fechaTurno = isnull(@fechaTurno, t.FECHA),
+			@numeroTurno = isnull(@numeroTurno, t.NUM_TUR)
+		from TURN_EST t
+		where t.COD_ISL = @islaTurno
+		  and (
+				(@fechaTurno is not null and t.FECHA = @fechaTurno)
+				or @fechaTurno is null
+			  )
+		order by case when t.estado != 'C' then 0 else 1 end, t.FECHA desc, t.NUM_TUR desc;
+	end
+
+	if @fechaTurno is not null and @numeroTurno is not null and @islaTurno is not null
+	begin
+		select @turnoGuid = CONVERT(varchar(36), CONVERT(uniqueidentifier, HASHBYTES('MD5', CONCAT(CONVERT(varchar(20), @fechaTurno), '|', CONVERT(varchar(20), @islaTurno), '|', CONVERT(varchar(20), @numeroTurno)))))
+	end
 	
 	select @identificacion = nit from CLIENTES WHERE @COD_CLI = COD_CLI
 
@@ -407,16 +430,16 @@ begin try
 		end
 	end
 
-	if @descripcionCombustible is not null and @precioCombustible > 0
-	begin
-		exec [dbo].[ActualizarPrecioCombustible] @descripcionCombustible, @precioCombustible,
-			case
-				when lower(replace(replace(@descripcionCombustible, '.', ''), ' ', '')) like '%gnvc%'
-					or lower(@descripcionCombustible) like '%gas%'
-				then 1 else 0
-			end;
-	end
-    exec Facturacion_Electronica.dbo.CrearFactura @ventaId, @terceroId, @Placa, @Kilometraje, @COD_FOR_PAG, @fecha
+	--if @descripcionCombustible is not null and @precioCombustible > 0
+	--begin
+	--	exec [dbo].[ActualizarPrecioCombustible] @descripcionCombustible, @precioCombustible,
+	--		case
+	--			when lower(replace(replace(@descripcionCombustible, '.', ''), ' ', '')) like '%gnvc%'
+	--				or lower(@descripcionCombustible) like '%gas%'
+	--			then 1 else 0
+	--		end;
+	--end
+	exec Facturacion_Electronica.dbo.CrearFactura @ventaId, @terceroId, @Placa, @Kilometraje, @COD_FOR_PAG, @fecha, @turnoGuid = @turnoGuid
 end try
 begin catch
     declare 
@@ -618,7 +641,7 @@ CREATE procedure [dbo].[ObtenerTurnoIsla]
 as
 begin try
     set nocount on;
-	select  NUM_TUR as numero, EMPLEADO.NOMBRE, empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(FECHA) as FechaApertura ,dbo.Finteger(FECHA)  as FechaCierre ,  FECHA
+	select  NUM_TUR as numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(FECHA) as FechaApertura ,dbo.Finteger(FECHA)  as FechaCierre ,  FECHA
  from TURN_EST
 inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
 inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
@@ -647,7 +670,7 @@ CREATE procedure [dbo].[ObtenerTurnoIslaPorVenta]
 as
 begin try
     set nocount on;
-	select  TURN_EST.NUM_TUR as Numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(TURN_EST.FECHA) as FechaApertura ,dbo.Finteger(TURN_EST.FECHA) as FechaCierre,  , FECHA 
+	select  TURN_EST.NUM_TUR as Numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(TURN_EST.FECHA) as FechaApertura ,dbo.Finteger(TURN_EST.FECHA) as FechaCierre, TURN_EST.FECHA 
  from TURN_EST
 inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
 inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL

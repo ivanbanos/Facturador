@@ -30,6 +30,7 @@ namespace FactoradorEstacionesModelo.Objetos
         public IEnumerable<Venta> Ventas { get; set; }
         public bool habilitada { get; internal set; }
         public int codigoFormaPago { get; set; }
+        public string TurnoGuid { get; set; }
 
     }
 }

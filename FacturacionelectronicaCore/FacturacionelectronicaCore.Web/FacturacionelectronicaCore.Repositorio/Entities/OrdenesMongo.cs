@@ -39,12 +39,12 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
             IdTerceroLocal = orden.IdTerceroLocal;
             IdEstacion = orden.IdEstacion;
             SubTotal = orden.SubTotal;
+            TurnoGuid = orden.TurnoGuid;
             FechaProximoMantenimiento = orden.FechaProximoMantenimiento;
             Vendedor = orden.Vendedor;
             idFacturaElectronica = orden.idFacturaElectronica;
         }
 
         public string EstacionGuid { get; set; }
-        public string TurnoGuid { get; set; }
     }
 }

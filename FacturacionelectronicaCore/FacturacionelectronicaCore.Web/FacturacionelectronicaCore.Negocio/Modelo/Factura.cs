@@ -44,5 +44,6 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public string idFacturaElectronica { get; set; }
         public string IdEstacion { get; set; }
         public DateTime FechaReporte { get; set; }
+        public string TurnoGuid { get; set; }
     }
 }

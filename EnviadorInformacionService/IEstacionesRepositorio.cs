@@ -3,6 +3,7 @@ using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
+using System;
 using System.Collections.Generic;
 
 namespace FacturadorEstacionesRepositorio
@@ -29,6 +30,9 @@ namespace FacturadorEstacionesRepositorio
         IEnumerable<ObjetoImprimir> GetObjetoImprimir();
         CuposRequest GetInfoCupos();
         void ActualizarPreciosCombustibles(IEnumerable<Combustible> combustibles);
+        IEnumerable<TurnoSiges> GetTurnosByFechas(DateTime desde, DateTime hasta);
+        IEnumerable<FactoradorEstacionesModelo.Siges.TurnoSurtidor> ObtenerTurnoInfo(int id);
+        void PrepararRetroactivoTurnosPendientes();
 
     }
 }

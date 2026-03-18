@@ -37,6 +37,7 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         public int IdTerceroLocal { get; set; }
         public int IdEstacion { get; set; }
         public decimal SubTotal { get; set; }
+        public string TurnoGuid { get; set; }
         
         [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
         public DateTime FechaProximoMantenimiento { get; set; }

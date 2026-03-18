@@ -32,12 +32,26 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         {
             var filter = Builders<Turno>.Filter.Eq("FechaApertura", turno.FechaApertura)
                 & Builders<Turno>.Filter.Eq("Numero", turno.Numero)
-                & Builders<Turno>.Filter.Eq("Isla", turno.Isla);
+                & Builders<Turno>.Filter.Eq("Isla", turno.Isla)
+                & Builders<Turno>.Filter.Eq("EstacionGuid", turno.EstacionGuid);
+
             var turnos = await _mongoHelper.GetFilteredDocuments<Turno>(_repositorioConfig.Cliente, "Turnos", filter);
-            if (!turnos.Any(x => x.EstacionGuid == turno.EstacionGuid.ToString()))
+            var turnoExistente = turnos.FirstOrDefault();
+
+            if (turnoExistente == null)
             {
+                if (string.IsNullOrWhiteSpace(turno.Id))
+                {
+                    turno.Id = Guid.NewGuid().ToString();
+                }
+
                 await _mongoHelper.CreateDocument(_repositorioConfig.Cliente, "Turnos", turno);
+                return;
             }
+
+            turno.Id = turnoExistente.Id;
+            var filterById = Builders<Turno>.Filter.Eq("Id", turnoExistente.Id);
+            await _mongoHelper.ReplaceDocument(_repositorioConfig.Cliente, "Turnos", filterById, turno);
         }
 
         public async Task<IEnumerable<Turno>> Get(DateTime fechaInicial, DateTime fechaFinal, string estacion)

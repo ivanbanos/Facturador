@@ -50,6 +50,7 @@ BEGIN
         isla VARCHAR(50) NULL,
         fechaturno INT NULL,
         turno INT NULL,
+        turnoguid VARCHAR(50) NULL,
         FOREIGN KEY (resolucionId) REFERENCES dbo.Resoluciones (ResolucionId)
     );
 END
@@ -76,6 +77,11 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'total2' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
 BEGIN
     ALTER TABLE dbo.FacturasCanastilla ADD total2 FLOAT NULL;
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'turnoguid' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
+BEGIN
+    ALTER TABLE dbo.FacturasCanastilla ADD turnoguid VARCHAR(50) NULL;
 END
 GO
 --ALTER TABLE FacturasCanastilla
@@ -378,6 +384,7 @@ AS
 BEGIN TRY
     SET NOCOUNT ON;
     DECLARE @ResolucionId INT, @consecutivoActual INT, @fechafinal DATETIME, @facturaCanastillaId INT, @ConsecutivoFinal INT, @cantidadCanastillas INT, @mismaResolucion VARCHAR(50), @fecha INT, @turno INT;
+    DECLARE @turnoGuid VARCHAR(50);
     DECLARE @subtotal FLOAT = 0, @totalIva FLOAT = 0, @total FLOAT = 0;
     DECLARE @ivaPorcentaje BIT = 0;
     DECLARE @codigoFormaPagoPrincipal SMALLINT;
@@ -395,6 +402,19 @@ BEGIN TRY
     FROM ventas.dbo.TURN_EST 
     WHERE TURN_EST.estado != 'C' AND COD_ISL = @isla
     ORDER BY FECHA DESC;
+
+    IF (@fecha IS NULL OR @turno IS NULL) AND @isla IS NOT NULL
+    BEGIN
+        SELECT TOP(1) @fecha = FECHA, @turno = NUM_TUR
+        FROM ventas.dbo.TURN_EST
+        WHERE COD_ISL = @isla
+        ORDER BY CASE WHEN estado != 'C' THEN 0 ELSE 1 END, FECHA DESC, NUM_TUR DESC;
+    END
+
+    IF @fecha IS NOT NULL AND @turno IS NOT NULL AND @isla IS NOT NULL
+    BEGIN
+        SELECT @turnoGuid = CONVERT(VARCHAR(36), CONVERT(UNIQUEIDENTIFIER, HASHBYTES('MD5', CONCAT(CONVERT(VARCHAR(20), @fecha), '|', @isla, '|', CONVERT(VARCHAR(20), @turno)))));
+    END
 
     -- Determinar tipo de IVA (porcentaje vs valor fijo)
     SELECT @ivaPorcentaje = CASE WHEN MAX(c.iva) < 30 THEN 1 ELSE 0 END
@@ -476,12 +496,12 @@ BEGIN TRY
     INSERT INTO FacturasCanastilla (
         fecha, resolucionId, consecutivo, estado, terceroId, enviada, 
         codigoFormaPago, codigoFormaPago2, total1, total2, subtotal, descuento, iva, total, impresa,
-        vendedor, isla, fechaturno, turno, placa
+        vendedor, isla, fechaturno, turno, turnoguid, placa
     )
     VALUES (
         GETDATE(), @ResolucionId, @consecutivoActual, 'CR', @terceroId, 0, 
         @codigoFormaPagoPrincipal, @COD_FOR_PAG_2, @montoPago1, @montoPago2, @subtotal, @descuento, @totalIva, @total, -1,
-        @vendedor, @isla, @fecha, @turno, @placa
+        @vendedor, @isla, @fecha, @turno, @turnoGuid, @placa
     );
 
     SET @facturaCanastillaId = SCOPE_IDENTITY();

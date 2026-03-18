@@ -1,5 +1,5 @@
-import { React, useState, useRef } from 'react'
-import FiltrarInfoTurnos from '../../services/FiltrarInfoTurnos'
+import { React, useMemo, useState, useRef } from 'react'
+import { FiltrarInfoTurnosDia } from '../../services/FiltrarInfoTurnos'
 import { useNavigate } from 'react-router-dom'
 import {
   CButton,
@@ -16,6 +16,7 @@ import {
   CTableDataCell,
   CFormInput,
   CFormLabel,
+  CFormSelect,
   CSpinner,
   CBadge,
   CAlert,
@@ -26,14 +27,7 @@ import {
   CButtonGroup,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import {
-  cilCalendar,
-  cilCloudDownload,
-  cilSearch,
-  cilClock,
-  cilCalculator,
-  cilSpreadsheet,
-} from '@coreui/icons'
+import { cilCalendar, cilCloudDownload, cilSearch, cilClock, cilSpreadsheet } from '@coreui/icons'
 import Toast from '../toast/Toast'
 import * as XLSX from 'xlsx'
 
@@ -52,35 +46,33 @@ const Turnos = () => {
   const toastRef = useRef()
 
   // Estados
-  const [fechaInicial, setFechaInicial] = useState('')
-  const [fechaFinal, setFechaFinal] = useState('')
-  const [turnos, setTurnos] = useState([])
-  const [turnosDetalle, setTurnosDetalle] = useState([])
+  const [fechaConsulta, setFechaConsulta] = useState('')
+  const [turnosBase, setTurnosBase] = useState([])
+  const [filtroEmpleado, setFiltroEmpleado] = useState('')
+  const [filtroIsla, setFiltroIsla] = useState('')
+  const [filtroNumeroTurno, setFiltroNumeroTurno] = useState('')
+  const [filtroSurtidor, setFiltroSurtidor] = useState('')
+  const [filtroManguera, setFiltroManguera] = useState('')
+  const [filtroCombustible, setFiltroCombustible] = useState('')
   const [loading, setLoading] = useState(false)
   const [showResults, setShowResults] = useState(false)
 
-  // Función para validar fecha
-  const isValidDate = (dateString) => {
-    return !isNaN(Date.parse(dateString))
-  }
-
   // Manejador de búsqueda
   const handleSearch = async () => {
-    if (!fechaInicial || !fechaFinal) {
-      toastRef.current?.addMessage('Debe seleccionar las fechas inicial y final', 'error')
+    if (!fechaConsulta) {
+      toastRef.current?.addMessage('Debe seleccionar el día a consultar', 'error')
       return
     }
 
     setLoading(true)
     try {
-      const response = await FiltrarInfoTurnos(fechaInicial, fechaFinal)
+      const response = await FiltrarInfoTurnosDia({ fecha: fechaConsulta })
       if (response === 'fail') {
         navigate('/Login', { replace: true })
         return
       }
 
-      setTurnosDetalle(response || [])
-      setTurnos([...new Set(response.map((item) => item.turno))])
+      setTurnosBase(response || [])
       setShowResults(true)
 
       toastRef.current?.addMessage('Reporte de turnos generado exitosamente', 'success')
@@ -91,6 +83,65 @@ const Turnos = () => {
       setLoading(false)
     }
   }
+
+  const turnosDetalle = useMemo(() => {
+    return (turnosBase || []).filter((item) => {
+      const empleadoOk =
+        !filtroEmpleado ||
+        (item.empleado || '').toLowerCase().includes(filtroEmpleado.toLowerCase())
+      const islaOk =
+        !filtroIsla || (item.isla || '').trim().toLowerCase() === filtroIsla.trim().toLowerCase()
+      const numeroOk =
+        !filtroNumeroTurno || String(item.numeroTurno || '') === String(filtroNumeroTurno)
+      const surtidorOk =
+        !filtroSurtidor ||
+        (item.surtidor || '').toLowerCase().includes(filtroSurtidor.toLowerCase())
+      const mangueraOk =
+        !filtroManguera ||
+        (item.manguera || '').toLowerCase().includes(filtroManguera.toLowerCase())
+      const combustibleOk =
+        !filtroCombustible ||
+        (item.combustible || '').toLowerCase().includes(filtroCombustible.toLowerCase())
+
+      return empleadoOk && islaOk && numeroOk && surtidorOk && mangueraOk && combustibleOk
+    })
+  }, [
+    turnosBase,
+    filtroEmpleado,
+    filtroIsla,
+    filtroNumeroTurno,
+    filtroSurtidor,
+    filtroManguera,
+    filtroCombustible,
+  ])
+
+  const turnos = useMemo(
+    () => [
+      ...new Set(
+        turnosDetalle.map((item) => item.turno).filter((value) => value && value !== 'Total'),
+      ),
+    ],
+    [turnosDetalle],
+  )
+
+  const empleadosDisponibles = useMemo(
+    () => [...new Set((turnosBase || []).map((item) => item.empleado).filter(Boolean))],
+    [turnosBase],
+  )
+  const islasDisponibles = useMemo(
+    () => [...new Set((turnosBase || []).map((item) => item.isla).filter(Boolean))],
+    [turnosBase],
+  )
+  const turnosDisponibles = useMemo(
+    () => [
+      ...new Set(
+        (turnosBase || [])
+          .map((item) => item.numeroTurno)
+          .filter((value) => value !== null && value !== undefined),
+      ),
+    ],
+    [turnosBase],
+  )
 
   // Función para descargar reporte PDF
   const descargarReporte = () => {
@@ -125,7 +176,7 @@ const Turnos = () => {
             margin: [0, 20, 0, 10],
           },
           {
-            text: `Período: ${fechaInicial} - ${fechaFinal}`,
+            text: `Día: ${fechaConsulta}`,
             style: 'subheader',
             alignment: 'center',
             margin: [0, 0, 0, 20],
@@ -216,9 +267,7 @@ const Turnos = () => {
 
       pdfMake
         .createPdf(docDefinition)
-        .download(
-          `turnos_${fechaInicial}_${fechaFinal}_${new Date().toISOString().split('T')[0]}.pdf`,
-        )
+        .download(`turnos_${fechaConsulta}_${new Date().toISOString().split('T')[0]}.pdf`)
       toastRef.current?.addMessage('Reporte descargado exitosamente', 'success')
     } catch (error) {
       console.error('Error generating PDF:', error)
@@ -246,7 +295,7 @@ const Turnos = () => {
         [''],
         ['Estación:', estacionNombre],
         ['NIT:', estacionNit],
-        ['Período:', `${fechaInicial} - ${fechaFinal}`],
+        ['Día:', `${fechaConsulta}`],
         ['Fecha de generación:', new Date().toLocaleDateString('es-ES')],
         [''],
         ['RESUMEN ESTADÍSTICAS'],
@@ -377,7 +426,7 @@ const Turnos = () => {
       XLSX.utils.book_append_sheet(workbook, combustibleSheet, 'Por Combustible')
 
       // Descargar archivo
-      const fileName = `ReporteTurnos_${fechaInicial}_${fechaFinal}_${
+      const fileName = `ReporteTurnos_${fechaConsulta}_${
         new Date().toISOString().split('T')[0]
       }.xlsx`
       XLSX.writeFile(workbook, fileName)
@@ -416,33 +465,19 @@ const Turnos = () => {
           <CRow>
             <CCol md={4}>
               <div className="mb-3">
-                <CFormLabel htmlFor="fechaInicial">
+                <CFormLabel htmlFor="fechaConsulta">
                   <CIcon icon={cilCalendar} className="me-1" />
-                  Fecha Inicial *
+                  Día a consultar *
                 </CFormLabel>
                 <CFormInput
                   type="date"
-                  id="fechaInicial"
-                  value={fechaInicial}
-                  onChange={(e) => setFechaInicial(e.target.value)}
+                  id="fechaConsulta"
+                  value={fechaConsulta}
+                  onChange={(e) => setFechaConsulta(e.target.value)}
                 />
               </div>
             </CCol>
-            <CCol md={4}>
-              <div className="mb-3">
-                <CFormLabel htmlFor="fechaFinal">
-                  <CIcon icon={cilCalendar} className="me-1" />
-                  Fecha Final *
-                </CFormLabel>
-                <CFormInput
-                  type="date"
-                  id="fechaFinal"
-                  value={fechaFinal}
-                  onChange={(e) => setFechaFinal(e.target.value)}
-                />
-              </div>
-            </CCol>
-            <CCol md={4}>
+            <CCol md={8}>
               <div className="mb-3">
                 <CFormLabel>&nbsp;</CFormLabel>
                 <div>
@@ -499,125 +534,194 @@ const Turnos = () => {
           <CCardBody>
             {!turnosDetalle.length ? (
               <CAlert color="warning">
-                No se encontraron turnos para el período especificado.
+                No se encontraron turnos para el día/filtros especificados.
               </CAlert>
             ) : (
-              <CAccordion flush>
-                {turnos.map((turno, index) => {
-                  const stats = calcularEstadisticasTurno(turno)
-                  return (
-                    <CAccordionItem key={turno} itemKey={index}>
-                      <CAccordionHeader>
-                        <div className="d-flex justify-content-between align-items-center w-100 me-3">
-                          <div className="d-flex align-items-center">
-                            <CIcon icon={cilClock} className="me-2" />
-                            <strong>Turno: {turno}</strong>
-                          </div>
-                          <div className="d-flex gap-3">
-                            <CBadge color="info">
-                              {stats.surtidores} surtidor{stats.surtidores !== 1 ? 'es' : ''}
-                            </CBadge>
-                            <CBadge color="primary">
-                              {stats.totalMangueras} manguera{stats.totalMangueras !== 1 ? 's' : ''}
-                            </CBadge>
-                            <CBadge color="warning">{stats.totalGalones.toFixed(2)} Gal</CBadge>
-                            <CBadge color="success">{cop.format(stats.totalMonto)}</CBadge>
-                          </div>
-                        </div>
-                      </CAccordionHeader>
-                      <CAccordionBody>
-                        <CTable striped hover responsive>
-                          <CTableHead>
-                            <CTableRow>
-                              <CTableHeaderCell>Manguera</CTableHeaderCell>
-                              <CTableHeaderCell>Surtidor</CTableHeaderCell>
-                              <CTableHeaderCell>Combustible</CTableHeaderCell>
-                              <CTableHeaderCell className="text-end">Apertura</CTableHeaderCell>
-                              <CTableHeaderCell className="text-end">Cierre</CTableHeaderCell>
-                              <CTableHeaderCell className="text-end">
-                                Diferencia (Gal)
-                              </CTableHeaderCell>
-                              <CTableHeaderCell className="text-end">Precio</CTableHeaderCell>
-                              <CTableHeaderCell className="text-end">Total</CTableHeaderCell>
-                            </CTableRow>
-                          </CTableHead>
-                          <CTableBody>
-                            {turnosDetalle
-                              .filter((t) => t.turno === turno)
-                              .map((detalle, detailIndex) => (
-                                <CTableRow key={`${turno}-${detailIndex}`}>
-                                  <CTableDataCell>
-                                    <CBadge color="secondary">{detalle.manguera || 'N/A'}</CBadge>
-                                  </CTableDataCell>
-                                  <CTableDataCell>
-                                    <CBadge color="info">{detalle.surtidor || 'N/A'}</CBadge>
-                                  </CTableDataCell>
-                                  <CTableDataCell>
-                                    <CBadge color="primary">
-                                      {(detalle.combustible || '').trim()}
-                                    </CBadge>
-                                  </CTableDataCell>
-                                  <CTableDataCell className="text-end">
-                                    {detalle.apertura?.toFixed(3) || '0.000'}
-                                  </CTableDataCell>
-                                  <CTableDataCell className="text-end">
-                                    {detalle.cierre?.toFixed(3) || '0.000'}
-                                  </CTableDataCell>
-                                  <CTableDataCell className="text-end fw-bold text-info">
-                                    {detalle.diferencia?.toFixed(3) || '0.000'}
-                                  </CTableDataCell>
-                                  <CTableDataCell className="text-end">
-                                    {cop.format(detalle.precio || 0)}
-                                  </CTableDataCell>
-                                  <CTableDataCell className="text-end fw-bold text-success">
-                                    {cop.format(detalle.total || 0)}
-                                  </CTableDataCell>
-                                </CTableRow>
-                              ))}
-                          </CTableBody>
-                        </CTable>
+              <>
+                <CRow className="mb-3">
+                  <CCol md={2}>
+                    <CFormLabel>Empleado</CFormLabel>
+                    <CFormSelect
+                      value={filtroEmpleado}
+                      onChange={(e) => setFiltroEmpleado(e.target.value)}
+                    >
+                      <option value="">Todos</option>
+                      {empleadosDisponibles.map((empleado) => (
+                        <option key={empleado} value={empleado}>
+                          {empleado}
+                        </option>
+                      ))}
+                    </CFormSelect>
+                  </CCol>
+                  <CCol md={2}>
+                    <CFormLabel>Isla</CFormLabel>
+                    <CFormSelect value={filtroIsla} onChange={(e) => setFiltroIsla(e.target.value)}>
+                      <option value="">Todas</option>
+                      {islasDisponibles.map((isla) => (
+                        <option key={isla} value={isla}>
+                          {isla}
+                        </option>
+                      ))}
+                    </CFormSelect>
+                  </CCol>
+                  <CCol md={2}>
+                    <CFormLabel>Turno</CFormLabel>
+                    <CFormSelect
+                      value={filtroNumeroTurno}
+                      onChange={(e) => setFiltroNumeroTurno(e.target.value)}
+                    >
+                      <option value="">Todos</option>
+                      {turnosDisponibles.map((numero) => (
+                        <option key={numero} value={numero}>
+                          {numero}
+                        </option>
+                      ))}
+                    </CFormSelect>
+                  </CCol>
+                  <CCol md={2}>
+                    <CFormLabel>Surtidor</CFormLabel>
+                    <CFormInput
+                      value={filtroSurtidor}
+                      onChange={(e) => setFiltroSurtidor(e.target.value)}
+                      placeholder="Filtrar"
+                    />
+                  </CCol>
+                  <CCol md={2}>
+                    <CFormLabel>Manguera</CFormLabel>
+                    <CFormInput
+                      value={filtroManguera}
+                      onChange={(e) => setFiltroManguera(e.target.value)}
+                      placeholder="Filtrar"
+                    />
+                  </CCol>
+                  <CCol md={2}>
+                    <CFormLabel>Combustible</CFormLabel>
+                    <CFormInput
+                      value={filtroCombustible}
+                      onChange={(e) => setFiltroCombustible(e.target.value)}
+                      placeholder="Filtrar"
+                    />
+                  </CCol>
+                </CRow>
 
-                        <div className="mt-3 p-3 bg-light rounded">
-                          <CRow>
-                            <CCol md={3}>
-                              <strong>Mangueras: </strong>
-                              <span className="text-primary">{stats.totalMangueras}</span>
-                            </CCol>
-                            <CCol md={3}>
-                              <strong>Surtidores: </strong>
-                              <span className="text-info">{stats.surtidores}</span>
-                            </CCol>
-                            <CCol md={3}>
-                              <strong>Total Galones: </strong>
-                              <span className="text-warning fw-bold">
-                                {stats.totalGalones.toFixed(3)}
-                              </span>
-                            </CCol>
-                            <CCol md={3}>
-                              <strong>Total Monto: </strong>
-                              <span className="text-success fw-bold">
-                                {cop.format(stats.totalMonto)}
-                              </span>
-                            </CCol>
-                          </CRow>
-                          {stats.combustibles.length > 0 && (
-                            <CRow className="mt-2">
-                              <CCol>
-                                <strong>Combustibles: </strong>
-                                {stats.combustibles.map((combustible, idx) => (
-                                  <CBadge key={idx} color="outline-primary" className="me-1">
-                                    {combustible}
-                                  </CBadge>
+                <CAccordion flush>
+                  {turnos.map((turno, index) => {
+                    const stats = calcularEstadisticasTurno(turno)
+                    return (
+                      <CAccordionItem key={turno} itemKey={index}>
+                        <CAccordionHeader>
+                          <div className="d-flex justify-content-between align-items-center w-100 me-3">
+                            <div className="d-flex align-items-center">
+                              <CIcon icon={cilClock} className="me-2" />
+                              <strong>Turno: {turno}</strong>
+                            </div>
+                            <div className="d-flex gap-3">
+                              <CBadge color="info">
+                                {stats.surtidores} surtidor{stats.surtidores !== 1 ? 'es' : ''}
+                              </CBadge>
+                              <CBadge color="primary">
+                                {stats.totalMangueras} manguera
+                                {stats.totalMangueras !== 1 ? 's' : ''}
+                              </CBadge>
+                              <CBadge color="warning">{stats.totalGalones.toFixed(2)} Gal</CBadge>
+                              <CBadge color="success">{cop.format(stats.totalMonto)}</CBadge>
+                            </div>
+                          </div>
+                        </CAccordionHeader>
+                        <CAccordionBody>
+                          <CTable striped hover responsive>
+                            <CTableHead>
+                              <CTableRow>
+                                <CTableHeaderCell>Manguera</CTableHeaderCell>
+                                <CTableHeaderCell>Surtidor</CTableHeaderCell>
+                                <CTableHeaderCell>Combustible</CTableHeaderCell>
+                                <CTableHeaderCell className="text-end">Apertura</CTableHeaderCell>
+                                <CTableHeaderCell className="text-end">Cierre</CTableHeaderCell>
+                                <CTableHeaderCell className="text-end">
+                                  Diferencia (Gal)
+                                </CTableHeaderCell>
+                                <CTableHeaderCell className="text-end">Precio</CTableHeaderCell>
+                                <CTableHeaderCell className="text-end">Total</CTableHeaderCell>
+                              </CTableRow>
+                            </CTableHead>
+                            <CTableBody>
+                              {turnosDetalle
+                                .filter((t) => t.turno === turno)
+                                .map((detalle, detailIndex) => (
+                                  <CTableRow key={`${turno}-${detailIndex}`}>
+                                    <CTableDataCell>
+                                      <CBadge color="secondary">{detalle.manguera || 'N/A'}</CBadge>
+                                    </CTableDataCell>
+                                    <CTableDataCell>
+                                      <CBadge color="info">{detalle.surtidor || 'N/A'}</CBadge>
+                                    </CTableDataCell>
+                                    <CTableDataCell>
+                                      <CBadge color="primary">
+                                        {(detalle.combustible || '').trim()}
+                                      </CBadge>
+                                    </CTableDataCell>
+                                    <CTableDataCell className="text-end">
+                                      {detalle.apertura?.toFixed(3) || '0.000'}
+                                    </CTableDataCell>
+                                    <CTableDataCell className="text-end">
+                                      {detalle.cierre?.toFixed(3) || '0.000'}
+                                    </CTableDataCell>
+                                    <CTableDataCell className="text-end fw-bold text-info">
+                                      {detalle.diferencia?.toFixed(3) || '0.000'}
+                                    </CTableDataCell>
+                                    <CTableDataCell className="text-end">
+                                      {cop.format(detalle.precio || 0)}
+                                    </CTableDataCell>
+                                    <CTableDataCell className="text-end fw-bold text-success">
+                                      {cop.format(detalle.total || 0)}
+                                    </CTableDataCell>
+                                  </CTableRow>
                                 ))}
+                            </CTableBody>
+                          </CTable>
+
+                          <div className="mt-3 p-3 bg-light rounded">
+                            <CRow>
+                              <CCol md={3}>
+                                <strong>Mangueras: </strong>
+                                <span className="text-primary">{stats.totalMangueras}</span>
+                              </CCol>
+                              <CCol md={3}>
+                                <strong>Surtidores: </strong>
+                                <span className="text-info">{stats.surtidores}</span>
+                              </CCol>
+                              <CCol md={3}>
+                                <strong>Total Galones: </strong>
+                                <span className="text-warning fw-bold">
+                                  {stats.totalGalones.toFixed(3)}
+                                </span>
+                              </CCol>
+                              <CCol md={3}>
+                                <strong>Total Monto: </strong>
+                                <span className="text-success fw-bold">
+                                  {cop.format(stats.totalMonto)}
+                                </span>
                               </CCol>
                             </CRow>
-                          )}
-                        </div>
-                      </CAccordionBody>
-                    </CAccordionItem>
-                  )
-                })}
-              </CAccordion>
+                            {stats.combustibles.length > 0 && (
+                              <CRow className="mt-2">
+                                <CCol>
+                                  <strong>Combustibles: </strong>
+                                  {stats.combustibles.map((combustible, idx) => (
+                                    <CBadge key={idx} color="outline-primary" className="me-1">
+                                      {combustible}
+                                    </CBadge>
+                                  ))}
+                                </CCol>
+                              </CRow>
+                            )}
+                          </div>
+                        </CAccordionBody>
+                      </CAccordionItem>
+                    )
+                  })}
+                </CAccordion>
+              </>
             )}
           </CCardBody>
         </CCard>

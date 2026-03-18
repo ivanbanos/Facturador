@@ -1,6 +1,7 @@
 ﻿using EnviadorInformacionService.Models;
 using FactoradorEstacionesModelo.Convertidor;
 using FactoradorEstacionesModelo.Objetos;
+using FactoradorEstacionesModelo.Siges;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
 using Microsoft.Extensions.Logging;
@@ -747,6 +748,15 @@ namespace FacturadorEstacionesRepositorio
             return facturas.ToList();
         }
 
+        public void PrepararRetroactivoTurnosPendientes()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+            };
+
+            LoadDataTableFromStoredProc(_connectionString.Facturacion, "PrepararRetroactivoTurnosPendientes", parameters);
+        }
+
         public void ActuralizarFacturasEnviadosTurno(int factura)
         {
             var ventasIds = new DataTable();
@@ -939,6 +949,29 @@ DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidel
                 factura.Manguera = manguera;
             }
             return facturas.ToList();
+        }
+
+        public IEnumerable<TurnoSiges> GetTurnosByFechas(DateTime desde, DateTime hasta)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@fechaInicio", desde },
+                {"@fechaFin", hasta }
+            };
+
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnosPorFecha", parameters);
+            return _convertidor.ConvertirTurnoSiges(dt);
+        }
+
+        public IEnumerable<FactoradorEstacionesModelo.Siges.TurnoSurtidor> ObtenerTurnoInfo(int id)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@Id", id }
+            };
+
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnoSurtidorInfo", parameters);
+            return _convertidor.ConvertirTurnoSurtidoresSiges(dt);
         }
 
         public void ActuralizarFacturasEnviadosSiesa(IEnumerable<int> facturas)

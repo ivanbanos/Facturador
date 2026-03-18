@@ -14,6 +14,7 @@ namespace FactoradorEstacionesModelo.Siges
         public DateTime? FechaCierre { get; set; }
         public int IdEstado { get; set; }
         public string Isla { get; set; }
+        public int Numero { get; set; }
 
         public List<TurnoSurtidor> turnoSurtidores {get;set;}
     }

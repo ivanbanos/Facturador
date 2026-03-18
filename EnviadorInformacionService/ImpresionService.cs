@@ -138,7 +138,7 @@ namespace EnviadorInformacionService
             {
                 try
                 {
-                    var objetoImprimir = _estacionesRepositorio.GetObjetoImprimir().FirstOrDefault();
+                    var objetoImprimir = _estacionesRepositorio.GetObjetoImprimir().OrderBy(x => x.Id).FirstOrDefault();
                          
                         if (imprimiendo == 0 && objetoImprimir != null)
                         {
@@ -151,6 +151,14 @@ namespace EnviadorInformacionService
                                     case "Cierre":
                                         {
                                             var turnoimprimir = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha, objetoImprimir.Isla, objetoImprimir.Numero);
+                                            if (turnoimprimir == null && objetoImprimir.Numero > 0)
+                                            {
+                                                turnoimprimir = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha.AddDays(-1), objetoImprimir.Isla, objetoImprimir.Numero);
+                                            }
+                                            if (turnoimprimir == null)
+                                            {
+                                                turnoimprimir = _estacionesRepositorio.ObtenerTurnoCerradoPorIslaFecha(objetoImprimir.fecha, objetoImprimir.Isla);
+                                            }
                                             if (turnoimprimir == null)
                                             {
                                                 _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
@@ -181,6 +189,12 @@ namespace EnviadorInformacionService
                                             }
                                             if (turnoimprimir == null)
                                             {
+                                                if (TryImprimirCierreCanastillaDesdeObjeto(objetoImprimir))
+                                                {
+                                                    _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                                    break;
+                                                }
+
                                                 _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
 
                                             }
@@ -251,24 +265,10 @@ namespace EnviadorInformacionService
                                     case "ReimprimirCierreCanastilla":
                                     case "CierreCana":
                                         {
-                                            // Se espera que objetoImprimir.Isla y objetoImprimir.Numero tengan la isla y numero de turno a imprimir
-                                            var isla = objetoImprimir.Isla;
-                                            var turnoCerrado = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha, isla, objetoImprimir.Numero);
-                                            if (turnoCerrado == null)
+                                            if (!TryImprimirCierreCanastillaDesdeObjeto(objetoImprimir))
                                             {
-                                                Logger.Warn($"No hay turno cerrado para la isla {isla} turno {objetoImprimir.Numero}");
-                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
-                                                break;
+                                                Logger.Warn($"No fue posible resolver cierre canastilla para isla {objetoImprimir.Isla} fecha {objetoImprimir.fecha:yyyy-MM-dd} numero {objetoImprimir.Numero}");
                                             }
-                                            var facturas = _estacionesRepositorio.GetFacturasCanastillaPorIslaTurno(isla.ToString(), turnoCerrado.Numero, turnoCerrado.FechaAperturaJuliana);
-                                            if (facturas == null || !facturas.Any())
-                                            {
-                                                Logger.Warn($"No hay facturas de canastilla para el cierre de la isla {isla} turno {turnoCerrado.Numero}");
-                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
-                                                break;
-                                            }
-                                            imprimiendo++;
-                                            ImprimirCierreCanastilla(isla.ToString(), turnoCerrado, facturas);
                                             _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
                                             break;
 
@@ -391,6 +391,38 @@ namespace EnviadorInformacionService
                     Thread.Sleep(100);
                 }
             }
+        }
+
+        private bool TryImprimirCierreCanastillaDesdeObjeto(ObjetoImprimir objetoImprimir)
+        {
+            var isla = objetoImprimir.Isla;
+
+            Turno turnoCerrado = null;
+            if (objetoImprimir.Numero > 0)
+            {
+                turnoCerrado = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha, isla, objetoImprimir.Numero)
+                    ?? _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha.AddDays(-1), isla, objetoImprimir.Numero);
+            }
+
+            if (turnoCerrado == null)
+            {
+                turnoCerrado = _estacionesRepositorio.ObtenerTurnoCerradoPorIslaFecha(objetoImprimir.fecha, isla);
+            }
+
+            if (turnoCerrado == null)
+            {
+                return false;
+            }
+
+            var facturas = _estacionesRepositorio.GetFacturasCanastillaPorIslaTurno(isla.ToString(), turnoCerrado.Numero, turnoCerrado.FechaAperturaJuliana);
+            if (facturas == null || !facturas.Any())
+            {
+                return false;
+            }
+
+            imprimiendo++;
+            ImprimirCierreCanastilla(isla.ToString(), turnoCerrado, facturas);
+            return true;
         }
 
         // --- Cierre Canastilla Printing ---

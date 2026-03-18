@@ -43,9 +43,9 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
             DescripcionResolucion = factura.DescripcionResolucion;
             AutorizacionResolucion = factura.AutorizacionResolucion;
             idFacturaElectronica = factura.idFacturaElectronica;
+            TurnoGuid = factura.TurnoGuid;
         }
 
         public string EstacionGuid { get; set; }
-        public string TurnoGuid { get; set; }
     }
 }

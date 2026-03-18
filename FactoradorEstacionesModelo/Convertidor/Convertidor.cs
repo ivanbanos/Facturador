@@ -183,6 +183,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                 {
                     facturaPOSId = dr.Field<int>("facturaPOSId"),
                     ventaId = dr.Field<int>("ventaId"),
+                    TurnoGuid = dt.Columns.Contains("turnoguid") ? dr.Field<string>("turnoguid") : null,
                     Consecutivo = dr.Field<int>("CONSECUTIVO"),
                     DescripcionResolucion = dr.Field<string>("descripcionRes"),
                     Autorizacion = dr.Field<string>("autorizacion"),
@@ -419,7 +420,8 @@ namespace FactoradorEstacionesModelo.Convertidor
                     Isla = dr.Field<string>("Isla"),
                     IdEstado = dr.Field<int>("IdEstado"),
                     FechaApertura = dr.Field<DateTime>("FechaApertura"),
-                    FechaCierre = dr.Field<DateTime?>("FechaCierre")
+                    FechaCierre = dr.Field<DateTime?>("FechaCierre"),
+                    Numero = dt.Columns.Contains("Numero") ? Convert.ToInt32(dr["Numero"]) : 0
                 });
             }
             return response;
@@ -574,6 +576,9 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.terceroId.terceroId = dr.Field<int>("terceroId");
                     fc.terceroId.tipoIdentificacion = dr.Field<int?>("tipoIdentificacion");
                     fc.terceroId.tipoIdentificacionS = dr.Field<string>("descripcion");
+                    fc.TurnoGuid = dt.Columns.Contains("turnoguid") && !dr.IsNull("turnoguid")
+                        ? dr.Field<string>("turnoguid")
+                        : null;
 
 
                     return fc;

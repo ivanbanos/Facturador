@@ -28,6 +28,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
 		public string IdEstacion { get; set; }
 		public string Isla { get; set; }
 		public string Empleado { get; set; }
+		public string TurnoGuid { get; set; }
 		public string Placa { get; set; }
 	}
 }

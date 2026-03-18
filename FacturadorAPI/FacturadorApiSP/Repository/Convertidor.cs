@@ -710,7 +710,8 @@ namespace FacturadorAPI.Repository
             response.Isla = drTurno.Field<string>("Isla");
             response.IdEstado = drTurno.Field<int>("IdEstado");
             response.FechaApertura = drTurno.Field<DateTime>("FechaApertura");
-            response.FechaCierre = drTurno.Field<DateTime>("FechaApertura");
+            response.FechaCierre = drTurno.Field<DateTime?>("FechaCierre");
+            response.numero = Convert.ToInt32(drTurno["Numero"]);
             var dtLecturas = ds.Tables[1];
             response.turnoSurtidores = dtLecturas.AsEnumerable().Select(x => new TurnoSurtidor()
             {

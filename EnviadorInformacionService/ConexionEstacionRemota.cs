@@ -364,7 +364,10 @@ namespace EnviadorInformacionService
         public void SubirTurno(Turno turno, Guid estacionFuente, string token)
         {
             turno.EstacionGuid = estacionFuente.ToString();
-            turno.Id = Guid.NewGuid().ToString();
+            if (string.IsNullOrWhiteSpace(turno.Id))
+            {
+                turno.Id = Guid.NewGuid().ToString();
+            }
             using (var client = new HttpClient())
             {
                 client.Timeout = new TimeSpan(0, 0, 1, 0, 0);

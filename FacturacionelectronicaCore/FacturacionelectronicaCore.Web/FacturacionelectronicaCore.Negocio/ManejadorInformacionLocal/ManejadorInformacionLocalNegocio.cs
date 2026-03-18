@@ -152,6 +152,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                     Placa = x.Placa,
                                     Precio = x.Precio,
                                     SubTotal = x.SubTotal,
+                                    TurnoGuid = x.TurnoGuid,
                                     Surtidor = x.Surtidor,
                                     Total = x.Total,
                                     idFacturaElectronica = x.idFacturaElectronica,
@@ -201,6 +202,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                 Placa = x.Placa,
                                 Precio = x.Precio,
                                 SubTotal = x.SubTotal,
+                                TurnoGuid = x.TurnoGuid,
                                 Surtidor = x.Surtidor,
                                 Total = x.Total,
                                 idFacturaElectronica = x.idFacturaElectronica ?? ordenDeDespachoEntity?.idFacturaElectronica,
@@ -382,6 +384,11 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                 {
                     try
                     {
+                        if (!string.IsNullOrWhiteSpace(factura.Isla) && string.IsNullOrWhiteSpace(factura.TurnoGuid))
+                        {
+                            Console.WriteLine($"Advertencia: factura canastilla {factura.FacturasCanastillaId} llega con Isla={factura.Isla} pero sin TurnoGuid");
+                        }
+
                         // Replace campoextra in each factura.canastillas from repo
                         foreach (var canastilla in factura.canastillas ?? Enumerable.Empty<Modelo.CanastillaFactura>())
                         {

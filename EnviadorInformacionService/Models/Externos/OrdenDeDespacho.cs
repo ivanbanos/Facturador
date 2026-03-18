@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Configuration;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace FacturacionelectronicaCore.Negocio.Modelo
 {
@@ -38,7 +40,45 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public DateTime FechaProximoMantenimiento { get; set; }
         public decimal SubTotal { get; set; }
         public string Vendedor { get; set; }
+        public string TurnoGuid { get; set; }
         public Guid estacion { get; set; }
+
+        private static int? GetIntProperty(object source, string name)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            var prop = source.GetType().GetProperty(name);
+            if (prop == null)
+            {
+                return null;
+            }
+
+            var value = prop.GetValue(source, null);
+            if (value == null)
+            {
+                return null;
+            }
+
+            return Convert.ToInt32(value);
+        }
+
+        private static string BuildTurnoGuid(DateTime? fechaTurno, int? isla, int? numeroTurno)
+        {
+            if (!fechaTurno.HasValue || !isla.HasValue || !numeroTurno.HasValue)
+            {
+                return null;
+            }
+
+            var payload = $"{fechaTurno.Value:yyyyMMdd}|{isla.Value}|{numeroTurno.Value}";
+            using (var md5 = MD5.Create())
+            {
+                var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(payload));
+                return new Guid(hash).ToString();
+            }
+        }
 
 
         public OrdenDeDespacho(FactoradorEstacionesModelo.Objetos.Factura x, string forma, string forma2 = null)
@@ -80,6 +120,10 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
             Vendedor = x.Venta.EMPLEADO;
             Identificacion = x.Tercero.identificacion;
             FechaReporte = x.Venta.FECHA_REAL.Value;
+            var fechaTurno = x.Venta.FECHA_REAL;
+            var isla = GetIntProperty(x.Venta, "COD_ISL");
+            var numeroTurno = GetIntProperty(x.Venta, "NUM_TUR");
+            TurnoGuid = BuildTurnoGuid(fechaTurno, isla, numeroTurno);
         }
     }
 }
