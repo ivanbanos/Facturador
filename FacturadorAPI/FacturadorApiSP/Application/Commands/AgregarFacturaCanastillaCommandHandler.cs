@@ -141,6 +141,19 @@ namespace FacturadorAPI.Application.Commands
 
                 var forma = formas.FirstOrDefault(x => x.Id == _factura.Forma.Id);
                  informacionVenta.Append(formatoTotales("Forma de pago : ", forma?.Descripcion?.Trim()));
+                if (_factura.total1.HasValue)
+                {
+                    informacionVenta.Append(formatoTotales("Valor pago 1 : ", String.Format("{0:#,0.00}", _factura.total1.Value)));
+                }
+                if (_factura.codigoFormaPago2.HasValue)
+                {
+                    var forma2 = formas.FirstOrDefault(x => x.Id == _factura.codigoFormaPago2.Value);
+                    informacionVenta.Append(formatoTotales("Forma de pago 2 : ", forma2?.Descripcion?.Trim()));
+                    if (_factura.total2.HasValue)
+                    {
+                        informacionVenta.Append(formatoTotales("Valor pago 2 : ", String.Format("{0:#,0.00}", _factura.total2.Value)));
+                    }
+                }
 
                 if (!string.IsNullOrEmpty(_factura.placa))
                 {

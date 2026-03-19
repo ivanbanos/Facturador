@@ -13,8 +13,10 @@ import AlertVentaExitosa from "./AlertVentaExitosa";
 import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 import ModalReimprimirFacturaCanastilla from "./modalReimprimirFacturaCanastilla";
 import ModalReimprimirTurnoCanastilla from "./modalReimprimirTurnoCanastilla";
+import ModalAgregarFormaPago from "./modalAgregarFormaPago";
 
 const Canastilla = () => {
+  const habilitarSegundaFormaPago = window.HabilitarSegundaFormaPago !== false;
   const placaObligatoriaCanastillaCredito =
     window.PlacaObligatoriaCanastillaCredito === undefined ||
     window.PlacaObligatoriaCanastillaCredito === true ||
@@ -111,8 +113,18 @@ const Canastilla = () => {
   const [mensajeAlerta, setMensajeAlerta] = useState("Venta Generada Exitosamente");
   const handleSetShowAlertVentaExitosa = (show) =>
     setShowAlertVentaExitosa(show);
+  const [showModalSegundaFormaPago, setShowModalSegundaFormaPago] =
+    useState(false);
   const [showAddTercero, setShowAddTercero] = useState(false);
   const handleShowAddTercero = (show) => setShowAddTercero(show);
+  const handleCloseModalSegundaFormaPago = () =>
+    setShowModalSegundaFormaPago(false);
+  const handleShowModalSegundaFormaPago = () => {
+    if (!habilitarSegundaFormaPago) {
+      return;
+    }
+    setShowModalSegundaFormaPago(true);
+  };
   function handleSetTerceroModalAddTercero(newTercero) {
     setTercero(newTercero);
     const tempObjetoPostCanastilla = {
@@ -157,6 +169,54 @@ const Canastilla = () => {
     setProductoSeleccionado(snapshot.productoSeleccionado);
     setFiltroProducto(snapshot.filtroProducto);
     setProductosFiltrados(snapshot.productosFiltrados);
+  };
+
+  const calcularTotalesCanastilla = (items, descuento = 0) => {
+    if (!Array.isArray(items) || items.length === 0) {
+      return { subtotal: 0, iva: 0, total: 0 };
+    }
+
+    const usaIvaPorcentaje =
+      Math.max(...items.map((item) => Number(item.iva || 0))) < 30;
+    const subtotal = items.reduce(
+      (acumulado, item) =>
+        acumulado + Number(item.precio || 0) * Number(item.cantidad || 0),
+      0
+    );
+    const iva = items.reduce((acumulado, item) => {
+      const cantidad = Number(item.cantidad || 0);
+      const precio = Number(item.precio || 0);
+      const valorIva = Number(item.iva || 0);
+
+      if (usaIvaPorcentaje) {
+        return acumulado + precio * cantidad * (valorIva / 100);
+      }
+
+      return acumulado + cantidad * valorIva;
+    }, 0);
+
+    return {
+      subtotal,
+      iva,
+      total: subtotal + iva - Number(descuento || 0),
+    };
+  };
+
+  const handleGuardarSegundaFormaPago = ({
+    codigoFormaPago2,
+    total2,
+    total1,
+  }) => {
+    if (!habilitarSegundaFormaPago) {
+      return;
+    }
+
+    setObjetoPostCanastilla((actual) => ({
+      ...actual,
+      codigoFormaPago2,
+      total2,
+      total1,
+    }));
   };
 
   // Función para filtrar productos por descripción
@@ -235,6 +295,16 @@ const Canastilla = () => {
       ...objetoPostCanastilla,
       codigoFormaPago: event.target.value,
     };
+
+    if (
+      Number(tempObjetoPostCanastilla.codigoFormaPago2) ===
+      Number(event.target.value)
+    ) {
+      tempObjetoPostCanastilla.codigoFormaPago2 = null;
+      tempObjetoPostCanastilla.total1 = null;
+      tempObjetoPostCanastilla.total2 = null;
+    }
+
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
   };
   const handleChangePlaca = (event) => {
@@ -285,7 +355,7 @@ const Canastilla = () => {
       handleSetShowAlertError(true);
     } else if (
       placaObligatoriaCanastillaCredito &&
-      canastilla.codigoFormaPago == 6 &&
+      (canastilla.codigoFormaPago == 6 || canastilla.codigoFormaPago2 == 6) &&
       (!canastilla.placa || canastilla.placa.trim() === "")
     ) {
       alert("La placa es obligatoria cuando la forma de pago es crédito.");
@@ -412,6 +482,12 @@ const Canastilla = () => {
     const turnoLocal = JSON.parse(localStorage.getItem("turno"));
     setTurno(turnoLocal);
   }, []);
+
+  const resumenTotalesCanastilla = calcularTotalesCanastilla(
+    objetoPostCanastilla.canastillas,
+    objetoPostCanastilla.descuento
+  );
+
   return (
     <div className="div-canastilla row">
       {/* Información de turno y empleado */}
@@ -568,12 +644,28 @@ const Canastilla = () => {
                         </option>
                       ))}
                   </select>
+                  {habilitarSegundaFormaPago && (
+                    <button
+                      className="botton-light-blue-modal mt-2"
+                      onClick={handleShowModalSegundaFormaPago}
+                      disabled={isActionInProgress}
+                    >
+                      Agregar forma de pago
+                    </button>
+                  )}
+                  {habilitarSegundaFormaPago &&
+                    objetoPostCanastilla.codigoFormaPago2 && (
+                      <small className="d-block text-white mt-1">
+                        Forma 2: {objetoPostCanastilla.codigoFormaPago2} | Valor: {objetoPostCanastilla.total2 || 0}
+                      </small>
+                    )}
                 </div>
                 <div className="div-info-venta-canastilla mt-2 canastilla-venta-row">
                   <label className="label-info-venta-canastilla">
                     Placa{" "}
                     {placaObligatoriaCanastillaCredito &&
-                      objetoPostCanastilla.codigoFormaPago == 6 &&
+                      (objetoPostCanastilla.codigoFormaPago == 6 ||
+                        objetoPostCanastilla.codigoFormaPago2 == 6) &&
                       <span style={{ color: "red" }}>*</span>}
                   </label>
                   <input
@@ -616,6 +708,8 @@ const Canastilla = () => {
             <hr></hr>
             <p>Total Items: {totalItems}</p>
             <p>Subtotal: {subTotal}</p>
+            <p>IVA: {resumenTotalesCanastilla.iva.toFixed(2)}</p>
+            <p>Total: {resumenTotalesCanastilla.total.toFixed(2)}</p>
           </div>
         </div>
       </div>
@@ -663,6 +757,18 @@ const Canastilla = () => {
           handleSetTerceroModalAddTercero={handleSetTerceroModalAddTercero}
           handleNoCambiarTercero={handleNoCambiarTercero}
         ></ModalAddTercero>
+        {habilitarSegundaFormaPago && (
+          <ModalAgregarFormaPago
+            show={showModalSegundaFormaPago}
+            handleClose={handleCloseModalSegundaFormaPago}
+            onSave={handleGuardarSegundaFormaPago}
+            formasDePago={formasDePago}
+            factura={{
+              ...objetoPostCanastilla,
+              total: resumenTotalesCanastilla.total,
+            }}
+          />
+        )}
       </div>
       <AlertError
         showAlertError={showAlertError}

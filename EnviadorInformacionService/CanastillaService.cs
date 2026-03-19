@@ -424,6 +424,19 @@ namespace EnviadorInformacionService
 
             var forma = formasDePago.FirstOrDefault(x => x.Id == _factura.codigoFormaPago.Id);
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago : ", forma?.Descripcion?.Trim()), false));
+            if (_factura.total1.HasValue)
+            {
+                lineasImprimir.Add(new LineasImprimir(formatoTotales("Valor pago 1 : ", String.Format("{0:#,0.00}", _factura.total1.Value)), false));
+            }
+            if (_factura.codigoFormaPago2.HasValue)
+            {
+                var forma2 = formasDePago.FirstOrDefault(x => x.Id == _factura.codigoFormaPago2.Value);
+                lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago 2 : ", forma2?.Descripcion?.Trim()), false));
+                if (_factura.total2.HasValue)
+                {
+                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Valor pago 2 : ", String.Format("{0:#,0.00}", _factura.total2.Value)), false));
+                }
+            }
 
 
 
