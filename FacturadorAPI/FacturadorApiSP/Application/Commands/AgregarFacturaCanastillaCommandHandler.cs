@@ -31,8 +31,13 @@ namespace FacturadorAPI.Application.Commands
 
             try
             {
+                if (request?.FacturaCanastilla == null || request.FacturaCanastilla.terceroId <= 0)
+                {
+                    _logger.LogWarning("No se puede crear factura canastilla sin tercero válido. terceroId: {TerceroId}", request?.FacturaCanastilla?.terceroId);
+                    return "fail";
+                }
 
-              var facturaId =   await _databaseHandler.GenerarFacturaCanastilla(request.FacturaCanastilla, false);
+                var facturaId = await _databaseHandler.GenerarFacturaCanastilla(request.FacturaCanastilla, false);
                 var _factura = await _databaseHandler.BuscarFacturaCanastillaPorConsecutivo(facturaId);
                 var _charactersPerPage = 40;
 
@@ -140,7 +145,7 @@ namespace FacturadorAPI.Application.Commands
                 // informacionVenta.Append(guiones.ToString());
 
                 var forma = formas.FirstOrDefault(x => x.Id == _factura.Forma.Id);
-                 informacionVenta.Append(formatoTotales("Forma de pago : ", forma?.Descripcion?.Trim()));
+                 informacionVenta.Append(formatoTotales("Forma de pago : ", forma?.Descripcion?.Trim() ?? string.Empty));
                 if (_factura.total1.HasValue)
                 {
                     informacionVenta.Append(formatoTotales("Valor pago 1 : ", String.Format("{0:#,0.00}", _factura.total1.Value)));
@@ -148,7 +153,7 @@ namespace FacturadorAPI.Application.Commands
                 if (_factura.codigoFormaPago2.HasValue)
                 {
                     var forma2 = formas.FirstOrDefault(x => x.Id == _factura.codigoFormaPago2.Value);
-                    informacionVenta.Append(formatoTotales("Forma de pago 2 : ", forma2?.Descripcion?.Trim()));
+                    informacionVenta.Append(formatoTotales("Forma de pago 2 : ", forma2?.Descripcion?.Trim() ?? string.Empty));
                     if (_factura.total2.HasValue)
                     {
                         informacionVenta.Append(formatoTotales("Valor pago 2 : ", String.Format("{0:#,0.00}", _factura.total2.Value)));

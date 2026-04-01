@@ -26,9 +26,10 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         private readonly Alegra _alegra;
         private readonly IValidadorGuidAFacturaElectronica _validadorGuidAFacturaElectronica;
         private readonly ICombustiblesEstacionRepository _combustiblesEstacionRepository;
+        private readonly ITurnoRepositorio _turnoRepositorio;
 
         public OrdenDeDespachoNegocio(IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio,
-                                       IMapper mapper, IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, ITerceroRepositorio terceroRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, ICombustiblesEstacionRepository combustiblesEstacionRepository)
+                                       IMapper mapper, IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, ITerceroRepositorio terceroRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, ICombustiblesEstacionRepository combustiblesEstacionRepository, ITurnoRepositorio turnoRepositorio)
         {
             _ordenDeDespachoRepositorio = ordenDeDespachoRepositorio;
             _mapper = mapper;
@@ -37,6 +38,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             _terceroRepositorio = terceroRepositorio;
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
             _combustiblesEstacionRepository = combustiblesEstacionRepository;
+            _turnoRepositorio = turnoRepositorio;
         }
 
         // Normalize incoming search DateTime using configured ServerTimeOffsetHours.
@@ -446,6 +448,25 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 }
             }
             return ordenes;
+        }
+
+        public async Task<bool> AgregarTurnoAOrdenDeDespacho(RequestFacturaTurno request)
+        {
+            if (request == null || request.idVentaLocal <= 0 || request.estacion == Guid.Empty)
+            {
+                return false;
+            }
+
+            var isla = string.IsNullOrWhiteSpace(request.isla) ? request.isla : request.isla.Trim();
+            var turnos = await _turnoRepositorio.Get(request.fecha, request.numero, isla, request.estacion.ToString());
+            var turno = turnos.FirstOrDefault();
+
+            if (turno == null || string.IsNullOrWhiteSpace(turno.Id))
+            {
+                return false;
+            }
+
+            return await _ordenDeDespachoRepositorio.AgregarTurnoAOrdenDeDespacho(request.idVentaLocal, turno.Id, request.estacion);
         }
 
         public async Task<string> EnviarAFacturacion(Modelo.OrdenDeDespacho ordenDeDespacho, Guid estacion)

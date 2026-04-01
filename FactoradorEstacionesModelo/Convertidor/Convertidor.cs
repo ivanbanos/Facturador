@@ -558,6 +558,9 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.impresa = dr.Field<int>("impresa");
                     fc.estado = dr.Field<string>("estado");
                     fc.codigoFormaPago = new FormaPagoSiges() { Id = dr.Field<int>("codigoFormaPago") };
+                    fc.numeroTransaccion = dt.Columns.Contains("numeroTransaccion") && !dr.IsNull("numeroTransaccion")
+                        ? dr.Field<string>("numeroTransaccion")
+                        : null;
                     fc.descuento = Convert.ToSingle(dr.Field<double>("descuento"));
                     fc.subtotal = Convert.ToSingle(dr.Field<double>("subtotal"));
                     fc.total = Convert.ToSingle(dr.Field<double>("total"));
@@ -579,6 +582,9 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.TurnoGuid = dt.Columns.Contains("turnoguid") && !dr.IsNull("turnoguid")
                         ? dr.Field<string>("turnoguid")
                         : null;
+                    fc.Placa = dt.Columns.Contains("placa") && !dr.IsNull("placa")
+                        ? dr.Field<string>("placa")
+                        : (dt.Columns.Contains("Placa") && !dr.IsNull("Placa") ? dr.Field<string>("Placa") : null);
 
 
                     return fc;

@@ -916,7 +916,7 @@ declare @estadoActivoId int
 declare @IdTercero int, @idTipoIdentificacion int, @idTipoIdentificacioncc int
 	select @IdTercero = Id from terceros where Identificacion = '222222222222'
 	select @idTipoIdentificacion = Id from TipoIdentificacion where Texto ='No especificada'
-	select @idTipoIdentificacioncc = Id from TipoIdentificacion where Texto ='Cédula Ciudadanía'
+	select @idTipoIdentificacioncc = Id from TipoIdentificacion where Texto ='Cï¿½dula Ciudadanï¿½a'
 	if @idTipoIdentificacion is null
 	begin
 		INSERT INTO tipoTipoIdentificacion(Guid, Texto)
@@ -926,7 +926,7 @@ declare @IdTercero int, @idTipoIdentificacion int, @idTipoIdentificacioncc int
 	if @idTipoIdentificacioncc is null
 	begin
 		INSERT INTO tipoTipoIdentificacion(Guid, Texto)
-		VALUES(NEWID(), 'Cédula Ciudadanía');
+		VALUES(NEWID(), 'Cï¿½dula Ciudadanï¿½a');
 		select @idTipoIdentificacioncc = @@identity
 	end
 	if @IdTercero is null

@@ -21,6 +21,7 @@ namespace FacturadorEstacionesRepositorio
     public class EstacionesRepositorioSqlServer : IEstacionesRepositorio
     { 
         private readonly ConnectionStrings _connectionString;
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         private Convertidor _convertidor;
 
@@ -82,6 +83,39 @@ namespace FacturadorEstacionesRepositorio
             {
                 try
                 {
+                    if (timeout != null)
+                    {
+                        cmd.CommandTimeout = timeout.Value;
+                    }
+
+                    SetParameters(cmd, parameters);
+
+                    conn.Open();
+
+                    using (IDataReader reader = cmd.ExecuteReader())
+                    {
+                        dt.Load(reader, LoadOption.OverwriteChanges);
+                    }
+
+                }
+                catch (SqlException e)
+                {
+                    throw e;
+                }
+            }
+
+            return dt;
+        }
+
+        public virtual DataTable LoadDataTableFromQuery(string connectionString, string sqlQuery, IDictionary<string, object> parameters, int? timeout = null)
+        {
+            DataTable dt = new DataTable();
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlCommand cmd = new SqlCommand(sqlQuery, conn))
+            {
+                try
+                {
+                    cmd.CommandType = CommandType.Text;
                     if (timeout != null)
                     {
                         cmd.CommandTimeout = timeout.Value;
@@ -517,28 +551,44 @@ namespace FacturadorEstacionesRepositorio
             var factura = _convertidor.ConvertirFactura(dt2).FirstOrDefault();
             if (factura == null)
             {
+                Logger.Warn($"No se encontro factura/orden para venta {venta.CONSECUTIVO} (cara {cOD_CAR}). Se intentara generar desde la venta.");
                 try
                 {
-
-                    DataTable dt3 = LoadDataTableFromStoredProc(_connectionString.estacion, "AgregarFacturaPorIdVenta",
+                    LoadDataTableFromStoredProc(_connectionString.estacion, "AgregarFacturaPorIdVenta",
                              new Dictionary<string, object>{
 
                     {"@ventaId", venta.CONSECUTIVO }
                              });
+
+                    // Small retry window for eventual consistency across DB writes.
+                    Thread.Sleep(300);
                     dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ObtenerFacturaPorVenta",
                              new Dictionary<string, object>{
 
                     {"@ventaId", venta.CONSECUTIVO }
                              });
                     factura = _convertidor.ConvertirFactura(dt2).FirstOrDefault();
+
+                    if (factura == null)
+                    {
+                        Thread.Sleep(700);
+                        dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ObtenerFacturaPorVenta",
+                                 new Dictionary<string, object>{
+
+                        {"@ventaId", venta.CONSECUTIVO }
+                                 });
+                        factura = _convertidor.ConvertirFactura(dt2).FirstOrDefault();
+                    }
                 }
                 catch (Exception ex)
                 {
-
+                    Logger.Error($"Error generando factura/orden para venta {venta.CONSECUTIVO} (cara {cOD_CAR}): {ex.Message}");
+                    Logger.Error(ex.StackTrace);
                 }
             }
             if (factura == null)
             {
+                Logger.Warn($"Venta {venta.CONSECUTIVO} (cara {cOD_CAR}) existe, pero no se pudo obtener factura/orden despues de intentar generarla.");
                 return new List<FactoradorEstacionesModelo.Objetos.Factura>();
             }
             factura.Manguera = _convertidor.ConvertirManguera(dt).FirstOrDefault();
@@ -754,7 +804,15 @@ namespace FacturadorEstacionesRepositorio
             {
             };
 
-            LoadDataTableFromStoredProc(_connectionString.Facturacion, "PrepararRetroactivoTurnosPendientes", parameters);
+            try
+            {
+                LoadDataTableFromStoredProc(_connectionString.Facturacion, "PrepararRetroactivoTurnosPendientes", parameters);
+            }
+            catch (SqlException ex) when (ex.Number == 2812 && ex.Message.IndexOf("PrepararRetroactivoTurnosPendientes", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                // Backward compatibility: some stations still do not have this SP deployed.
+                return;
+            }
         }
 
         public void ActuralizarFacturasEnviadosTurno(int factura)
@@ -959,7 +1017,35 @@ DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidel
                 {"@fechaFin", hasta }
             };
 
-            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnosPorFecha", parameters);
+            DataTable dt;
+            try
+            {
+                dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnosPorFecha", parameters);
+            }
+            catch (SqlException ex) when (ex.Number == 2812)
+            {
+                var fallbackQuery = @"
+SELECT
+    CAST(t.FECHA AS INT) AS Id,
+    e.NOMBRE AS Nombre,
+    i.DESCRIPCION AS Isla,
+    CASE WHEN t.ESTADO = 'C' THEN 1 ELSE 0 END AS IdEstado,
+    dbo.Finteger(t.FECHA) + dbo.HINTEGER(t.HORA_INI) AS FechaApertura,
+    CASE
+        WHEN t.ESTADO = 'C' THEN dbo.Finteger(t.FECHA) + dbo.HINTEGER(t.HORA_FIN)
+        ELSE NULL
+    END AS FechaCierre,
+    CAST(t.NUM_TUR AS INT) AS Numero
+FROM TURN_EST t
+LEFT JOIN EMPLEADO e ON e.COD_EMP = t.COD_EMP
+LEFT JOIN ISLAS i ON i.COD_ISL = t.COD_ISL
+WHERE dbo.Finteger(t.FECHA) >= CAST(@fechaInicio AS DATE)
+  AND dbo.Finteger(t.FECHA) < DATEADD(DAY, 1, CAST(@fechaFin AS DATE))
+ORDER BY t.FECHA DESC, t.NUM_TUR DESC";
+
+                dt = LoadDataTableFromQuery(_connectionString.estacion, fallbackQuery, parameters);
+            }
+
             return _convertidor.ConvertirTurnoSiges(dt);
         }
 
@@ -970,8 +1056,16 @@ DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidel
                 {"@Id", id }
             };
 
-            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnoSurtidorInfo", parameters);
-            return _convertidor.ConvertirTurnoSurtidoresSiges(dt);
+            try
+            {
+                DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnoSurtidorInfo", parameters);
+                return _convertidor.ConvertirTurnoSurtidoresSiges(dt);
+            }
+            catch (SqlException ex) when (ex.Number == 2812 && ex.Message.IndexOf("GetTurnoSurtidorInfo", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                // Facturacion-only mode: if SP is not deployed there yet, return empty details.
+                return Enumerable.Empty<FactoradorEstacionesModelo.Siges.TurnoSurtidor>();
+            }
         }
 
         public void ActuralizarFacturasEnviadosSiesa(IEnumerable<int> facturas)
@@ -1060,7 +1154,7 @@ DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidel
                 {"@turno", turno },
                 {"@fechaTurno", fechaTurno }
             };
-            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetFacturasCanastillaIslaTurno", parameters);
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, " ", parameters);
             var facturas = _convertidor.ConvertirFacturaCanastilla(dt);
             return facturas?.ToList() ?? new List<FacturaCanastilla>();
         }

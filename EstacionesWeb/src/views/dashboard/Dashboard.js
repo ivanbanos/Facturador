@@ -18,15 +18,17 @@ import {
   CFormCheck,
   CBadge,
   CSpinner,
-  CTable,
-  CTableHead,
-  CTableHeaderCell,
-  CTableBody,
-  CTableRow,
-  CTableDataCell,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilPlus, cilLocationPin, cilPhone, cilContact, cilCalculator, cilCog } from '@coreui/icons'
+import {
+  cilPlus,
+  cilLocationPin,
+  cilPhone,
+  cilContact,
+  cilCalculator,
+  cilCog,
+  cilSpeedometer,
+} from '@coreui/icons'
 import { useNavigate } from 'react-router-dom'
 import Toast from '../toast/Toast'
 
@@ -387,53 +389,56 @@ const Dashboard = () => {
             <strong>Precios de combustibles por estación</strong>
           </CCardHeader>
           <CCardBody>
-            <CTable responsive hover>
-              <CTableHead>
-                <CTableRow>
-                  <CTableHeaderCell>Combustible</CTableHeaderCell>
-                  <CTableHeaderCell>Tipo</CTableHeaderCell>
-                  <CTableHeaderCell>Precio</CTableHeaderCell>
-                  <CTableHeaderCell className="text-end">Acción</CTableHeaderCell>
-                </CTableRow>
-              </CTableHead>
-              <CTableBody>
-                {combustibles.length === 0 && (
-                  <CTableRow>
-                    <CTableDataCell colSpan={4} className="text-center text-medium-emphasis">
-                      No hay combustibles configurados para esta estación.
-                    </CTableDataCell>
-                  </CTableRow>
-                )}
+            {combustibles.length === 0 ? (
+              <div className="text-center text-medium-emphasis py-4">
+                No hay combustibles configurados para esta estación.
+              </div>
+            ) : (
+              <CRow>
                 {combustibles.map((combustible, index) => (
-                  <CTableRow key={`${combustible.combustible}-${index}`}>
-                    <CTableDataCell>{combustible.combustible}</CTableDataCell>
-                    <CTableDataCell>
-                      <CBadge color={combustible.esGas ? 'warning' : 'primary'}>
-                        {combustible.esGas ? 'Gas' : 'Combustible'}
-                      </CBadge>
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      <CFormInput
-                        type="number"
-                        min="0"
-                        step="0.001"
-                        value={combustible.precio ?? 0}
-                        onChange={(e) => handleCombustiblePrecioChange(index, e.target.value)}
-                      />
-                    </CTableDataCell>
-                    <CTableDataCell className="text-end">
-                      <CButton
-                        color="primary"
-                        size="sm"
-                        onClick={() => abrirConfirmacionCombustible(combustible)}
-                      >
-                        Guardar
-                      </CButton>
-                    </CTableDataCell>
-                  </CTableRow>
+                  <CCol key={`${combustible.combustible}-${index}`} md={6} xl={4} className="mb-3">
+                    <CCard className="h-100 border-light">
+                      <CCardBody>
+                        <div className="d-flex justify-content-between align-items-start mb-3">
+                          <div>
+                            <div className="fw-semibold">{combustible.combustible}</div>
+                            <CBadge
+                              color={combustible.esGas ? 'warning' : 'primary'}
+                              className="mt-1"
+                            >
+                              {combustible.esGas ? 'Gas' : 'Combustible'}
+                            </CBadge>
+                          </div>
+                          <div className="text-primary opacity-75">
+                            <CIcon icon={cilSpeedometer} size="xl" />
+                          </div>
+                        </div>
+
+                        <div className="mb-3">
+                          <CFormLabel className="small text-medium-emphasis">Precio</CFormLabel>
+                          <CFormInput
+                            type="number"
+                            min="0"
+                            step="0.001"
+                            value={combustible.precio ?? 0}
+                            onChange={(e) => handleCombustiblePrecioChange(index, e.target.value)}
+                          />
+                        </div>
+
+                        <div className="d-grid">
+                          <CButton
+                            color="primary"
+                            onClick={() => abrirConfirmacionCombustible(combustible)}
+                          >
+                            Guardar
+                          </CButton>
+                        </div>
+                      </CCardBody>
+                    </CCard>
+                  </CCol>
                 ))}
-              </CTableBody>
-            </CTable>
+              </CRow>
+            )}
           </CCardBody>
         </CCard>
       )}

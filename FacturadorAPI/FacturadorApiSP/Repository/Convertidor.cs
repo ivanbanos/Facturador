@@ -569,11 +569,13 @@ namespace FacturadorAPI.Repository
                     fc.codigoFormaPago2 = dr.Table.Columns.Contains("codigoFormaPago2") && !dr.IsNull("codigoFormaPago2") ? dr.Field<int?>("codigoFormaPago2") : null;
                     fc.total1 = dr.Table.Columns.Contains("total1") && !dr.IsNull("total1") ? Convert.ToSingle(dr.Field<double>("total1")) : null;
                     fc.total2 = dr.Table.Columns.Contains("total2") && !dr.IsNull("total2") ? Convert.ToSingle(dr.Field<double>("total2")) : null;
+                    fc.numeroTransaccion = dr.Table.Columns.Contains("numeroTransaccion") && !dr.IsNull("numeroTransaccion") ? dr.Field<string>("numeroTransaccion") : null;
                     fc.Forma = new FormasPagos() { Id = dr.Field<int>("codigoFormaPago") };
                     fc.descuento = Convert.ToSingle(dr.Field<double>("descuento"));
                     fc.subtotal = Convert.ToSingle(dr.Field<double>("subtotal"));
                     fc.total = Convert.ToSingle(dr.Field<double>("total"));
                     fc.iva = Convert.ToSingle(dr.Field<double>("iva"));
+                    fc.placa = dr.Table.Columns.Contains("placa") && !dr.IsNull("placa") ? dr.Field<string>("placa") : (dr.Table.Columns.Contains("Placa") && !dr.IsNull("Placa") ? dr.Field<string>("Placa") : string.Empty);
                     fc.resolucion = ConvertirResolucion(dt).FirstOrDefault();
                     fc.enviada = dr.Field<bool>("enviada");
                     fc.Tercero = new Tercero();

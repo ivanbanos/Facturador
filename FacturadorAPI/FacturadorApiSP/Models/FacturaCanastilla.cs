@@ -15,6 +15,7 @@ namespace FacturadorAPI.Models
         public int impresa { get; set; }
         public bool enviada { get; set; }
         public int codigoFormaPago { get; set; }
+        public string numeroTransaccion { get; set; }
         public int? codigoFormaPago2 { get; set; }
         public float? total1 { get; set; }
         public float? total2 { get; set; }

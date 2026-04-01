@@ -71,7 +71,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public int PaymentFormId { get; set; }
         public int PaymentMethodId { get; set; }
         public int PaymentMeanId { get; set; }
-        public int CardId { get; set; }
-        public int TransaccionNumber { get; set; }
+        public int? CardId { get; set; }
+        public int? TransaccionNumber { get; set; }
     }
 }

@@ -32,6 +32,7 @@ const Canastilla = () => {
   const valorInicialObjetoPostCanastilla = {
     terceroId: 0,
     codigoFormaPago: 4,
+    numeroTransaccion: "",
     descuento: 0,
     vendedor: 0,
     isla: 0,
@@ -319,6 +320,14 @@ const Canastilla = () => {
     setObjetoPostCanastilla(tempObjetoPostCanastilla);
   };
 
+  const handleChangeNumeroTransaccion = (event) => {
+    const tempObjetoPostCanastilla = {
+      ...objetoPostCanastilla,
+      numeroTransaccion: event.target.value,
+    };
+    setObjetoPostCanastilla(tempObjetoPostCanastilla);
+  };
+
   const esPlacaColombianaValida = (placa) => {
     const placaLimpia = (placa || "").trim().toUpperCase();
     return /^(?:[A-Z]{3}\d{3}|[A-Z]{3}\d{2}[A-Z])$/.test(placaLimpia);
@@ -351,6 +360,8 @@ const Canastilla = () => {
     const islaSeleccionada = localStorage.getItem("islaSelect");
     if (!islaSeleccionada || islaSeleccionada === "") {
       alert("Debe seleccionar una isla/cara antes de generar la venta.");
+    } else if (!canastilla.terceroId || Number(canastilla.terceroId) <= 0) {
+      alert("Debe seleccionar un tercero válido antes de generar la venta.");
     } else if (canastilla.codigoFormaPago == 0) {
       handleSetShowAlertError(true);
     } else if (
@@ -387,7 +398,7 @@ const Canastilla = () => {
       };
 
       setIsGeneratingVenta(true);
-      limpiarEstadoCanastilla(tercero);
+      limpiarEstadoCanastilla({ terceroId: canastilla.terceroId });
 
       try {
         const respuesta = await PostCanastilla(ventaPayload);
@@ -676,6 +687,20 @@ const Canastilla = () => {
                     value={objetoPostCanastilla.placa}
                     onChange={handleChangePlaca}
                     maxLength={6}
+                  />
+                </div>
+                <div className="div-info-venta-canastilla mt-2 canastilla-venta-row">
+                  <label className="label-info-venta-canastilla">
+                    N transacción
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control altura-select select-white-blue text-select-list canastilla-venta-control"
+                    placeholder="Ingrese N transacción"
+                    name="numeroTransaccion"
+                    value={objetoPostCanastilla.numeroTransaccion || ""}
+                    onChange={handleChangeNumeroTransaccion}
+                    maxLength={50}
                   />
                 </div>
               </div>

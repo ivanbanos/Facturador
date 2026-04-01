@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json.Serialization;
 
 namespace FacturacionelectronicaCore.Negocio.Modelo
 {
@@ -9,6 +10,18 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public string Nombre { get; set; }
         public string Segundo { get; set; }
         public string Apellidos { get; set; }
+        [JsonPropertyName("apellido")]
+        public string Apellido
+        {
+            get => Apellidos;
+            set
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    Apellidos = value;
+                }
+            }
+        }
         public string Municipio { get; set; }
         public string Departamento { get; set; }
         public string Direccion { get; set; }

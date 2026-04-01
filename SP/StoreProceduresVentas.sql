@@ -7,7 +7,7 @@
 History:
 2020-11-07 primera version
 */
-USE Estacion
+USE Ventas
 GO
 SET ANSI_NULLS ON
 GO
@@ -350,7 +350,7 @@ begin try
 
 	if @fechaTurno is not null and @numeroTurno is not null and @islaTurno is not null
 	begin
-		select @turnoGuid = CONVERT(varchar(36), CONVERT(uniqueidentifier, HASHBYTES('MD5', CONCAT(CONVERT(varchar(20), @fechaTurno), '|', CONVERT(varchar(20), @islaTurno), '|', CONVERT(varchar(20), @numeroTurno)))))
+		select @turnoGuid = CONVERT(varchar(36), CONVERT(uniqueidentifier, HASHBYTES('MD5', CONVERT(varchar(20), @fechaTurno) + '|' + CONVERT(varchar(20), @islaTurno) + '|' + CONVERT(varchar(20), @numeroTurno))))
 	end
 	
 	select @identificacion = nit from CLIENTES WHERE @COD_CLI = COD_CLI
@@ -463,35 +463,29 @@ CREATE procedure [dbo].[AgregarFacturaDesdeIdVenta]
 as
 begin try
     set nocount on;
-	declare @ventaMin int, @ventaMax int, @ventaActual int
-	select @ventaMin = min(ventaId)
-	from Facturacion_Electronica.dbo.FacturasPOS
-	where fecha > DATEADD(day, -1,  CAST( GETDATE() AS Date ) )
 
-	
-	select @ventaMin = case when @ventaMin > min(ventaId) then  min(ventaId) else @ventaMin end
-	from Facturacion_Electronica.dbo.OrdenesDeDespacho
-	where fecha > DATEADD(day, -1,  CAST( GETDATE() AS Date ) )
+    declare @ventaId int;
 
-	WHILE @ventaMin is not null
-	BEGIN
-		select @ventaMin = MIN(VENTAS.CONSECUTIVO)
-		FROM VENTAS
-		left join Facturacion_Electronica.dbo.FacturasPOS as FacturasPOS on FacturasPOS.ventaId = VENTAS.CONSECUTIVO
-		left join Facturacion_Electronica.dbo.OrdenesDeDespacho as OrdenesDeDespacho on OrdenesDeDespacho.ventaId = VENTAS.CONSECUTIVO
-		Where VENTAS.CONSECUTIVO > @ventaMin
-		and FacturasPOS.facturaPOSId is null
-		and OrdenesDeDespacho.facturaPOSId is null
-		
-		if @ventaMin is not null
-		begin
-			exec [AgregarFacturaPorIdVenta] @ventaMin
-		end
+    declare cur cursor local fast_forward for
+        select v.CONSECUTIVO
+        from VENTAS v
+        left join Facturacion_Electronica.dbo.OrdenesDeDespacho as od on od.ventaId = v.CONSECUTIVO
+        where dbo.Finteger(v.FECHA_REAL) > DATEADD(day, -7, CAST(GETDATE() as date))
+          and od.ventaId is null;
 
+    open cur;
+    fetch next from cur into @ventaId;
 
-	END
-	
-		select 'OK'
+    while @@FETCH_STATUS = 0
+    begin
+        exec [AgregarFacturaPorIdVenta] @ventaId;
+        fetch next from cur into @ventaId;
+    end;
+
+    close cur;
+    deallocate cur;
+
+    select 'OK';
 end try
 begin catch
     declare 
@@ -536,12 +530,9 @@ as
 begin try
     set nocount on;
 	select top(50) v.CONSECUTIVO as IdVentaLocal, dbo.finteger(v.FECHA) FechaReporte from VENTAS v
-	left JOIN  Facturacion_Electronica.dbo.FacturasPOS f ON f.ventaId = v.CONSECUTIVO
 	left JOIN  Facturacion_Electronica.dbo.ORdenesdedespacho o ON o.ventaId = v.CONSECUTIVO
-	
-	WHERE (f.ventaID is not null and (f.reporteEnviado is null or f.reporteEnviado = 0) and f.enviada = 1 	) or
-	(o.ventaID is not null and (o.reporteEnviado is null or o.reporteEnviado = 0) and o.enviada = 1 	)
-	order by v.consecutivo desc 
+	WHERE (o.ventaID is not null and (o.reporteEnviado is null or o.reporteEnviado = 0) and o.enviada = 1)
+	order by v.consecutivo desc
 end try
 begin catch
     declare 
@@ -662,7 +653,7 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerTurnoIslaPorVentaId')
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerTurnoIslaPorVenta')
 	DROP PROCEDURE [dbo].[ObtenerTurnoIslaPorVenta]
 GO
 CREATE procedure [dbo].[ObtenerTurnoIslaPorVenta]
@@ -670,7 +661,7 @@ CREATE procedure [dbo].[ObtenerTurnoIslaPorVenta]
 as
 begin try
     set nocount on;
-	select  TURN_EST.NUM_TUR as Numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(TURN_EST.FECHA) as FechaApertura ,dbo.Finteger(TURN_EST.FECHA) as FechaCierre, TURN_EST.FECHA 
+	select  TURN_EST.NUM_TUR as Numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(TURN_EST.FECHA) as FechaApertura ,dbo.Finteger(TURN_EST.FECHA) as FechaCierre, TURN_EST.FECHA
  from TURN_EST
 inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
 inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
@@ -770,4 +761,56 @@ begin catch
 
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
+GO
+
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'AgregarFacturasDesdeIdVentaPorFecha')
+    DROP PROCEDURE [dbo].[AgregarFacturasDesdeIdVentaPorFecha]
+GO
+CREATE PROCEDURE [dbo].[AgregarFacturasDesdeIdVentaPorFecha]
+(
+    @fecha date
+)
+AS
+BEGIN TRY
+    SET NOCOUNT ON;
+
+    DECLARE @ventaId INT;
+
+    DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
+        SELECT v.CONSECUTIVO
+        FROM VENTAS v
+        LEFT JOIN Facturacion_Electronica.dbo.OrdenesDeDespacho AS od ON od.ventaId = v.CONSECUTIVO
+        WHERE dbo.Finteger(v.FECHA_REAL) = dbo.Finteger(CAST(@fecha AS VARCHAR))
+          AND od.ventaId IS NULL;
+
+    OPEN cur;
+    FETCH NEXT FROM cur INTO @ventaId;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        EXEC [AgregarFacturaPorIdVenta] @ventaId;
+        FETCH NEXT FROM cur INTO @ventaId;
+    END;
+
+    CLOSE cur;
+    DEALLOCATE cur;
+
+    SELECT 'OK';
+END TRY
+BEGIN CATCH
+    DECLARE 
+        @errorMessage  VARCHAR(2000),
+        @errorProcedure VARCHAR(255),
+        @errorLine      INT;
+
+    SELECT
+        @errorMessage  = ERROR_MESSAGE(),
+        @errorProcedure = ERROR_PROCEDURE(),
+        @errorLine      = ERROR_LINE();
+
+    RAISERROR(N'<message>Error occurred in %s :: %s :: Line number: %d</message>',
+              16, 1, @errorProcedure, @errorMessage, @errorLine);
+END CATCH;
+GO
+EXEC AgregarFacturasDesdeIdVentaPorFecha @fecha = '2026-03-18';
 GO

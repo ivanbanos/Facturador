@@ -18,6 +18,7 @@ namespace EnviadorInformacionService.Models
 		public int impresa { get; set; }
 		public bool enviada { get; set; }
 		public FormasPagos codigoFormaPago { get; set; }
+		public string numeroTransaccion { get; set; }
 		public int? codigoFormaPago2 { get; set; }
 		public decimal? total1 { get; set; }
 		public decimal? total2 { get; set; }

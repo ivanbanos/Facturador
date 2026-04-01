@@ -19,6 +19,7 @@ namespace EnviadorInformacionService.Models
 		public int impresa { get; set; }
 		public int enviada { get; set; }
 		public FormaPagoSiges codigoFormaPago { get; set; }
+		public string numeroTransaccion { get; set; }
 		public int? codigoFormaPago2 { get; set; }
 		public decimal? total1 { get; set; }
 		public decimal? total2 { get; set; }
@@ -27,6 +28,7 @@ namespace EnviadorInformacionService.Models
 		public float descuento { get; set; }
 		public float iva { get; set; }
 		public float total { get; set; }
+		public string Placa { get; set; }
 		public string TurnoGuid { get; set; }
 	}
 }

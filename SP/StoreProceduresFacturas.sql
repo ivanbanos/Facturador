@@ -132,32 +132,9 @@ END;
 
 GO
 
-IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='FacturasPOS' and xtype='U')
+IF EXISTS (SELECT * FROM sysobjects WHERE name='FacturasPOS' and xtype='U')
 BEGIN
-    create table dbo.FacturasPOS(
-    facturaPOSId INT PRIMARY KEY IDENTITY (1, 1),
-    fecha DATETIME NOT NULL,
-    resolucionId int NOT NULL,
-    consecutivo int NOT NULL,
-    ventaId int NOT NULL,
-    estado CHAR(2),
-	terceroId int,
-	reporteEnviado bit default 0,
-	turnoEnviado bit default 0,
-    turnoguid varchar(50) null,
-	Placa varchar(50) null,
-	Kilometraje varchar(50) null,
-	impresa int default 0,
-	consolidadoId int,
-	enviadaFacturacion bit default 0,
-	enviada bit default 0,
-	codigoFormaPago int not null default 4,
-    codigoFormaPago2 int null,
-    total1 float null,
-    total2 float null,
-    FOREIGN KEY (resolucionId) REFERENCES dbo.Resoluciones (ResolucionId)
-);
-
+    DROP TABLE dbo.FacturasPOS;
 END
 
 
@@ -201,47 +178,6 @@ IF NOT EXISTS (
   FROM
     INFORMATION_SCHEMA.COLUMNS
   WHERE
-    TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'terceroId')
-BEGIN
-  ALTER TABLE FacturasPOS
-ADD terceroId int;
-END;
-GO
-
-IF NOT EXISTS (
-  SELECT
-    *
-  FROM
-    INFORMATION_SCHEMA.COLUMNS
-  WHERE
-    TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'reporteEnviado')
-BEGIN
-  ALTER TABLE FacturasPOS
-ADD reporteEnviado bit default 0;
-END;
-GO
-
-
-IF NOT EXISTS (
-  SELECT
-    *
-  FROM
-    INFORMATION_SCHEMA.COLUMNS
-  WHERE
-    TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'turnoEnviado')
-BEGIN
-  ALTER TABLE FacturasPOS
-ADD turnoEnviado bit default 0;
-  ALTER TABLE OrdenDeDespacho
-ADD turnoEnviado bit default 0;
-END;
-GO
-IF NOT EXISTS (
-  SELECT
-    *
-  FROM
-    INFORMATION_SCHEMA.COLUMNS
-  WHERE
     TABLE_NAME = 'Terceros' AND COLUMN_NAME = 'enviada')
 BEGIN
   ALTER TABLE Terceros
@@ -262,46 +198,8 @@ BEGIN
 ADD tipo int not null default 0
 END;
 GO
-ALTER TABLE FacturasPOS
-ADD FOREIGN KEY (terceroId) REFERENCES terceros(terceroId);
-
-GO
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'CrearFacturaElectronica')
 	DROP PROCEDURE [dbo].[CrearFacturaElectronica]
-GO
-
-GO
-IF type_id('[dbo].[facturaPOSIdType]') IS NOT NULL
-        DROP TYPE [dbo].[facturaPOSIdType];
-GO
-CREATE TYPE [dbo].[facturaPOSIdType] AS TABLE(
-	[ventaId] [int] NOT NULL
-)
-
-GO
-IF NOT EXISTS (
-  SELECT
-    *
-  FROM
-    INFORMATION_SCHEMA.COLUMNS
-  WHERE
-    TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'Placa')
-BEGIN
-  ALTER TABLE FacturasPOS
-ADD Placa varchar(50) null;
-END;
-GO
-IF NOT EXISTS (
-  SELECT
-    *
-  FROM
-    INFORMATION_SCHEMA.COLUMNS
-  WHERE
-    TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'Kilometraje')
-BEGIN
-  ALTER TABLE FacturasPOS
-ADD Kilometraje varchar(50) null;
-END;
 GO
 DECLARE @idtipoIdentificaciones int
 
@@ -314,15 +212,10 @@ begin
 end
 GO
 IF NOT EXISTS (
-  SELECT
-    *
-  FROM
-    INFORMATION_SCHEMA.COLUMNS
-  WHERE
-    TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'impresa')
+  SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_NAME = 'OrdenesDeDespacho' AND COLUMN_NAME = 'numeroTransaccion')
 BEGIN
-  ALTER TABLE FacturasPOS
-ADD impresa int default 0;
+  ALTER TABLE OrdenesDeDespacho ADD numeroTransaccion VARCHAR(50) NULL;
 END;
 GO
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='configuracionEstacion' and xtype='U')
@@ -519,18 +412,6 @@ CREATE TYPE [dbo].[facturasIds] AS TABLE(
 	[facturaId] [int] NOT NULL
 )
 GO
-IF NOT EXISTS (
-  SELECT
-    *
-  FROM
-    INFORMATION_SCHEMA.COLUMNS
-  WHERE
-    TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'consolidadoId')
-BEGIN
-  ALTER TABLE FacturasPOS
-ADD consolidadoId int;
-END;
-GO
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'AnularFacturas')
 	DROP PROCEDURE [dbo].[AnularFacturas]
 GO
@@ -541,10 +422,10 @@ CREATE procedure [dbo].[AnularFacturas]
 as
 begin try
     set nocount on;
-	Update FacturasPOS
+	Update OrdenesDeDespacho
 	set estado = 'AN'
-	from FacturasPOS
-	Inner join @facturasIds fi on fi.facturaId = FacturasPOS.facturaPOSId
+	from OrdenesDeDespacho
+	Inner join @facturasIds fi on fi.facturaId = OrdenesDeDespacho.facturaPOSId
 
 
     
@@ -593,42 +474,6 @@ ADD autorizacion varchar(50) not null default 0
 END;
 GO
 IF NOT EXISTS (
-  SELECT
-    *
-  FROM
-    INFORMATION_SCHEMA.COLUMNS
-  WHERE
-    TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'enviada')
-BEGIN
-  ALTER TABLE FacturasPOS
-ADD enviada bit default 0;
-END;
-GO
-IF NOT EXISTS (
-  SELECT
-    *
-  FROM
-    INFORMATION_SCHEMA.COLUMNS
-  WHERE
-    TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'codigoFormaPago')
-BEGIN
-ALTER TABLE
-  FacturasPOS ADD codigoFormaPago int not null default 4
-END;
-GO
-IF NOT EXISTS (
-    SELECT
-        *
-    FROM
-        INFORMATION_SCHEMA.COLUMNS
-    WHERE
-        TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'codigoFormaPago2')
-BEGIN
-ALTER TABLE
-    FacturasPOS ADD codigoFormaPago2 int null
-END;
-GO
-IF NOT EXISTS (
     SELECT
         *
     FROM
@@ -638,42 +483,6 @@ IF NOT EXISTS (
 BEGIN
 ALTER TABLE
     OrdenesDeDespacho ADD codigoFormaPago2 int null
-END;
-GO
-IF NOT EXISTS (
-    SELECT
-        *
-    FROM
-        INFORMATION_SCHEMA.COLUMNS
-    WHERE
-        TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'total1')
-BEGIN
-ALTER TABLE
-    FacturasPOS ADD total1 float null
-END;
-GO
-IF NOT EXISTS (
-    SELECT
-        *
-    FROM
-        INFORMATION_SCHEMA.COLUMNS
-    WHERE
-        TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'total2')
-BEGIN
-ALTER TABLE
-    FacturasPOS ADD total2 float null
-END;
-GO
-IF NOT EXISTS (
-    SELECT
-        *
-    FROM
-        INFORMATION_SCHEMA.COLUMNS
-    WHERE
-        TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'turnoguid')
-BEGIN
-ALTER TABLE
-    FacturasPOS ADD turnoguid varchar(50) null
 END;
 GO
 IF NOT EXISTS (
@@ -732,14 +541,7 @@ begin try
     declare @facturasTemp as Table(id int)
 
     insert into @facturasTemp (id)
-	select 
-	top(100)ventaId
-	from FacturasPOS
-    where enviada = 0 or enviada is null
-	order by ventaId desc
-
-	insert into @facturasTemp (id)
-	select 
+	select
 	top(100)ventaId
 	from OrdenesDeDespacho
     where (enviada = 0 or enviada is null)
@@ -762,47 +564,12 @@ begin try
 			select @terceroId = SCOPE_IDENTITY()
 			end
 			
-	update FacturasPOS set terceroId = @terceroId
-	from FacturasPOS
-	inner join terceros on FacturasPOS.terceroId = terceros.terceroId
-	where terceros.identificacion is null
 	update OrdenesDeDespacho set terceroId = @terceroId
 	from OrdenesDeDespacho
 	inner join terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
 	where terceros.identificacion is null
 
-	select 
-	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
-	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
-	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, FacturasPOS.[facturaPOSId]
-      ,FacturasPOS.[fecha]
-      ,FacturasPOS.[resolucionId]
-      ,FacturasPOS.[consecutivo]
-      ,FacturasPOS.[ventaId]
-      ,FacturasPOS.[estado]
-      ,FacturasPOS.[terceroId]
-      ,FacturasPOS.[Placa]
-      ,FacturasPOS.[Kilometraje]
-      ,FacturasPOS.[impresa]
-      ,FacturasPOS.[consolidadoId]
-      ,FacturasPOS.[enviada]
-    ,FacturasPOS.[codigoFormaPago]
-    ,FacturasPOS.[codigoFormaPago2]
-    ,FacturasPOS.[total1]
-    ,FacturasPOS.[total2]
-    ,FacturasPOS.[turnoguid]
-      ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
-	from FacturasPOS
-    inner join @facturasTemp tmp on tmp.id = FacturasPOS.ventaId 
-	left join dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	left join dbo.terceros on FacturasPOS.terceroId = terceros.terceroId
-    left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	
-	where FacturasPOS.estado != 'AN'
-	union
-	select 
+	select
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
 	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
 	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, OrdenesDeDespacho.[facturaPOSId]
@@ -822,22 +589,24 @@ begin try
     ,OrdenesDeDespacho.[total1]
     ,OrdenesDeDespacho.[total2]
     ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
+
 	from OrdenesDeDespacho
-    inner join @facturasTemp tmp on tmp.id = OrdenesDeDespacho.ventaId 
+    inner join @facturasTemp tmp on tmp.id = OrdenesDeDespacho.ventaId
 	left join dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
 	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
+	where OrdenesDeDespacho.estado != 'AN'
 end try
 begin catch
-    declare 
+    declare
         @errorMessage varchar(2000),
         @errorProcedure varchar(255),
         @errorLine int;
 
-    select  
+    select
         @errorMessage = error_message(),
         @errorProcedure = error_procedure(),
         @errorLine = error_line();
@@ -1066,9 +835,6 @@ CREATE procedure [dbo].[CambiarEstadoFactursEnviada]
 as
 begin try
     set nocount on;
-	update FacturasPOS set enviada = 1
-    from FacturasPOS
-    inner join @facturas f on f.ventaId = FacturasPOS.ventaId
 	update OrdenesDeDespacho set enviada = 1
     from OrdenesDeDespacho
     inner join @facturas f on f.ventaId = OrdenesDeDespacho.ventaId
@@ -1098,10 +864,10 @@ as
 begin try
     
 			
-		Update FacturasPOS
+		update OrdenesDeDespacho
 				set impresa = 1
-				from FacturasPOS
-				where FacturasPOS.ventaId = @ventaid
+				from OrdenesDeDespacho
+				where OrdenesDeDespacho.ventaId = @ventaid
 			
 		Update OrdenesDeDespacho
 				set impresa = 1
@@ -1145,7 +911,8 @@ CREATE procedure [dbo].[CrearFactura]
     @COD_FOR_PAG_2 smallint = null,
     @total1 float = null,
     @total2 float = null,
-    @turnoGuid varchar(50) = null
+    @turnoGuid varchar(50) = null,
+    @numeroTransaccion varchar(50) = null
 )
 as
 begin try
@@ -1155,7 +922,6 @@ begin try
 	@clientesCreditoGeneranFactura VARCHAR (50), @soloGeneraOrdenes VARCHAR (50), @verificarConsecutivo int,
     @OrdenDeDespachoId int, @mismaResolucion VARCHAR (50), @codigoFormaPagoPrincipal smallint;
 	
-	select @facturaPOSId = facturaPOSId from FacturasPOS where ventaId = @ventaId
 	select @OrdenDeDespachoId = facturaPOSId from OrdenesDeDespacho where ventaId = @ventaId
 
 	select @clientesCreditoGeneranFactura=valor from configuracionEstacion where descripcion = 'ClientesCreditosGeneranFactura'
@@ -1175,11 +941,7 @@ begin try
         select @codigoFormaPagoPrincipal = 4
     end
 
-	if @facturaPOSId is not null 
-	begin
-		select @facturaPOSId as facturaPOSId
-	end
-	else if @OrdenDeDespachoId is not null 
+	if @OrdenDeDespachoId is not null 
 	begin
 		select @OrdenDeDespachoId as facturaPOSId
 	end
@@ -1188,7 +950,10 @@ begin try
 		select @ResolucionId = ResolucionId, @consecutivoActual = consecutivoActual, @fechafinal = fechafinal, @ConsecutivoFinal = consecutivoFinal
 		from Resoluciones where esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
 
-		select @consecutivoActual = isnull(max(consecutivo)+1, @consecutivoActual) from FacturasPOS where resolucionId = @ResolucionId
+		select @consecutivoActual = isnull(max(consecutivo)+1, @consecutivoActual)
+		from OrdenesDeDespacho
+		where resolucionId = @ResolucionId
+		  and consecutivo > 0
 
 		select @consecutivoActual = case when isnull(max(consecutivo)+1, @consecutivoActual) > @consecutivoActual then isnull(max(consecutivo)+1, @consecutivoActual) else @consecutivoActual end  from FacturasCanastilla where resolucionId = @ResolucionId
 
@@ -1203,8 +968,8 @@ begin try
             if @soloGeneraOrdenes = 'SI' or (  @clientesCreditoGeneranFactura != 'SI' and @codigoFormaPagoPrincipal !=4)
 			begin
 			
-                insert into OrdenesDeDespacho (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago, codigoFormaPago2, total1, total2, turnoguid)
-                values(@Fecha, @ResolucionId, 0, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @codigoFormaPagoPrincipal, null, null, null, @turnoGuid)
+                insert into OrdenesDeDespacho (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago, codigoFormaPago2, total1, total2, turnoguid, numeroTransaccion)
+                values(@Fecha, @ResolucionId, 0, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @codigoFormaPagoPrincipal, null, null, null, @turnoGuid, @numeroTransaccion)
 			
 				select @facturaPOSId = SCOPE_IDENTITY()
 
@@ -1216,7 +981,11 @@ begin try
 			while @facturaPOSId is null
 			begin
 				select @verificarConsecutivo = null
-				select @verificarConsecutivo = consecutivo from FacturasPOS  where  consecutivo = @consecutivoActual
+				select @verificarConsecutivo = consecutivo
+				from OrdenesDeDespacho
+				where consecutivo = @consecutivoActual
+				  and resolucionId = @ResolucionId
+				  and consecutivo > 0
 				if (@verificarConsecutivo is not null )
 				begin 
 					update Resoluciones set consecutivoActual = consecutivoActual+1 WHERE esPos = 'S' and estado = 'AC'  and (@mismaResolucion = 'SI' or tipo = 0)
@@ -1224,8 +993,8 @@ begin try
 				end
 				else
 				begin
-                    insert into FacturasPOS (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago, codigoFormaPago2, total1, total2, turnoguid)
-                    select @Fecha, @ResolucionId, @consecutivoActual, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @codigoFormaPagoPrincipal, null, null, null, @turnoGuid
+                    insert into OrdenesDeDespacho (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago, codigoFormaPago2, total1, total2, turnoguid, numeroTransaccion)
+                    select @Fecha, @ResolucionId, @consecutivoActual, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @codigoFormaPagoPrincipal, null, null, null, @turnoGuid, @numeroTransaccion
 					from Resoluciones WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
 			
 					select @facturaPOSId = SCOPE_IDENTITY()
@@ -1270,34 +1039,35 @@ begin try
 	select top(1)
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
 	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
-	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, FacturasPOS.[facturaPOSId]
-      ,FacturasPOS.[fecha]
-      ,FacturasPOS.[resolucionId]
-      ,FacturasPOS.[consecutivo]
-      ,FacturasPOS.[ventaId]
-      ,FacturasPOS.[estado]
-      ,FacturasPOS.[terceroId]
-      ,FacturasPOS.[Placa]
-      ,FacturasPOS.[Kilometraje]
-      ,FacturasPOS.[impresa]
-      ,FacturasPOS.[consolidadoId]
-      ,FacturasPOS.[enviada]
-    ,FacturasPOS.[codigoFormaPago]
-    ,FacturasPOS.[codigoFormaPago2]
-    ,FacturasPOS.[total1]
-    ,FacturasPOS.[total2]
-    ,FacturasPOS.[turnoguid]
-      ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
+	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, OrdenesDeDespacho.[facturaPOSId]
+      ,OrdenesDeDespacho.[fecha]
+      ,OrdenesDeDespacho.[resolucionId]
+      ,OrdenesDeDespacho.[consecutivo]
+      ,OrdenesDeDespacho.[ventaId]
+      ,OrdenesDeDespacho.[estado]
+      ,OrdenesDeDespacho.[terceroId]
+      ,OrdenesDeDespacho.[Placa]
+      ,OrdenesDeDespacho.[Kilometraje]
+      ,OrdenesDeDespacho.[impresa]
+      ,OrdenesDeDespacho.[consolidadoId]
+      ,OrdenesDeDespacho.[enviada]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
+    ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
+      ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
-	from dbo.FacturasPOS
-	left join dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	left join dbo.terceros on FacturasPOS.terceroId = terceros.terceroId
+	from dbo.OrdenesDeDespacho
+	left join dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
+	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
 	
-	where @ventaId = FacturasPOS.ventaId
+	where @ventaId = OrdenesDeDespacho.ventaId
 	
-	and FacturasPOS.estado != 'AN'
+	and OrdenesDeDespacho.estado != 'AN'
 	union
 	select top(1)
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
@@ -1319,6 +1089,7 @@ begin try
     ,OrdenesDeDespacho.[total1]
     ,OrdenesDeDespacho.[total2]
     ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1358,33 +1129,34 @@ begin try
 	Resoluciones.habilitada as habilitada,
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
 	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
-	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, FacturasPOS.[facturaPOSId]
-      ,FacturasPOS.[fecha]
-      ,FacturasPOS.[resolucionId]
-      ,FacturasPOS.[consecutivo]
-      ,FacturasPOS.[ventaId]
-      ,FacturasPOS.[estado]
-      ,FacturasPOS.[terceroId]
-      ,FacturasPOS.[Placa]
-      ,FacturasPOS.[Kilometraje]
-      ,FacturasPOS.[impresa]
-      ,FacturasPOS.[consolidadoId]
-      ,FacturasPOS.[enviada]
-    ,FacturasPOS.[codigoFormaPago]
-    ,FacturasPOS.[codigoFormaPago2]
-    ,FacturasPOS.[total1]
-    ,FacturasPOS.[total2]
-    ,FacturasPOS.[turnoguid]
-      ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
+	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, OrdenesDeDespacho.[facturaPOSId]
+      ,OrdenesDeDespacho.[fecha]
+      ,OrdenesDeDespacho.[resolucionId]
+      ,OrdenesDeDespacho.[consecutivo]
+      ,OrdenesDeDespacho.[ventaId]
+      ,OrdenesDeDespacho.[estado]
+      ,OrdenesDeDespacho.[terceroId]
+      ,OrdenesDeDespacho.[Placa]
+      ,OrdenesDeDespacho.[Kilometraje]
+      ,OrdenesDeDespacho.[impresa]
+      ,OrdenesDeDespacho.[consolidadoId]
+      ,OrdenesDeDespacho.[enviada]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
+    ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
+      ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
-	from dbo.FacturasPOS
-	left join dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	left join dbo.terceros on FacturasPOS.terceroId = terceros.terceroId
+	from dbo.OrdenesDeDespacho
+	left join dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
+	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	inner join @ventas v on FacturasPOS.ventaId = v.[ventaId]
+	inner join @ventas v on OrdenesDeDespacho.ventaId = v.[ventaId]
 	
-	where FacturasPOS.estado != 'AN'
+	where OrdenesDeDespacho.estado != 'AN'
     union
 	select 
 	Resoluciones.habilitada as habilitada,
@@ -1407,6 +1179,7 @@ begin try
     ,OrdenesDeDespacho.[total1]
     ,OrdenesDeDespacho.[total2]
     ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1444,32 +1217,33 @@ begin try
 	select 
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
 	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
-	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, FacturasPOS.[facturaPOSId]
-      ,FacturasPOS.[fecha]
-      ,FacturasPOS.[resolucionId]
-      ,FacturasPOS.[consecutivo]
-      ,FacturasPOS.[ventaId]
-      ,FacturasPOS.[estado]
-      ,FacturasPOS.[terceroId]
-      ,FacturasPOS.[Placa]
-      ,FacturasPOS.[Kilometraje]
-      ,FacturasPOS.[impresa]
-      ,FacturasPOS.[consolidadoId]
-      ,FacturasPOS.[enviada]
-    ,FacturasPOS.[codigoFormaPago]
-    ,FacturasPOS.[codigoFormaPago2]
-    ,FacturasPOS.[total1]
-    ,FacturasPOS.[total2]
-    ,FacturasPOS.[turnoguid]
-      ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
+	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, OrdenesDeDespacho.[facturaPOSId]
+      ,OrdenesDeDespacho.[fecha]
+      ,OrdenesDeDespacho.[resolucionId]
+      ,OrdenesDeDespacho.[consecutivo]
+      ,OrdenesDeDespacho.[ventaId]
+      ,OrdenesDeDespacho.[estado]
+      ,OrdenesDeDespacho.[terceroId]
+      ,OrdenesDeDespacho.[Placa]
+      ,OrdenesDeDespacho.[Kilometraje]
+      ,OrdenesDeDespacho.[impresa]
+      ,OrdenesDeDespacho.[consolidadoId]
+      ,OrdenesDeDespacho.[enviada]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
+    ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
+      ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
-	from dbo.FacturasPOS
-	left join dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	left join dbo.terceros on FacturasPOS.terceroId = terceros.terceroId
+	from dbo.OrdenesDeDespacho
+	left join dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
+	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
 	where Resoluciones.descripcion = @prefijo
-	AND FacturasPOS.consecutivo = @consecutivo
+	AND OrdenesDeDespacho.consecutivo = @consecutivo
 	union
     select 
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
@@ -1491,6 +1265,7 @@ begin try
     ,OrdenesDeDespacho.[total1]
     ,OrdenesDeDespacho.[total2]
     ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1521,29 +1296,29 @@ IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'MandarImprimir')
 GO
 CREATE procedure [dbo].[MandarImprimir]
 (
-	@ventaId int )
+	@ventaId int, @veces int )
 as
 begin try
 		declare @impresa int
 		
-		select @impresa = impresa from FacturasPOS
-				where FacturasPOS.ventaId = @ventaId
+		select @impresa = impresa from OrdenesDeDespacho
+				where OrdenesDeDespacho.ventaId = @ventaId
 
 		if @impresa >=0
 		begin
-		Update FacturasPOS
+		update OrdenesDeDespacho
 				set impresa = -1,
 				enviada=0
-				from FacturasPOS
-				where FacturasPOS.ventaId = @ventaId
+				from OrdenesDeDespacho
+				where OrdenesDeDespacho.ventaId = @ventaId
 		end
 		else begin
 		
-		Update FacturasPOS
+		update OrdenesDeDespacho
 				set impresa = impresa-1,
 				enviada=0
-				from FacturasPOS
-				where FacturasPOS.ventaId = @ventaId
+				from OrdenesDeDespacho
+				where OrdenesDeDespacho.ventaId = @ventaId
 		end
 
 
@@ -1594,31 +1369,32 @@ begin try
 	select top(1)
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
 	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
-	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, FacturasPOS.[facturaPOSId]
-      ,FacturasPOS.[fecha]
-      ,FacturasPOS.[resolucionId]
-      ,FacturasPOS.[consecutivo]
-      ,FacturasPOS.[ventaId]
-      ,FacturasPOS.[estado]
-      ,FacturasPOS.[terceroId]
-      ,FacturasPOS.[Placa]
-      ,FacturasPOS.[Kilometraje]
-      ,FacturasPOS.[impresa]
-      ,FacturasPOS.[consolidadoId]
-      ,FacturasPOS.[enviada]
-    ,FacturasPOS.[codigoFormaPago]
-    ,FacturasPOS.[codigoFormaPago2]
-    ,FacturasPOS.[total1]
-    ,FacturasPOS.[total2]
-    ,FacturasPOS.[turnoguid]
-      ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
+	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, OrdenesDeDespacho.[facturaPOSId]
+      ,OrdenesDeDespacho.[fecha]
+      ,OrdenesDeDespacho.[resolucionId]
+      ,OrdenesDeDespacho.[consecutivo]
+      ,OrdenesDeDespacho.[ventaId]
+      ,OrdenesDeDespacho.[estado]
+      ,OrdenesDeDespacho.[terceroId]
+      ,OrdenesDeDespacho.[Placa]
+      ,OrdenesDeDespacho.[Kilometraje]
+      ,OrdenesDeDespacho.[impresa]
+      ,OrdenesDeDespacho.[consolidadoId]
+      ,OrdenesDeDespacho.[enviada]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
+    ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
+      ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
-	from dbo.FacturasPOS
-	left join dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	left join dbo.terceros on FacturasPOS.terceroId = terceros.terceroId
+	from dbo.OrdenesDeDespacho
+	left join dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
+	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	where FacturasPOS.impresa <= -1
+	where OrdenesDeDespacho.impresa <= -1
 	union
 	select top(1)
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
@@ -1640,6 +1416,7 @@ begin try
     ,OrdenesDeDespacho.[total1]
     ,OrdenesDeDespacho.[total2]
     ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -1676,18 +1453,6 @@ INSERT INTO configuracionEstacion(descripcion,valor) values('SoloGeneraOrdenes',
 end
 GO
 
-IF NOT EXISTS (
-  SELECT
-    *
-  FROM
-    INFORMATION_SCHEMA.COLUMNS
-  WHERE
-    TABLE_NAME = 'FacturasPOS' AND COLUMN_NAME = 'enviadaFacturacion')
-BEGIN
-  ALTER TABLE FacturasPOS
-ADD enviadaFacturacion bit default 0;
-END;
-GO
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaSinenviadaFacturacion')
 	DROP PROCEDURE [dbo].[getFacturaSinenviadaFacturacion]
 GO
@@ -1699,13 +1464,7 @@ begin try
     declare @facturasTemp as Table(id int)
 
     insert into @facturasTemp (id)
-	select 
-	top(100)ventaId
-	from FacturasPOS
-    where enviadaFacturacion = 0 or enviadaFacturacion is null
-	order by fecha desc
-	insert into @facturasTemp (id)
-	select 
+	select
 	top(100)ventaId
 	from OrdenesDeDespacho
     where (enviadaFacturacion = 0 or enviadaFacturacion is null)
@@ -1728,46 +1487,11 @@ begin try
 			select @terceroId = SCOPE_IDENTITY()
 			end
 			
-	update FacturasPOS set terceroId = @terceroId
-	from FacturasPOS
-	inner join terceros on FacturasPOS.terceroId = terceros.terceroId
-	where terceros.identificacion is null
 	update OrdenesDeDespacho set terceroId = @terceroId
 	from OrdenesDeDespacho
 	inner join terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
 	where terceros.identificacion is null
-	
 
-	select 
-	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
-	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
-	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, FacturasPOS.[facturaPOSId]
-      ,FacturasPOS.[fecha]
-      ,FacturasPOS.[resolucionId]
-      ,FacturasPOS.[consecutivo]
-      ,FacturasPOS.[ventaId]
-      ,FacturasPOS.[estado]
-      ,FacturasPOS.[terceroId]
-      ,FacturasPOS.[Placa]
-      ,FacturasPOS.[Kilometraje]
-      ,FacturasPOS.[impresa]
-      ,FacturasPOS.[consolidadoId]
-      ,FacturasPOS.[enviada]
-    ,FacturasPOS.[codigoFormaPago]
-    ,FacturasPOS.[codigoFormaPago2]
-    ,FacturasPOS.[total1]
-    ,FacturasPOS.[total2]
-    ,FacturasPOS.[turnoguid]
-      ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
-	from FacturasPOS
-    inner join @facturasTemp tmp on tmp.id = FacturasPOS.ventaId 
-	inner join dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	inner join dbo.terceros on FacturasPOS.terceroId = terceros.terceroId
-    inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	where FacturasPOS.estado != 'AN'
-	union
 	select
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
 	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
@@ -1788,15 +1512,17 @@ begin try
     ,OrdenesDeDespacho.[total1]
     ,OrdenesDeDespacho.[total2]
     ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
+
 	from OrdenesDeDespacho
-    inner join @facturasTemp tmp on tmp.id = OrdenesDeDespacho.ventaId 
+    inner join @facturasTemp tmp on tmp.id = OrdenesDeDespacho.ventaId
 	inner join dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
 	inner join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
     inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	
+	where OrdenesDeDespacho.estado != 'AN'
+
 end try
 begin catch
     declare 
@@ -1820,10 +1546,6 @@ CREATE procedure [dbo].[CambiarEstadoFactursEnviadaFacturacion]
 as
 begin try
     set nocount on;
-	update FacturasPOS set enviadaFacturacion = 1
-    from FacturasPOS
-    inner join @facturas f on f.ventaId = FacturasPOS.ventaId
-
 	update OrdenesDeDespacho set enviadaFacturacion = 1
     from OrdenesDeDespacho
     inner join @facturas f on f.ventaId = OrdenesDeDespacho.ventaId
@@ -1844,17 +1566,16 @@ begin catch
 end catch;
 GO
 GO
-CREATE procedure [dbo].[ActuralizarTurnoEnviadas]
+IF OBJECT_ID(N'dbo.ActuralizarTurnoEnviadas', N'P') IS NULL
+    EXEC('CREATE PROCEDURE [dbo].[ActuralizarTurnoEnviadas] AS SET NOCOUNT ON;');
+GO
+ALTER procedure [dbo].[ActuralizarTurnoEnviadas]
 (
 	@facturas [ventasIds] readonly
 )
 as
 begin try
     set nocount on;
-	update FacturasPOS set turnoEnviado = 1
-    from FacturasPOS
-    inner join @facturas f on f.ventaId = FacturasPOS.ventaId
-
 	update OrdenesDeDespacho set turnoEnviado = 1
     from OrdenesDeDespacho
     inner join @facturas f on f.ventaId = OrdenesDeDespacho.ventaId
@@ -1874,6 +1595,51 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+IF OBJECT_ID(N'dbo.GetTurnosPorFecha', N'P') IS NULL
+    EXEC('CREATE PROCEDURE [dbo].[GetTurnosPorFecha] AS SET NOCOUNT ON;');
+GO
+ALTER procedure [dbo].[GetTurnosPorFecha]
+(
+    @fechaInicio datetime,
+    @fechaFin datetime
+)
+as
+begin try
+    set nocount on;
+
+    select
+        cast(t.FECHA as int) as Id,
+        e.NOMBRE as Nombre,
+        i.DESCRIPCION as Isla,
+        case when t.ESTADO = 'C' then 1 else 0 end as IdEstado,
+        Ventas.dbo.Finteger(t.FECHA) + Ventas.dbo.HINTEGER(t.HORA_INI) as FechaApertura,
+        case
+            when t.ESTADO = 'C' then Ventas.dbo.Finteger(t.FECHA) + Ventas.dbo.HINTEGER(t.HORA_FIN)
+            else null
+        end as FechaCierre,
+        cast(t.NUM_TUR as int) as Numero, FECHA
+    from Ventas.dbo.TURN_EST t
+    left join Ventas.dbo.EMPLEADO e on e.COD_EMP = t.COD_EMP
+    left join Ventas.dbo.ISLAS i on i.COD_ISL = t.COD_ISL
+    where Ventas.dbo.Finteger(t.FECHA) >= cast(@fechaInicio as date)
+      and Ventas.dbo.Finteger(t.FECHA) < dateadd(day, 1, cast(@fechaFin as date))
+    order by t.FECHA desc, t.NUM_TUR desc;
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'PrepararRetroactivoTurnosPendientes')
 	DROP PROCEDURE [dbo].[PrepararRetroactivoTurnosPendientes]
 GO
@@ -1885,7 +1651,7 @@ begin try
     ;with turnosVentas as (
         select
             v.CONSECUTIVO as ventaId,
-                        CONVERT(varchar(36), CONVERT(uniqueidentifier, HASHBYTES('MD5', CONCAT(CONVERT(varchar(20), ISNULL(v.FECHA_REAL, t.FECHA)), '|', CONVERT(varchar(20), v.COD_ISL), '|', CONVERT(varchar(20), ISNULL(v.NUM_TUR, t.NUM_TUR)))))) as turnoGuid
+                        CONVERT(varchar(36), CONVERT(uniqueidentifier, HASHBYTES('MD5', CONVERT(varchar(20), ISNULL(v.FECHA_REAL, t.FECHA)) + '|' + CONVERT(varchar(20), v.COD_ISL) + '|' + CONVERT(varchar(20), ISNULL(v.NUM_TUR, t.NUM_TUR))))) as turnoGuid
         from Ventas.dbo.VENTAS v
                 outer apply (
                         select top(1) ts.FECHA, ts.NUM_TUR
@@ -1903,14 +1669,14 @@ begin try
     )
     update f
     set f.turnoguid = tv.turnoGuid
-    from FacturasPOS f
+    from OrdenesDeDespacho f
     inner join turnosVentas tv on tv.ventaId = f.ventaId
     where f.turnoguid is null;
 
     ;with turnosVentas as (
         select
             v.CONSECUTIVO as ventaId,
-                        CONVERT(varchar(36), CONVERT(uniqueidentifier, HASHBYTES('MD5', CONCAT(CONVERT(varchar(20), ISNULL(v.FECHA_REAL, t.FECHA)), '|', CONVERT(varchar(20), v.COD_ISL), '|', CONVERT(varchar(20), ISNULL(v.NUM_TUR, t.NUM_TUR)))))) as turnoGuid
+                        CONVERT(varchar(36), CONVERT(uniqueidentifier, HASHBYTES('MD5', CONVERT(varchar(20), ISNULL(v.FECHA_REAL, t.FECHA)) + '|' + CONVERT(varchar(20), v.COD_ISL) + '|' + CONVERT(varchar(20), ISNULL(v.NUM_TUR, t.NUM_TUR))))) as turnoGuid
         from Ventas.dbo.VENTAS v
                 outer apply (
                         select top(1) ts.FECHA, ts.NUM_TUR
@@ -1932,7 +1698,7 @@ begin try
     inner join turnosVentas tv on tv.ventaId = o.ventaId
     where o.turnoguid is null;
 
-    update FacturasPOS
+    update OrdenesDeDespacho
     set turnoEnviado = 0
     where turnoguid is not null
       and (turnoEnviado = 1 or turnoEnviado is null)
@@ -1965,9 +1731,9 @@ CREATE procedure [dbo].[ActuralizarFechasReportesEnviadas]
 as
 begin try
     set nocount on;
-	update FacturasPOS set reporteEnviado = 1
-    from FacturasPOS
-    inner join @facturas f on f.ventaId = FacturasPOS.ventaId
+	update OrdenesDeDespacho set reporteEnviado = 1
+    from OrdenesDeDespacho
+    inner join @facturas f on f.ventaId = OrdenesDeDespacho.ventaId
 
 	update OrdenesDeDespacho set reporteEnviado = 1
     from OrdenesDeDespacho
@@ -1998,10 +1764,6 @@ CREATE procedure [dbo].[CambiarEstadoFactursEnviadaFacturacion]
 as
 begin try
     set nocount on;
-	update FacturasPOS set enviadaFacturacion = 1
-    from FacturasPOS
-    inner join @facturas f on f.ventaId = FacturasPOS.ventaId
-
 	update OrdenesDeDespacho set enviadaFacturacion = 1
     from OrdenesDeDespacho
     inner join @facturas f on f.ventaId = OrdenesDeDespacho.ventaId
@@ -2031,11 +1793,6 @@ CREATE procedure [dbo].[enviarFacturacionSiigo]
 as
 begin try
     set nocount on;
-	update FacturasPOS set enviadaFacturacion = 1
-    from FacturasPOS
-    where @ventaId = FacturasPOS.ventaId
-
-	
 	update OrdenesDeDespacho set enviadaFacturacion = 1
     from OrdenesDeDespacho
     where @ventaId = OrdenesDeDespacho.ventaId
@@ -2063,53 +1820,18 @@ as
 begin try
     set nocount on;
 
-	declare @idFacturas as table (id int);
-	
-	insert into @idFacturas(id)
-	select FacturasPOS.ventaid
-	from dbo.FacturasPOS
-	where FacturasPOS.enviadaFacturacion = 1
+	declare @idFacturas as table (id int primary key);
 
-	
-	insert into @idFacturas(id)
-	select OrdenesDeDespacho.ventaid
-	from dbo.OrdenesDeDespacho
-	where OrdenesDeDespacho.enviadaFacturacion = 1
-	
-	update FacturasPOS
-	set enviadaFacturacion = 0
-	update OrdenesDeDespacho
-	set enviadaFacturacion = 0
+	begin tran;
 
-	select
-	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
-	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
-	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, FacturasPOS.[facturaPOSId]
-      ,FacturasPOS.[fecha]
-      ,FacturasPOS.[resolucionId]
-      ,FacturasPOS.[consecutivo]
-      ,FacturasPOS.[ventaId]
-      ,FacturasPOS.[estado]
-      ,FacturasPOS.[terceroId]
-      ,FacturasPOS.[Placa]
-      ,FacturasPOS.[Kilometraje]
-      ,FacturasPOS.[impresa]
-      ,FacturasPOS.[consolidadoId]
-      ,FacturasPOS.[enviada]
-    ,FacturasPOS.[codigoFormaPago]
-    ,FacturasPOS.[codigoFormaPago2]
-    ,FacturasPOS.[total1]
-    ,FacturasPOS.[total2]
-    ,FacturasPOS.[turnoguid]
-      ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
-	from dbo.FacturasPOS
-	inner join @idFacturas idf on idf.id = FacturasPOS.ventaid
-	left join dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	left join dbo.terceros on FacturasPOS.terceroId = terceros.terceroId
-    left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	union 
+	update o
+	set o.enviadaFacturacion = 0
+	output deleted.ventaId into @idFacturas(id)
+	from dbo.OrdenesDeDespacho o with (updlock, rowlock)
+	where o.enviadaFacturacion = 1;
+
+	commit tran;
+
 	select
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
 	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
@@ -2130,24 +1852,26 @@ begin try
     ,OrdenesDeDespacho.[total1]
     ,OrdenesDeDespacho.[total2]
     ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
 	from dbo.OrdenesDeDespacho
 	inner join @idFacturas idf on idf.id = OrdenesDeDespacho.ventaid
 	left join dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
 	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
-    left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	
+    left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId;
 
-
-    
 end try
 begin catch
     declare 
         @errorMessage varchar(2000),
         @errorProcedure varchar(255),
         @errorLine int;
+
+	if (@@TRANCOUNT > 0)
+	begin
+		rollback tran;
+	end
 
     select  
         @errorMessage = error_message(),
@@ -2168,89 +1892,163 @@ CREATE procedure [dbo].[ConvertirAFactura]
 as
 begin try
     set nocount on;
-	declare @ResolucionId int, @consecutivoActual int, @fechafinal DATETIME, @facturaPOSId int, @ConsecutivoFinal int,
-	
-	@clientesCreditoGeneranFactura VARCHAR (50), @soloGeneraOrdenes VARCHAR (50), @verificarConsecutivo int,
-	@OrdenDeDespachoId int,  @mismaResolucion VARCHAR (50);
-	
-	select @mismaResolucion=valor from configuracionEstacion where descripcion = 'mismaResolucion'
+
+	declare @ResolucionId int,
+			@consecutivoActual int,
+			@fechafinal DATETIME,
+			@facturaPOSId int,
+			@ConsecutivoFinal int,
+			@verificarConsecutivo int,
+			@mismaResolucion VARCHAR (50),
+			@loopCounter int = 0,
+			@maxIterations int = 1000;
+
+	select @mismaResolucion = valor from configuracionEstacion where descripcion = 'mismaResolucion';
 	if @mismaResolucion is null
 	begin
-	insert into configuracionEstacion(descripcion, valor) values ('mismaResolucion','SI')
+		insert into configuracionEstacion(descripcion, valor) values ('mismaResolucion','SI');
+		select @mismaResolucion = 'SI';
 	end
 
-	select @facturaPOSId = facturaPOSId from FacturasPOS where ventaId = @ventaId
-	declare @terceroId int,
-	@Placa varchar(50) = null,
-	@Kilometraje varchar(50) = null,
-	@COD_FOR_PAG smallint,
-	@Fecha datetime = null;
-
-	select @terceroId = terceroId, @Placa = Placa, @Kilometraje = Kilometraje, @COD_FOR_PAG = codigoFormaPago, @Fecha = GETDATE()
+	select @facturaPOSId = facturaPOSId
 	from OrdenesDeDespacho
-	where  @ventaId = OrdenesDeDespacho.ventaId
+	where ventaId = @ventaId;
 
-	if @facturaPOSId is not null 
+	if @facturaPOSId is null
 	begin
-		select @facturaPOSId as facturaPOSId
+		select cast(null as int) as facturaPOSId;
+		return;
 	end
-	else 
+
+	if exists(
+		select 1
+		from OrdenesDeDespacho
+		where ventaId = @ventaId
+		  and consecutivo > 0
+	)
 	begin
-		select @ResolucionId = ResolucionId, @consecutivoActual = consecutivoActual, @fechafinal = fechafinal, @ConsecutivoFinal = consecutivoFinal
-		from Resoluciones where esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-
-		if @fechafinal is null or @fechafinal < GETDATE() or @ConsecutivoFinal <= @consecutivoActual
-		begin
-			update Resoluciones set estado = 'VE' WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-			select @facturaPOSId as facturaPOSId
-		end
-		else
-		begin
-			while @facturaPOSId is null
-			begin
-				select @verificarConsecutivo = null
-				select @verificarConsecutivo = consecutivo from FacturasPOS  where  consecutivo = @consecutivoActual
-				if (@verificarConsecutivo is not null )
-				begin 
-					update Resoluciones set consecutivoActual = consecutivoActual+1 WHERE esPos = 'S' and estado = 'AC' 
-					select @consecutivoActual=consecutivoActual from Resoluciones where esPos = 'S' and estado = 'AC' 
-				end
-				else
-				begin
-					insert into FacturasPOS (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago)
-					select @Fecha, @ResolucionId, @consecutivoActual, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @COD_FOR_PAG
-					from Resoluciones WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-			
-					select @facturaPOSId = SCOPE_IDENTITY()
-
-					update Resoluciones set consecutivoActual = @consecutivoActual+1 WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-
-					
-					delete OrdenesDeDespacho 
-					from OrdenesDeDespacho
-					where @ventaId = OrdenesDeDespacho.ventaId
-    
-				end
-			
-			
-				select @facturaPOSId as facturaPOSId
-			end
-		end
+		select @facturaPOSId as facturaPOSId;
+		return;
 	end
-	
+
+	set transaction isolation level serializable;
+	begin tran;
+
+	select @ResolucionId = ResolucionId,
+		   @consecutivoActual = consecutivoActual,
+		   @fechafinal = fechafinal,
+		   @ConsecutivoFinal = consecutivoFinal
+	from Resoluciones with (updlock, holdlock, rowlock)
+	where esPos = 'S'
+	  and estado = 'AC'
+	  and (@mismaResolucion = 'SI' or tipo = 0);
+
+	if @ResolucionId is null
+	begin
+		rollback tran;
+		select @facturaPOSId as facturaPOSId;
+		return;
+	end
+
+	select @consecutivoActual = isnull(max(consecutivo)+1, @consecutivoActual)
+	from OrdenesDeDespacho
+	where resolucionId = @ResolucionId
+	  and consecutivo > 0;
+
+	select @consecutivoActual = case
+		when isnull(max(consecutivo)+1, @consecutivoActual) > @consecutivoActual then isnull(max(consecutivo)+1, @consecutivoActual)
+		else @consecutivoActual
+	end
+	from FacturasCanastilla
+	where resolucionId = @ResolucionId;
+
+	if @fechafinal is null or @fechafinal < GETDATE() or @ConsecutivoFinal <= @consecutivoActual
+	begin
+		update Resoluciones
+		set estado = 'VE'
+		where esPos = 'S'
+		  and estado = 'AC'
+		  and (@mismaResolucion = 'SI' or tipo = 0);
+
+		commit tran;
+		select @facturaPOSId as facturaPOSId;
+		return;
+	end
+
+	while @loopCounter < @maxIterations
+	begin
+		select @verificarConsecutivo = null;
+		select @verificarConsecutivo = consecutivo
+		from OrdenesDeDespacho
+		where consecutivo = @consecutivoActual
+		  and resolucionId = @ResolucionId
+		  and consecutivo > 0;
+
+		if @verificarConsecutivo is null
+		begin
+			select @verificarConsecutivo = consecutivo
+			from FacturasCanastilla
+			where consecutivo = @consecutivoActual
+			  and resolucionId = @ResolucionId;
+		end
+
+		if @verificarConsecutivo is null
+			break;
+
+		update Resoluciones
+		set consecutivoActual = consecutivoActual + 1
+		where esPos = 'S'
+		  and estado = 'AC'
+		  and (@mismaResolucion = 'SI' or tipo = 0);
+
+		select @consecutivoActual = consecutivoActual
+		from Resoluciones
+		where esPos = 'S'
+		  and estado = 'AC'
+		  and (@mismaResolucion = 'SI' or tipo = 0);
+
+		set @loopCounter = @loopCounter + 1;
+	end
+
+	if @loopCounter >= @maxIterations
+	begin
+		rollback tran;
+		raiserror (N'<message>No se encontro consecutivo disponible para la resolucion activa</message>', 16, 1);
+		return;
+	end
+
+	update OrdenesDeDespacho
+	set consecutivo = @consecutivoActual,
+		resolucionId = @ResolucionId,
+		estado = 'CR'
+	where ventaId = @ventaId;
+
+	update Resoluciones
+	set consecutivoActual = @consecutivoActual + 1
+	where esPos = 'S'
+	  and estado = 'AC'
+	  and (@mismaResolucion = 'SI' or tipo = 0);
+
+	commit tran;
+	select @facturaPOSId as facturaPOSId;
 end try
 begin catch
-    declare 
+    declare
         @errorMessage varchar(2000),
         @errorProcedure varchar(255),
         @errorLine int;
 
-    select  
+	if (@@TRANCOUNT > 0)
+	begin
+		rollback tran;
+	end
+
+    select
         @errorMessage = error_message(),
         @errorProcedure = error_procedure(),
         @errorLine = error_line();
 
-    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+    raiserror (N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
 
@@ -2264,77 +2062,38 @@ CREATE procedure [dbo].[ConvertirAOrden]
 as
 begin try
     set nocount on;
-	declare @ResolucionId int, @consecutivoActual int, @fechafinal DATETIME, @facturaPOSId int, @ConsecutivoFinal int,
-	
-	@clientesCreditoGeneranFactura VARCHAR (50), @soloGeneraOrdenes VARCHAR (50), @verificarConsecutivo int,
-	@OrdenDeDespachoId int,  @mismaResolucion VARCHAR (50);
-	
-	select @mismaResolucion=valor from configuracionEstacion where descripcion = 'mismaResolucion'
-	if @mismaResolucion is null
+
+	declare @facturaPOSId int;
+
+	select @facturaPOSId = facturaPOSId
+	from OrdenesDeDespacho
+	where ventaId = @ventaId;
+
+	if @facturaPOSId is null
 	begin
-	insert into configuracionEstacion(descripcion, valor) values ('mismaResolucion','SI')
+		select cast(null as int) as facturaPOSId;
+		return;
 	end
 
-	select @facturaPOSId = facturaPOSId from OrdenesDeDespacho where ventaId = @ventaId
-	declare @terceroId int,
-	@Placa varchar(50) = null,
-	@Kilometraje varchar(50) = null,
-	@COD_FOR_PAG smallint,
-	@Fecha datetime = null;
+	update OrdenesDeDespacho
+	set consecutivo = 0,
+		estado = 'CR'
+	where ventaId = @ventaId;
 
-	select @terceroId = terceroId, @Placa = Placa, @Kilometraje = Kilometraje, @COD_FOR_PAG = codigoFormaPago, @Fecha = GETDATE()
-	from FacturasPOS
-	where  @ventaId = FacturasPOS.ventaId
-
-	if @facturaPOSId is not null 
-	begin
-		select @facturaPOSId as facturaPOSId
-	end
-	else 
-	begin
-		select @ResolucionId = ResolucionId, @consecutivoActual = consecutivoActual, @fechafinal = fechafinal, @ConsecutivoFinal = consecutivoFinal
-		from Resoluciones where esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-
-		if @fechafinal is null or @fechafinal < GETDATE() or @ConsecutivoFinal <= @consecutivoActual
-		begin
-			update Resoluciones set estado = 'VE' WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-			select @facturaPOSId as facturaPOSId
-		end
-		else
-		begin
-			
-					insert into OrdenesDeDespacho(consecutivo,fecha,resolucionId,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago)
-					select 0, @Fecha, @ResolucionId, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @COD_FOR_PAG
-					from Resoluciones WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-			
-					select @facturaPOSId = SCOPE_IDENTITY()
-
-
-					
-					update FacturasPOS set estado = 'AN'
-					from FacturasPOS
-					where @ventaId = FacturasPOS.ventaId
-    
-			
-			
-				select @facturaPOSId as facturaPOSId
-			
-		end
-	end
-	
+	select @facturaPOSId as facturaPOSId;
 end try
 begin catch
-    declare 
+    declare
         @errorMessage varchar(2000),
         @errorProcedure varchar(255),
         @errorLine int;
 
-    select  
+    select
         @errorMessage = error_message(),
         @errorProcedure = error_procedure(),
         @errorLine = error_line();
 
-    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+    raiserror (N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
 
@@ -2359,7 +2118,7 @@ begin try
     set nocount on;
 
 
-	Update FacturasPOS
+	update OrdenesDeDespacho
 	set Placa = @Placa,
 	Kilometraje = @Kilometraje,
 	impresa = impresa+1,
@@ -2369,22 +2128,8 @@ begin try
     total1 = isnull(@total1, total1),
     total2 = isnull(@total2, total2),
 	terceroId = isnull(@terceroId, terceroId)
-	Where @facturaPOSId = facturaPOSId
-	and ventaId = @ventaID
-
-	
-	Update OrdenesDeDespacho
-	set Placa = @Placa,
-	Kilometraje = @Kilometraje,
-	impresa = impresa+1,
-    enviada = 0,
-    codigoFormaPago = @codigoFormaPago,
-    codigoFormaPago2 = isnull(@codigoFormaPago2, codigoFormaPago2),
-    total1 = isnull(@total1, total1),
-    total2 = isnull(@total2, total2),
-	terceroId = isnull(@terceroId, terceroId)
-	Where @facturaPOSId = facturaPOSId
-	and ventaId = @ventaID
+	where @facturaPOSId = facturaPOSId
+	  and ventaId = @ventaId
 	select 'Ok' as result
 	
 
@@ -2417,24 +2162,24 @@ as
 begin try
 		declare @impresa int
 		
-		select @impresa = impresa from FacturasPOS
-				where FacturasPOS.consecutivo = @consecutivo or FacturasPOS.ventaid = @consecutivo
+		select @impresa = impresa from OrdenesDeDespacho
+				where OrdenesDeDespacho.consecutivo = @consecutivo or OrdenesDeDespacho.ventaid = @consecutivo
 
 		if @impresa >=0
 		begin
-		Update FacturasPOS
+		update OrdenesDeDespacho
 				set impresa = -1,
 				enviada=0
-				from FacturasPOS
-				where FacturasPOS.consecutivo = @consecutivo or FacturasPOS.ventaid = @consecutivo
+				from OrdenesDeDespacho
+				where OrdenesDeDespacho.consecutivo = @consecutivo or OrdenesDeDespacho.ventaid = @consecutivo
 		end
 		else begin
 		
-		Update FacturasPOS
+		update OrdenesDeDespacho
 				set impresa = impresa-1,
 				enviada=0
-				from FacturasPOS
-				where FacturasPOS.consecutivo = @consecutivo or FacturasPOS.ventaid = @consecutivo
+				from OrdenesDeDespacho
+				where OrdenesDeDespacho.consecutivo = @consecutivo or OrdenesDeDespacho.ventaid = @consecutivo
 		end
 
 
@@ -2487,31 +2232,32 @@ begin try
 	select top(1)
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
 	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
-	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, FacturasPOS.[facturaPOSId]
-      ,FacturasPOS.[fecha]
-      ,FacturasPOS.[resolucionId]
-      ,FacturasPOS.[consecutivo]
-      ,FacturasPOS.[ventaId]
-      ,FacturasPOS.[estado]
-      ,FacturasPOS.[terceroId]
-      ,FacturasPOS.[Placa]
-      ,FacturasPOS.[Kilometraje]
-      ,FacturasPOS.[impresa]
-      ,FacturasPOS.[consolidadoId]
-      ,FacturasPOS.[enviada]
-    ,FacturasPOS.[codigoFormaPago]
-    ,FacturasPOS.[codigoFormaPago2]
-    ,FacturasPOS.[total1]
-    ,FacturasPOS.[total2]
-    ,FacturasPOS.[turnoguid]
-      ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
+	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, OrdenesDeDespacho.[facturaPOSId]
+      ,OrdenesDeDespacho.[fecha]
+      ,OrdenesDeDespacho.[resolucionId]
+      ,OrdenesDeDespacho.[consecutivo]
+      ,OrdenesDeDespacho.[ventaId]
+      ,OrdenesDeDespacho.[estado]
+      ,OrdenesDeDespacho.[terceroId]
+      ,OrdenesDeDespacho.[Placa]
+      ,OrdenesDeDespacho.[Kilometraje]
+      ,OrdenesDeDespacho.[impresa]
+      ,OrdenesDeDespacho.[consolidadoId]
+      ,OrdenesDeDespacho.[enviada]
+    ,OrdenesDeDespacho.[codigoFormaPago]
+    ,OrdenesDeDespacho.[codigoFormaPago2]
+    ,OrdenesDeDespacho.[total1]
+    ,OrdenesDeDespacho.[total2]
+    ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
+      ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
-	from dbo.FacturasPOS
-	left join dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	left join dbo.terceros on FacturasPOS.terceroId = terceros.terceroId
+	from dbo.OrdenesDeDespacho
+	left join dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
+	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	where FacturasPOS.ventaId =@idVenta
+	where OrdenesDeDespacho.ventaId =@idVenta
 	union
 	select top(1)
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
@@ -2533,6 +2279,7 @@ begin try
     ,OrdenesDeDespacho.[total1]
     ,OrdenesDeDespacho.[total2]
     ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -2569,15 +2316,7 @@ begin try
     declare @facturasTemp as Table(id int)
 
     insert into @facturasTemp (id)
-	select 
-	top(100)ventaId
-	from FacturasPOS
-    where (turnoEnviado = 0 or turnoEnviado is null)
-      and turnoguid is not null
-	order by ventaId desc
-
-	insert into @facturasTemp (id)
-	select 
+	select
 	top(100)ventaId
 	from OrdenesDeDespacho
     where (turnoEnviado = 0 or turnoEnviado is null)
@@ -2601,47 +2340,12 @@ begin try
 			select @terceroId = SCOPE_IDENTITY()
 			end
 			
-	update FacturasPOS set terceroId = @terceroId
-	from FacturasPOS
-	inner join terceros on FacturasPOS.terceroId = terceros.terceroId
-	where terceros.identificacion is null
 	update OrdenesDeDespacho set terceroId = @terceroId
 	from OrdenesDeDespacho
 	inner join terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
 	where terceros.identificacion is null
 
-	select 
-	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
-	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
-	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, FacturasPOS.[facturaPOSId]
-      ,FacturasPOS.[fecha]
-      ,FacturasPOS.[resolucionId]
-      ,FacturasPOS.[consecutivo]
-      ,FacturasPOS.[ventaId]
-      ,FacturasPOS.[estado]
-      ,FacturasPOS.[terceroId]
-      ,FacturasPOS.[Placa]
-      ,FacturasPOS.[Kilometraje]
-      ,FacturasPOS.[impresa]
-      ,FacturasPOS.[consolidadoId]
-      ,FacturasPOS.[enviada]
-    ,FacturasPOS.[codigoFormaPago]
-    ,FacturasPOS.[codigoFormaPago2]
-    ,FacturasPOS.[total1]
-    ,FacturasPOS.[total2]
-    ,FacturasPOS.[turnoguid]
-      ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
-	from FacturasPOS
-    inner join @facturasTemp tmp on tmp.id = FacturasPOS.ventaId 
-	left join dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	left join dbo.terceros on FacturasPOS.terceroId = terceros.terceroId
-    left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	
-	where FacturasPOS.estado != 'AN'
-	union
-	select 
+	select
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
 	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
 	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, OrdenesDeDespacho.[facturaPOSId]
@@ -2661,14 +2365,16 @@ begin try
     ,OrdenesDeDespacho.[total1]
     ,OrdenesDeDespacho.[total2]
     ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
+
 	from OrdenesDeDespacho
-    inner join @facturasTemp tmp on tmp.id = OrdenesDeDespacho.ventaId 
+    inner join @facturasTemp tmp on tmp.id = OrdenesDeDespacho.ventaId
 	left join dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
 	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
+	where OrdenesDeDespacho.estado != 'AN'
 end try
 begin catch
     declare 
@@ -2684,8 +2390,8 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorConsecutivo')
-	DROP PROCEDURE [dbo].getFacturaPorConsecutivo
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorConsecutivoORVentaId')
+	DROP PROCEDURE [dbo].getFacturaPorConsecutivoORVentaId
 GO
 CREATE procedure [dbo].[getFacturaPorConsecutivoORVentaId]
 (
@@ -2694,36 +2400,7 @@ CREATE procedure [dbo].[getFacturaPorConsecutivoORVentaId]
 as
 begin try
     set nocount on;
-	select 
-	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
-	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
-	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, FacturasPOS.[facturaPOSId]
-      ,FacturasPOS.[fecha]
-      ,FacturasPOS.[resolucionId]
-      ,FacturasPOS.[consecutivo]
-      ,FacturasPOS.[ventaId]
-      ,FacturasPOS.[estado]
-      ,FacturasPOS.[terceroId]
-      ,FacturasPOS.[Placa]
-      ,FacturasPOS.[Kilometraje]
-      ,FacturasPOS.[impresa]
-      ,FacturasPOS.[consolidadoId]
-      ,FacturasPOS.[enviada]
-      ,FacturasPOS.[codigoFormaPago]
-    ,FacturasPOS.[codigoFormaPago2]
-    ,FacturasPOS.[total1]
-    ,FacturasPOS.[total2]
-    ,FacturasPOS.[turnoguid]
-      ,FacturasPOS.[reporteEnviado]
-      ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
-	from dbo.FacturasPOS
-	left join dbo.Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
-	left join dbo.terceros on FacturasPOS.terceroId = terceros.terceroId
-    left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	where FacturasPOS.consecutivo = @consecutivo or FacturasPOS.ventaid = @consecutivo
-	union
-    select 
+    select
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
 	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
 	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, OrdenesDeDespacho.[facturaPOSId]
@@ -2743,6 +2420,7 @@ begin try
     ,OrdenesDeDespacho.[total1]
     ,OrdenesDeDespacho.[total2]
     ,OrdenesDeDespacho.[turnoguid]
+    ,OrdenesDeDespacho.[numeroTransaccion]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
@@ -3009,4 +2687,6 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+
+
 

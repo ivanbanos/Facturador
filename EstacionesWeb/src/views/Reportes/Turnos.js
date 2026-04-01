@@ -1,5 +1,6 @@
 import { React, useMemo, useState, useRef } from 'react'
 import { FiltrarInfoTurnosDia } from '../../services/FiltrarInfoTurnos'
+import FiltrarInfoCanastilla from '../../services/FiltrarInfoCanastilla'
 import { useNavigate } from 'react-router-dom'
 import {
   CButton,
@@ -54,6 +55,8 @@ const Turnos = () => {
   const [filtroSurtidor, setFiltroSurtidor] = useState('')
   const [filtroManguera, setFiltroManguera] = useState('')
   const [filtroCombustible, setFiltroCombustible] = useState('')
+  const [canastillaFacturas, setCanastillaFacturas] = useState([])
+  const [canastillaFormas, setCanastillaFormas] = useState([])
   const [loading, setLoading] = useState(false)
   const [showResults, setShowResults] = useState(false)
 
@@ -66,13 +69,19 @@ const Turnos = () => {
 
     setLoading(true)
     try {
-      const response = await FiltrarInfoTurnosDia({ fecha: fechaConsulta })
-      if (response === 'fail') {
+      const [responseTurnos, responseCanastilla] = await Promise.all([
+        FiltrarInfoTurnosDia({ fecha: fechaConsulta }),
+        FiltrarInfoCanastilla(fechaConsulta, fechaConsulta),
+      ])
+
+      if (responseTurnos === 'fail' || responseCanastilla === 'fail') {
         navigate('/Login', { replace: true })
         return
       }
 
-      setTurnosBase(response || [])
+      setTurnosBase(responseTurnos || [])
+      setCanastillaFacturas(responseCanastilla?.facturas || [])
+      setCanastillaFormas(responseCanastilla?.detalleFormaPago || [])
       setShowResults(true)
 
       toastRef.current?.addMessage('Reporte de turnos generado exitosamente', 'success')
@@ -95,13 +104,13 @@ const Turnos = () => {
         !filtroNumeroTurno || String(item.numeroTurno || '') === String(filtroNumeroTurno)
       const surtidorOk =
         !filtroSurtidor ||
-        (item.surtidor || '').toLowerCase().includes(filtroSurtidor.toLowerCase())
+        (item.surtidor || '').trim().toLowerCase() === filtroSurtidor.trim().toLowerCase()
       const mangueraOk =
         !filtroManguera ||
-        (item.manguera || '').toLowerCase().includes(filtroManguera.toLowerCase())
+        (item.manguera || '').trim().toLowerCase() === filtroManguera.trim().toLowerCase()
       const combustibleOk =
         !filtroCombustible ||
-        (item.combustible || '').toLowerCase().includes(filtroCombustible.toLowerCase())
+        (item.combustible || '').trim().toLowerCase() === filtroCombustible.trim().toLowerCase()
 
       return empleadoOk && islaOk && numeroOk && surtidorOk && mangueraOk && combustibleOk
     })
@@ -142,6 +151,91 @@ const Turnos = () => {
     ],
     [turnosBase],
   )
+  const surtidoresDisponibles = useMemo(
+    () => [...new Set((turnosBase || []).map((item) => item.surtidor).filter(Boolean))],
+    [turnosBase],
+  )
+  const manguerasDisponibles = useMemo(
+    () => [...new Set((turnosBase || []).map((item) => item.manguera).filter(Boolean))],
+    [turnosBase],
+  )
+  const combustiblesDisponibles = useMemo(
+    () => [
+      ...new Set((turnosBase || []).map((item) => (item.combustible || '').trim()).filter(Boolean)),
+    ],
+    [turnosBase],
+  )
+
+  const resumenGeneral = useMemo(
+    () => ({
+      totalTurnos: turnos.length,
+      totalRegistros: turnosDetalle.length,
+      totalSurtidores: [...new Set(turnosDetalle.map((item) => item.surtidor).filter(Boolean))]
+        .length,
+      totalGalones: turnosDetalle.reduce((sum, t) => sum + (t.diferencia || 0), 0),
+      totalMonto: turnosDetalle.reduce((sum, t) => sum + (t.total || 0), 0),
+    }),
+    [turnos, turnosDetalle],
+  )
+
+  const resumenCombustible = useMemo(() => {
+    const agrupado = turnosDetalle.reduce((acc, detalle) => {
+      const combustible = (detalle.combustible || '').trim() || 'Sin Especificar'
+      if (!acc[combustible]) {
+        acc[combustible] = { registros: 0, galones: 0, monto: 0 }
+      }
+      acc[combustible].registros += 1
+      acc[combustible].galones += detalle.diferencia || 0
+      acc[combustible].monto += detalle.total || 0
+      return acc
+    }, {})
+
+    return Object.entries(agrupado)
+      .map(([combustible, data]) => ({
+        combustible,
+        registros: data.registros,
+        galones: data.galones,
+        monto: data.monto,
+      }))
+      .sort((a, b) => b.monto - a.monto)
+  }, [turnosDetalle])
+
+  const resumenSurtidor = useMemo(() => {
+    const agrupado = turnosDetalle.reduce((acc, detalle) => {
+      const surtidor = (detalle.surtidor || '').trim() || 'Sin Especificar'
+      if (!acc[surtidor]) {
+        acc[surtidor] = { mangueras: new Set(), galones: 0, monto: 0 }
+      }
+      if (detalle.manguera) {
+        acc[surtidor].mangueras.add(detalle.manguera)
+      }
+      acc[surtidor].galones += detalle.diferencia || 0
+      acc[surtidor].monto += detalle.total || 0
+      return acc
+    }, {})
+
+    return Object.entries(agrupado)
+      .map(([surtidor, data]) => ({
+        surtidor,
+        mangueras: data.mangueras.size,
+        galones: data.galones,
+        monto: data.monto,
+      }))
+      .sort((a, b) => b.monto - a.monto)
+  }, [turnosDetalle])
+
+  const resumenCanastilla = useMemo(() => {
+    const totalFacturas = canastillaFacturas.length
+    const totalMonto = canastillaFacturas.reduce((sum, factura) => sum + (factura.total || 0), 0)
+
+    return {
+      totalFacturas,
+      totalMonto,
+      detalleFormas: (canastillaFormas || [])
+        .slice()
+        .sort((a, b) => (b.total || 0) - (a.total || 0)),
+    }
+  }, [canastillaFacturas, canastillaFormas])
 
   // Función para descargar reporte PDF
   const descargarReporte = () => {
@@ -180,6 +274,103 @@ const Turnos = () => {
             style: 'subheader',
             alignment: 'center',
             margin: [0, 0, 0, 20],
+          },
+          {
+            text: 'Resumen General',
+            style: 'sectionHeader',
+            margin: [0, 0, 0, 5],
+          },
+          {
+            table: {
+              headerRows: 1,
+              widths: ['*', 'auto', 'auto', 'auto', 'auto'],
+              body: [
+                ['Turnos', 'Registros', 'Surtidores', 'Galones', 'Total'],
+                [
+                  resumenGeneral.totalTurnos,
+                  resumenGeneral.totalRegistros,
+                  resumenGeneral.totalSurtidores,
+                  resumenGeneral.totalGalones.toFixed(3),
+                  cop.format(resumenGeneral.totalMonto),
+                ],
+              ],
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 12],
+          },
+          {
+            text: 'Bloque 1: Consolidado por Combustible',
+            style: 'sectionHeader',
+            margin: [0, 0, 0, 5],
+          },
+          {
+            table: {
+              headerRows: 1,
+              widths: ['*', 'auto', 'auto', 'auto'],
+              body: [
+                ['Combustible', 'Registros', 'Galones', 'Total'],
+                ...resumenCombustible.map((item) => [
+                  item.combustible,
+                  item.registros,
+                  item.galones.toFixed(3),
+                  cop.format(item.monto),
+                ]),
+              ],
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 12],
+          },
+          {
+            text: 'Bloque 2: Consolidado por Surtidor',
+            style: 'sectionHeader',
+            margin: [0, 0, 0, 5],
+          },
+          {
+            table: {
+              headerRows: 1,
+              widths: ['*', 'auto', 'auto', 'auto'],
+              body: [
+                ['Surtidor', 'Mangueras', 'Galones', 'Total'],
+                ...resumenSurtidor.map((item) => [
+                  item.surtidor,
+                  item.mangueras,
+                  item.galones.toFixed(3),
+                  cop.format(item.monto),
+                ]),
+              ],
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 12],
+          },
+          {
+            text: 'Bloque 3: Resumen de Canastillas por Forma de Pago',
+            style: 'sectionHeader',
+            margin: [0, 0, 0, 5],
+          },
+          {
+            table: {
+              headerRows: 1,
+              widths: ['*', 'auto', 'auto'],
+              body: [
+                ['Forma de Pago', 'Cantidad', 'Total'],
+                ...((resumenCanastilla.detalleFormas || []).length > 0
+                  ? resumenCanastilla.detalleFormas.map((forma) => [
+                      forma.formaPago || 'N/A',
+                      forma.cantidad || 0,
+                      cop.format(forma.total || 0),
+                    ])
+                  : [['Sin datos de canastilla para el día consultado', '-', '-']]),
+              ],
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 12],
+          },
+          {
+            text: `Total canastillas: ${resumenCanastilla.totalFacturas} facturas | ${cop.format(
+              resumenCanastilla.totalMonto,
+            )}`,
+            style: 'total',
+            margin: [0, 0, 0, 15],
           },
           ...turnos
             .map((turno) => [
@@ -299,13 +490,13 @@ const Turnos = () => {
         ['Fecha de generación:', new Date().toLocaleDateString('es-ES')],
         [''],
         ['RESUMEN ESTADÍSTICAS'],
-        ['Total turnos:', turnos.length],
-        ['Total mangueras:', turnosDetalle.length],
-        [
-          'Total galones:',
-          turnosDetalle.reduce((sum, t) => sum + (t.diferencia || 0), 0).toFixed(3),
-        ],
-        ['Total monto:', turnosDetalle.reduce((sum, t) => sum + (t.total || 0), 0)],
+        ['Total turnos:', resumenGeneral.totalTurnos],
+        ['Total registros:', resumenGeneral.totalRegistros],
+        ['Total surtidores:', resumenGeneral.totalSurtidores],
+        ['Total galones:', resumenGeneral.totalGalones.toFixed(3)],
+        ['Total monto:', resumenGeneral.totalMonto],
+        ['Total facturas canastilla:', resumenCanastilla.totalFacturas],
+        ['Total monto canastilla:', resumenCanastilla.totalMonto],
       ]
 
       const resumenSheet = XLSX.utils.aoa_to_sheet(resumenData)
@@ -386,44 +577,65 @@ const Turnos = () => {
       const combustibleData = [
         ['ANÁLISIS POR COMBUSTIBLE'],
         [''],
-        ['Combustible', 'Mangueras', 'Galones Total', 'Monto Total', 'Precio Promedio'],
+        ['Combustible', 'Registros', 'Galones Total', 'Monto Total'],
       ]
 
-      const combustiblesGroup = turnosDetalle.reduce((acc, detalle) => {
-        const combustible = (detalle.combustible || '').trim() || 'Sin Especificar'
-        if (!acc[combustible]) {
-          acc[combustible] = { mangueras: 0, galones: 0, monto: 0, precios: [] }
-        }
-        acc[combustible].mangueras += 1
-        acc[combustible].galones += detalle.diferencia || 0
-        acc[combustible].monto += detalle.total || 0
-        if (detalle.precio) acc[combustible].precios.push(detalle.precio)
-        return acc
-      }, {})
-
-      Object.entries(combustiblesGroup).forEach(([combustible, data]) => {
-        const precioPromedio =
-          data.precios.length > 0
-            ? data.precios.reduce((sum, p) => sum + p, 0) / data.precios.length
-            : 0
+      resumenCombustible.forEach((item) => {
         combustibleData.push([
-          combustible,
-          data.mangueras,
-          data.galones.toFixed(3),
-          data.monto,
-          precioPromedio.toFixed(2),
+          item.combustible,
+          item.registros,
+          item.galones.toFixed(3),
+          item.monto,
         ])
       })
 
       const combustibleSheet = XLSX.utils.aoa_to_sheet(combustibleData)
       combustibleSheet['!cols'] = [
         { width: 20 }, // Combustible
-        { width: 15 }, // Mangueras
+        { width: 15 }, // Registros
         { width: 15 }, // Galones
         { width: 18 }, // Monto
-        { width: 18 }, // Precio Promedio
       ]
       XLSX.utils.book_append_sheet(workbook, combustibleSheet, 'Por Combustible')
+
+      // Hoja 5: Por Surtidor
+      const surtidorData = [
+        ['ANÁLISIS POR SURTIDOR'],
+        [''],
+        ['Surtidor', 'Mangueras', 'Galones Total', 'Monto Total'],
+        ...resumenSurtidor.map((item) => [
+          item.surtidor,
+          item.mangueras,
+          item.galones.toFixed(3),
+          item.monto,
+        ]),
+      ]
+
+      const surtidorSheet = XLSX.utils.aoa_to_sheet(surtidorData)
+      surtidorSheet['!cols'] = [{ width: 18 }, { width: 15 }, { width: 15 }, { width: 18 }]
+      XLSX.utils.book_append_sheet(workbook, surtidorSheet, 'Por Surtidor')
+
+      // Hoja 6: Canastilla
+      const canastillaData = [
+        ['RESUMEN CANASTILLA'],
+        [''],
+        ['Total Facturas', resumenCanastilla.totalFacturas],
+        ['Total Monto', resumenCanastilla.totalMonto],
+        [''],
+        ['Forma de Pago', 'Cantidad', 'Total'],
+      ]
+
+      if (resumenCanastilla.detalleFormas.length > 0) {
+        resumenCanastilla.detalleFormas.forEach((forma) => {
+          canastillaData.push([forma.formaPago || 'N/A', forma.cantidad || 0, forma.total || 0])
+        })
+      } else {
+        canastillaData.push(['Sin datos de canastilla para el día consultado', '-', '-'])
+      }
+
+      const canastillaSheet = XLSX.utils.aoa_to_sheet(canastillaData)
+      canastillaSheet['!cols'] = [{ width: 28 }, { width: 15 }, { width: 18 }]
+      XLSX.utils.book_append_sheet(workbook, canastillaSheet, 'Canastilla')
 
       // Descargar archivo
       const fileName = `ReporteTurnos_${fechaConsulta}_${
@@ -580,27 +792,234 @@ const Turnos = () => {
                   </CCol>
                   <CCol md={2}>
                     <CFormLabel>Surtidor</CFormLabel>
-                    <CFormInput
+                    <CFormSelect
                       value={filtroSurtidor}
                       onChange={(e) => setFiltroSurtidor(e.target.value)}
-                      placeholder="Filtrar"
-                    />
+                    >
+                      <option value="">Todos</option>
+                      {surtidoresDisponibles.map((surtidor) => (
+                        <option key={surtidor} value={surtidor}>
+                          {surtidor}
+                        </option>
+                      ))}
+                    </CFormSelect>
                   </CCol>
                   <CCol md={2}>
                     <CFormLabel>Manguera</CFormLabel>
-                    <CFormInput
+                    <CFormSelect
                       value={filtroManguera}
                       onChange={(e) => setFiltroManguera(e.target.value)}
-                      placeholder="Filtrar"
-                    />
+                    >
+                      <option value="">Todas</option>
+                      {manguerasDisponibles.map((manguera) => (
+                        <option key={manguera} value={manguera}>
+                          {manguera}
+                        </option>
+                      ))}
+                    </CFormSelect>
                   </CCol>
                   <CCol md={2}>
                     <CFormLabel>Combustible</CFormLabel>
-                    <CFormInput
+                    <CFormSelect
                       value={filtroCombustible}
                       onChange={(e) => setFiltroCombustible(e.target.value)}
-                      placeholder="Filtrar"
-                    />
+                    >
+                      <option value="">Todos</option>
+                      {combustiblesDisponibles.map((combustible) => (
+                        <option key={combustible} value={combustible}>
+                          {combustible}
+                        </option>
+                      ))}
+                    </CFormSelect>
+                  </CCol>
+                </CRow>
+
+                <CRow className="mb-4">
+                  <CCol md={3}>
+                    <CCard className="h-100 border-start border-4 border-primary">
+                      <CCardBody>
+                        <div className="text-medium-emphasis small">Resumen General</div>
+                        <div className="fs-6 mt-2">Turnos: {resumenGeneral.totalTurnos}</div>
+                        <div className="fs-6">Registros: {resumenGeneral.totalRegistros}</div>
+                        <div className="fs-6">Surtidores: {resumenGeneral.totalSurtidores}</div>
+                        <div className="fs-6">
+                          Galones: {resumenGeneral.totalGalones.toFixed(3)}
+                        </div>
+                        <div className="fs-5 fw-semibold text-success">
+                          {cop.format(resumenGeneral.totalMonto)}
+                        </div>
+                      </CCardBody>
+                    </CCard>
+                  </CCol>
+                  <CCol md={3}>
+                    <CCard className="h-100 border-start border-4 border-info">
+                      <CCardBody>
+                        <div className="text-medium-emphasis small">Resumen por Combustible</div>
+                        {resumenCombustible.slice(0, 3).map((item) => (
+                          <div key={item.combustible} className="mt-2">
+                            <div className="fw-semibold">{item.combustible}</div>
+                            <div className="small text-medium-emphasis">
+                              {item.galones.toFixed(3)} Gal | {cop.format(item.monto)}
+                            </div>
+                          </div>
+                        ))}
+                        {!resumenCombustible.length && (
+                          <div className="small text-medium-emphasis mt-2">Sin registros</div>
+                        )}
+                      </CCardBody>
+                    </CCard>
+                  </CCol>
+                  <CCol md={3}>
+                    <CCard className="h-100 border-start border-4 border-warning">
+                      <CCardBody>
+                        <div className="text-medium-emphasis small">Resumen por Surtidor</div>
+                        {resumenSurtidor.slice(0, 3).map((item) => (
+                          <div key={item.surtidor} className="mt-2">
+                            <div className="fw-semibold">Surtidor {item.surtidor}</div>
+                            <div className="small text-medium-emphasis">
+                              {item.mangueras} mangueras | {cop.format(item.monto)}
+                            </div>
+                          </div>
+                        ))}
+                        {!resumenSurtidor.length && (
+                          <div className="small text-medium-emphasis mt-2">Sin registros</div>
+                        )}
+                      </CCardBody>
+                    </CCard>
+                  </CCol>
+                  <CCol md={3}>
+                    <CCard className="h-100 border-start border-4 border-success">
+                      <CCardBody>
+                        <div className="text-medium-emphasis small">Resumen de Canastillas</div>
+                        <div className="fs-6 mt-2">Facturas: {resumenCanastilla.totalFacturas}</div>
+                        <div className="fs-5 fw-semibold text-success">
+                          {cop.format(resumenCanastilla.totalMonto)}
+                        </div>
+                        {resumenCanastilla.detalleFormas.slice(0, 2).map((forma) => (
+                          <div key={forma.formaPago} className="small text-medium-emphasis mt-1">
+                            {forma.formaPago}: {cop.format(forma.total || 0)}
+                          </div>
+                        ))}
+                      </CCardBody>
+                    </CCard>
+                  </CCol>
+                </CRow>
+
+                <CRow className="mb-4">
+                  <CCol md={6}>
+                    <CCard>
+                      <CCardHeader>
+                        <strong>Bloque 1: Consolidado por Combustible</strong>
+                      </CCardHeader>
+                      <CCardBody>
+                        <CTable small responsive>
+                          <CTableHead>
+                            <CTableRow>
+                              <CTableHeaderCell>Combustible</CTableHeaderCell>
+                              <CTableHeaderCell className="text-end">Registros</CTableHeaderCell>
+                              <CTableHeaderCell className="text-end">Galones</CTableHeaderCell>
+                              <CTableHeaderCell className="text-end">Total</CTableHeaderCell>
+                            </CTableRow>
+                          </CTableHead>
+                          <CTableBody>
+                            {resumenCombustible.map((item) => (
+                              <CTableRow key={item.combustible}>
+                                <CTableDataCell>{item.combustible}</CTableDataCell>
+                                <CTableDataCell className="text-end">
+                                  {item.registros}
+                                </CTableDataCell>
+                                <CTableDataCell className="text-end">
+                                  {item.galones.toFixed(3)}
+                                </CTableDataCell>
+                                <CTableDataCell className="text-end">
+                                  {cop.format(item.monto)}
+                                </CTableDataCell>
+                              </CTableRow>
+                            ))}
+                          </CTableBody>
+                        </CTable>
+                      </CCardBody>
+                    </CCard>
+                  </CCol>
+                  <CCol md={6}>
+                    <CCard>
+                      <CCardHeader>
+                        <strong>Bloque 2: Consolidado por Surtidor</strong>
+                      </CCardHeader>
+                      <CCardBody>
+                        <CTable small responsive>
+                          <CTableHead>
+                            <CTableRow>
+                              <CTableHeaderCell>Surtidor</CTableHeaderCell>
+                              <CTableHeaderCell className="text-end">Mangueras</CTableHeaderCell>
+                              <CTableHeaderCell className="text-end">Galones</CTableHeaderCell>
+                              <CTableHeaderCell className="text-end">Total</CTableHeaderCell>
+                            </CTableRow>
+                          </CTableHead>
+                          <CTableBody>
+                            {resumenSurtidor.map((item) => (
+                              <CTableRow key={item.surtidor}>
+                                <CTableDataCell>{item.surtidor}</CTableDataCell>
+                                <CTableDataCell className="text-end">
+                                  {item.mangueras}
+                                </CTableDataCell>
+                                <CTableDataCell className="text-end">
+                                  {item.galones.toFixed(3)}
+                                </CTableDataCell>
+                                <CTableDataCell className="text-end">
+                                  {cop.format(item.monto)}
+                                </CTableDataCell>
+                              </CTableRow>
+                            ))}
+                          </CTableBody>
+                        </CTable>
+                      </CCardBody>
+                    </CCard>
+                  </CCol>
+                </CRow>
+
+                <CRow className="mb-4">
+                  <CCol md={12}>
+                    <CCard>
+                      <CCardHeader>
+                        <strong>Bloque 3: Resumen de Canastillas por Forma de Pago</strong>
+                      </CCardHeader>
+                      <CCardBody>
+                        <CTable small responsive>
+                          <CTableHead>
+                            <CTableRow>
+                              <CTableHeaderCell>Forma de pago</CTableHeaderCell>
+                              <CTableHeaderCell className="text-end">Cantidad</CTableHeaderCell>
+                              <CTableHeaderCell className="text-end">Total</CTableHeaderCell>
+                            </CTableRow>
+                          </CTableHead>
+                          <CTableBody>
+                            {resumenCanastilla.detalleFormas.length > 0 ? (
+                              resumenCanastilla.detalleFormas.map((forma) => (
+                                <CTableRow key={forma.formaPago}>
+                                  <CTableDataCell>{forma.formaPago || 'N/A'}</CTableDataCell>
+                                  <CTableDataCell className="text-end">
+                                    {forma.cantidad || 0}
+                                  </CTableDataCell>
+                                  <CTableDataCell className="text-end">
+                                    {cop.format(forma.total || 0)}
+                                  </CTableDataCell>
+                                </CTableRow>
+                              ))
+                            ) : (
+                              <CTableRow>
+                                <CTableDataCell
+                                  colSpan={3}
+                                  className="text-center text-medium-emphasis"
+                                >
+                                  Sin datos de canastilla para el día consultado
+                                </CTableDataCell>
+                              </CTableRow>
+                            )}
+                          </CTableBody>
+                        </CTable>
+                      </CCardBody>
+                    </CCard>
                   </CCol>
                 </CRow>
 

@@ -241,6 +241,7 @@ namespace FacturacionelectronicaCore.Worker
                 estado = entity.estado,
                 impresa = entity.impresa,
                 enviada = entity.enviada,
+                numeroTransaccion = entity.numeroTransaccion,
                 codigoFormaPago2 = entity.codigoFormaPago2,
                 total1 = entity.total1,
                 total2 = entity.total2,

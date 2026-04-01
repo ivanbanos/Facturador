@@ -1,16 +1,17 @@
-import React, { useState } from "react";
+import React from "react";
 import "./styles/home.css";
 import "./styles/navbar.css";
-import circle from "./styles/circle.svg";
-import { Link } from "react-router-dom";
-import Nav from "react-bootstrap/Nav";
+import { Link, useLocation } from "react-router-dom";
 
 const NavBar = () => {
-  const [selectedItem, setSelectedItem] = useState("combustible");
+  const location = useLocation();
 
-  const handleItemClick = (item) => {
-    setSelectedItem(item);
-  };
+  const selectedItem =
+    location.pathname === "/canastilla"
+      ? "canastilla"
+      : location.pathname === "/terceros"
+        ? "terceros"
+        : "combustible";
 
   return (
     // <nav className="">
@@ -76,7 +77,6 @@ const NavBar = () => {
                   : "item-no-active"
               }`}
               to="/"
-              onClick={() => handleItemClick("combustible")}
             >
               COMBUSTIBLE
             </Link>
@@ -87,7 +87,6 @@ const NavBar = () => {
                 selectedItem === "canastilla" ? "item-active" : "item-no-active"
               }`}
               to="/canastilla"
-              onClick={() => handleItemClick("canastilla")}
             >
               CANASTILLA
             </Link>
@@ -98,7 +97,6 @@ const NavBar = () => {
                 selectedItem === "terceros" ? "item-active" : "item-no-active"
               }`}
               to="/terceros"
-              onClick={() => handleItemClick("terceros")}
             >
               TERCEROS
             </Link>

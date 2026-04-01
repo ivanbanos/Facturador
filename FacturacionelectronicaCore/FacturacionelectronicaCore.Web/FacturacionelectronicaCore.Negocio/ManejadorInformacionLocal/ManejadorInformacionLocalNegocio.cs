@@ -61,6 +61,14 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             await EnviarTerceros((ordenDeDespachos ?? Enumerable.Empty<Modelo.OrdenDeDespacho>()).Select(x => x?.Tercero).Where(t => t != null));
             Console.WriteLine("EnvioDirecto " + _alegra.EnvioDirecto);
             Console.WriteLine("EnviaCreditos " + _alegra.EnviaCreditos);
+
+            var combustiblesExistentes = (await _combustiblesEstacionRepository
+                .GetCombustiblesEstacion(estacion)
+                .ConfigureAwait(false))
+                .Select(c => (c.Combustible ?? string.Empty).Trim())
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
             foreach (var x in ordenDeDespachos)
             {
                 // In-memory cache check to prevent duplicate sends in this app instance (per station)
@@ -74,11 +82,17 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                 {
                     if (!string.IsNullOrWhiteSpace(x.Combustible) && x.Precio > 0)
                     {
-                        await _combustiblesEstacionRepository.UpsertCombustibleEstacion(
-                            estacion,
-                            x.Combustible.Trim(),
-                            Convert.ToDecimal(x.Precio),
-                            EsCombustibleGas(x.Combustible)).ConfigureAwait(false);
+                        var combustibleNormalizado = x.Combustible.Trim();
+                        if (!combustiblesExistentes.Contains(combustibleNormalizado))
+                        {
+                            await _combustiblesEstacionRepository.UpsertCombustibleEstacion(
+                                estacion,
+                                combustibleNormalizado,
+                                Convert.ToDecimal(x.Precio),
+                                EsCombustibleGas(x.Combustible)).ConfigureAwait(false);
+
+                            combustiblesExistentes.Add(combustibleNormalizado);
+                        }
                     }
 
                     if (_alegra.MultiplicarPorDies)
@@ -234,7 +248,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                 .Replace(".", string.Empty)
                 .Replace(" ", string.Empty);
 
-            return normalizado.Contains("gnvc") || normalizado.Contains("gas");
+            return normalizado.Contains("gnvc") || normalizado.Contains("gnv") || normalizado.Contains("gasnaturalvehicular") || normalizado.Contains("gasnaturalcomprimido") || normalizado.Contains("gasnaturallicuado");
         }
 
         public async Task<IEnumerable<Modelo.Tercero>> GetTercerosActualizados(Guid estacion)

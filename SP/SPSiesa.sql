@@ -154,10 +154,6 @@ begin try
 			select @terceroId = SCOPE_IDENTITY()
 			end
 			
-	update FacturasPOS set terceroId = @terceroId
-	from FacturasPOS
-	inner join terceros on FacturasPOS.terceroId = terceros.terceroId
-	where terceros.identificacion is null
 	update OrdenesDeDespacho set terceroId = @terceroId
 	from OrdenesDeDespacho
 	inner join terceros on OrdenesDeDespacho.terceroId = terceros.terceroId

@@ -514,7 +514,7 @@ namespace EnviadorInformacionService
             // Print each canastilla product with quantity and total
             foreach (var kvp in canastillasSummary)
             {
-                string linea = string.Format("{0,-27}{1,10:F0}   {2,12:N2}", 
+                string linea = string.Format("{0,-27}{1,10:F3}   {2,12:N2}", 
                     kvp.Key.Length > 15 ? kvp.Key.Substring(0, 12) + "..." : kvp.Key,
                     kvp.Value.cantidad,
                     kvp.Value.total);

@@ -334,6 +334,30 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             return await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
         }
 
+        public async Task<bool> AgregarTurnoAOrdenDeDespacho(int idVentaLocal, string turnoGuid, Guid estacion)
+        {
+            var filtros = new List<FilterDefinition<OrdenesMongo>>
+            {
+                Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", idVentaLocal),
+                Builders<OrdenesMongo>.Filter.Eq("EstacionGuid", estacion.ToString())
+            };
+
+            var ordenesMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filtros);
+            if (!ordenesMongo.Any())
+            {
+                return false;
+            }
+
+            foreach (var orden in ordenesMongo)
+            {
+                var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", orden.guid);
+                var update = Builders<OrdenesMongo>.Update.Set(x => x.TurnoGuid, turnoGuid);
+                await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "ordenes", filterGuid, update);
+            }
+
+            return true;
+        }
+
         public async Task AgregarFechaReporteFactura(IEnumerable<FacturaFechaReporte> facturas, Guid estacion)
         {
             foreach (var factura in facturas)

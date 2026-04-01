@@ -283,9 +283,11 @@ namespace EnviadorInformacionService
                     {
                         decimal valorItem = (decimal)(item.cantidad * item.Canastilla.precio);
                         
-                        // Obtener auxiliar según tiene IVA o no
-                        string auxiliarItem = ConfigurationManager.AppSettings[facturaCanastilla.TieneIva ? "auxiliarcanastillaconiva" : "auxiliarcanastillasiniva"];
-                        
+                        // Obtener auxiliar según el tipo de producto (urea vs lubricantes)
+                        string descripcionProducto = item.Canastilla.descripcion?.ToString() ?? "";
+                        string auxiliarItem = ObtenerAuxiliarProductoCanastilla(descripcionProducto);
+                        Logger.Info($"Factura canastilla {facturaCanastilla.FacturasCanastillaId} - Producto '{descripcionProducto}' → auxiliar '{auxiliarItem}'");
+
                         // Movimiento del producto/servicio
                         movimientosContables.Add(new
                         {
@@ -306,18 +308,19 @@ namespace EnviadorInformacionService
                             F351_NRO_DOCTO_BANCO = "",
                             F351_NOTAS = $"Canastilla {item.Canastilla.descripcion} - Cant: {item.cantidad}"
                         });
-                        
-                        // Si tiene IVA, agregar movimiento de IVA
+
+                        // Si tiene IVA, agregar movimiento de IVA con auxiliar configurable
                         if (item.Canastilla.iva > 0)
                         {
                             decimal ivaItem = valorItem * (item.Canastilla.iva / 100m);
+                            string auxiliarIva = ConfigurationManager.AppSettings["auxiliarcanastillaiva"] ?? "240801";
                             movimientosContables.Add(new
                             {
                                 F_CIA = "1",
                                 F350_ID_CO = config.CentroOperacionesDocumento,
                                 F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
                                 F350_CONSEC_DOCTO = consecutivo,
-                                F351_ID_AUXILIAR = "240801", // Auxiliar para IVA generado
+                                F351_ID_AUXILIAR = auxiliarIva,
                                 F351_ID_TERCERO = facturaCanastilla.Tercero.identificacion.ToString(),
                                 F351_ID_CO_MOV = config.CentroOperacionesDocumento,
                                 F351_ID_UN = ConfigurationManager.AppSettings["unidadnegocio"],
@@ -745,6 +748,22 @@ namespace EnviadorInformacionService
         {
             // En instalaciones históricas se usa 1 o 4 para efectivo.
             return formaPagoId == 1 || formaPagoId == 4;
+        }
+
+        /// <summary>
+        /// Determina el auxiliar contable para un producto de canastilla.
+        /// Si la descripción contiene "urea" usa <c>auxiliarurea</c>;
+        /// en cualquier otro caso usa <c>auxiliarlubricantes</c>.
+        /// </summary>
+        private static string ObtenerAuxiliarProductoCanastilla(string descripcion)
+        {
+            if (!string.IsNullOrWhiteSpace(descripcion) &&
+                descripcion.IndexOf("urea", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return ConfigurationManager.AppSettings["auxiliarurea"];
+            }
+
+            return ConfigurationManager.AppSettings["auxiliarlubricantes"];
         }
 
         private string ObtenerMedioPagoSiesa(int formaPagoId)

@@ -349,6 +349,9 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.codigoFormaPago2 = dr.Table.Columns.Contains("codigoFormaPago2") && !dr.IsNull("codigoFormaPago2")
                         ? (int?)Convert.ToInt32(dr["codigoFormaPago2"])
                         : null;
+                    fc.numeroTransaccion = dr.Table.Columns.Contains("numeroTransaccion") && !dr.IsNull("numeroTransaccion")
+                        ? dr.Field<string>("numeroTransaccion")
+                        : null;
                     fc.total1 = dr.Table.Columns.Contains("total1") && !dr.IsNull("total1")
                         ? (decimal?)Convert.ToDecimal(dr["total1"])
                         : null;
@@ -379,7 +382,9 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.TurnoGuid = dr.Table.Columns.Contains("turnoguid") && !dr.IsNull("turnoguid")
                         ? dr.Field<string>("turnoguid")
                         : null;
-                    fc.Placa = dr.IsNull("placa") ? string.Empty : dr.Field<string>("placa");
+                    fc.Placa = dr.Table.Columns.Contains("placa") && !dr.IsNull("placa")
+                        ? dr.Field<string>("placa")
+                        : (dr.Table.Columns.Contains("Placa") && !dr.IsNull("Placa") ? dr.Field<string>("Placa") : string.Empty);
 
 
                     return fc;
@@ -413,19 +418,63 @@ namespace FactoradorEstacionesModelo.Convertidor
 
         internal Turno ConvertirTurno(DataSet ds)
         {
-            if (ds.Tables[0].AsEnumerable().Any()) { 
+            if (ds == null || ds.Tables.Count == 0 || !ds.Tables[0].AsEnumerable().Any())
+            {
+                return null;
+            }
+
             var drTurno = ds.Tables[0].Rows[0];
+            var fechaApertura = drTurno.Table.Columns.Contains("FechaApertura")
+                ? drTurno.Field<DateTime>("FechaApertura")
+                : drTurno.Field<DateTime>("FECHA");
+            var fechaCierre = drTurno.Table.Columns.Contains("FechaCierre")
+                ? drTurno.Field<DateTime?>("FechaCierre")
+                : null;
+
+            int fechaAperturaJuliana;
+            if (drTurno.Table.Columns.Contains("FECHA") && !drTurno.IsNull("FECHA"))
+            {
+                var fechaRaw = drTurno["FECHA"];
+                if (fechaRaw is int)
+                {
+                    fechaAperturaJuliana = (int)fechaRaw;
+                }
+                else if (fechaRaw is long)
+                {
+                    fechaAperturaJuliana = Convert.ToInt32((long)fechaRaw);
+                }
+                else if (fechaRaw is short)
+                {
+                    fechaAperturaJuliana = Convert.ToInt32((short)fechaRaw);
+                }
+                else if (fechaRaw is DateTime)
+                {
+                    var fecha = (DateTime)fechaRaw;
+                    fechaAperturaJuliana = (fecha.Year * 1000) + fecha.DayOfYear;
+                }
+                else
+                {
+                    fechaAperturaJuliana = (fechaApertura.Year * 1000) + fechaApertura.DayOfYear;
+                }
+            }
+            else
+            {
+                fechaAperturaJuliana = (fechaApertura.Year * 1000) + fechaApertura.DayOfYear;
+            }
+
             var turno = new FacturacionelectronicaCore.Negocio.Modelo.Turno {
                 Empleado = drTurno.Field<string>("empleado"),
-                FechaApertura = drTurno.Field<DateTime>("FechaApertura"),
-                FechaAperturaJuliana = drTurno.Field<int>("FECHA"),
-                FechaCierre = drTurno.Field<DateTime>("FechaCierre"),
+                FechaApertura = fechaApertura,
+                FechaAperturaJuliana = fechaAperturaJuliana,
+                FechaCierre = fechaCierre,
                 IdEstado = drTurno.Field<int>("IdEstado"),
                 Isla = drTurno.Field<string>("Isla"),
-                Numero = drTurno.Field<short>("Numero"),
+                Numero = Convert.ToInt16(drTurno["Numero"]),
                 turnoSurtidores = new List<TurnoSurtidor>()
             };
-            var dtTurnoLec = ds.Tables[1];
+            if (ds.Tables.Count > 1)
+            {
+                var dtTurnoLec = ds.Tables[1];
                 if (dtTurnoLec.AsEnumerable().Any())
                 {
                     turno.turnoSurtidores.AddRange(
@@ -440,6 +489,10 @@ namespace FactoradorEstacionesModelo.Convertidor
                     })
                 );
                 }
+            }
+
+            if (ds.Tables.Count > 2)
+            {
                 var dtBolsa = ds.Tables[2];
                 if (dtBolsa.AsEnumerable().Any())
                 {
@@ -457,10 +510,9 @@ namespace FactoradorEstacionesModelo.Convertidor
                     })
                 );
                 }
-
-                return turno;
             }
-            return null;
+
+            return turno;
         }
 
         public IEnumerable<ObjetoImprimir> ConvertirObjetoImprimir(DataTable ds)

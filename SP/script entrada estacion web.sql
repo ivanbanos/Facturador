@@ -12,6 +12,13 @@ insert into [dbo].[Estados](GUID, texto)
 insert into [dbo].[Usuario](guid,nombre,usuario,contrasena)
   values('3FA85F64-5717-4562-B3FC-2C963F66AFA5',	'8090078011',	'8090078011',	'8011')
 
+declare @PrefijoCotaxiMorrison nvarchar(50) = 'FEA'
+declare @ResolucionCotaxiMorrison nvarchar(50) = 'PENDIENTE_AJUSTAR'
+declare @NumeroActualCotaxiMorrison int = 1
+
+insert into [dbo].[facturaelectronica](prefijo,resolucion,numeroActual,Estacion,correo,token,idNumeracion)
+  values(@PrefijoCotaxiMorrison,	@ResolucionCotaxiMorrison,	@NumeroActualCotaxiMorrison,	'b9763738-6ac7-4038-8304-dc0c84eb7cda',	'5471929',	'1929',	'529')
+
 delete from facturas
 delete from OrdenesDeDespacho
 delete from terceros

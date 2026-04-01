@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 function isPageReload() {
-  const navigationEntries = window.performance?.getEntriesByType?.("navigation");
+  const navigationEntries =
+    window.performance?.getEntriesByType?.("navigation");
 
   if (navigationEntries && navigationEntries.length > 0) {
     return navigationEntries[0].type === "reload";
@@ -17,10 +18,12 @@ function ReloadToRootOnRefreshGuard() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Evaluate only on first render to avoid forcing '/' on in-app navigation.
     if (isPageReload() && location.pathname !== "/") {
       navigate("/", { replace: true });
     }
-  }, [location.pathname, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return null;
 }

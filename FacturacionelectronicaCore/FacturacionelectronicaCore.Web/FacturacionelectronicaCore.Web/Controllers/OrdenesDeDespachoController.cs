@@ -108,6 +108,23 @@ namespace FacturacionelectronicaCore.Web.Controllers
             return Ok(resultado);
         }
 
+        [HttpPost("AgregarTurnoAFactura")]
+        public async Task<ActionResult> AgregarTurnoAFactura([FromBody] RequestFacturaTurno request)
+        {
+            if (request == null)
+            {
+                return BadRequest();
+            }
+
+            var actualizado = await _ordenDeDespachoNegocio.AgregarTurnoAOrdenDeDespacho(request);
+            if (!actualizado)
+            {
+                return NotFound();
+            }
+
+            return Ok();
+        }
+
         [HttpPost("GetConsolidado")]
         public async Task<ActionResult<ReporteFiscal>> GetConsolidado(FiltroBusqueda filtroFactura) 
         {

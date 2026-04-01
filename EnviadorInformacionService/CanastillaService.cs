@@ -357,8 +357,8 @@ namespace EnviadorInformacionService
             }
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", _factura.terceroId.Nombre == null ? "" : _factura.terceroId.Nombre.Trim()), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Nit/C.C. : ", _factura.terceroId.identificacion.Trim()), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", ObtenerNombreCompletoTercero(_factura.terceroId) ?? string.Empty), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Nit/C.C. : ", _factura.terceroId?.identificacion?.Trim() ?? string.Empty), false));
 
 
 
@@ -366,10 +366,14 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Fecha : ", _factura.fecha.ToString("dd/MM/yyyy HH:mm:ss")), false));
 
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Isla : ", _factura.Isla + ""), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendedor : ", _factura.Empleado?.Trim() + ""), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendedor : ", _factura.Empleado?.Trim() ?? string.Empty), false));
             if (!string.IsNullOrWhiteSpace(_factura.Placa))
             {
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Placa : ", _factura.Placa.Trim()), false));
+            }
+            if (!string.IsNullOrWhiteSpace(_factura.numeroTransaccion))
+            {
+                lineasImprimir.Add(new LineasImprimir(formatoTotales("N Tran : ", _factura.numeroTransaccion.Trim()), false));
             }
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             if (_infoEstacion.ImpresionPDA)
@@ -422,16 +426,16 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir(formatoTotales("TOTAL : ", String.Format("{0:#,0.00}", _factura.total)), false));
             //lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
 
-            var forma = formasDePago.FirstOrDefault(x => x.Id == _factura.codigoFormaPago.Id);
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago : ", forma?.Descripcion?.Trim()), false));
+            var forma = formasDePago?.FirstOrDefault(x => x.Id == _factura.codigoFormaPago.Id);
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago : ", forma?.Descripcion?.Trim() ?? string.Empty), false));
             if (_factura.total1.HasValue)
             {
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Valor pago 1 : ", String.Format("{0:#,0.00}", _factura.total1.Value)), false));
             }
             if (_factura.codigoFormaPago2.HasValue)
             {
-                var forma2 = formasDePago.FirstOrDefault(x => x.Id == _factura.codigoFormaPago2.Value);
-                lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago 2 : ", forma2?.Descripcion?.Trim()), false));
+                var forma2 = formasDePago?.FirstOrDefault(x => x.Id == _factura.codigoFormaPago2.Value);
+                lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago 2 : ", forma2?.Descripcion?.Trim() ?? string.Empty), false));
                 if (_factura.total2.HasValue)
                 {
                     lineasImprimir.Add(new LineasImprimir(formatoTotales("Valor pago 2 : ", String.Format("{0:#,0.00}", _factura.total2.Value)), false));
@@ -483,7 +487,7 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir("Fabricado por:" + " SIGES SOLUCIONES SAS ", true));
             lineasImprimir.Add(new LineasImprimir("Nit:" + " 901430393-2 ", true));
             lineasImprimir.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? string.Empty), false));
             lineasImprimir.Add(new LineasImprimir(".", true));
             if (!string.IsNullOrEmpty(infoTemp))
             {
@@ -548,8 +552,17 @@ namespace EnviadorInformacionService
 
         }
 
+        private string ObtenerNombreCompletoTercero(Tercero tercero)
+        {
+            var nombre = tercero?.Nombre?.Trim() ?? string.Empty;
+            var apellidos = tercero?.Apellidos?.Trim() ?? string.Empty;
+            return string.Join(" ", new[] { nombre, apellidos }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
+        }
+
         private string formatoTotales(string v1, string v2)
         {
+            v1 = v1 ?? string.Empty;
+            v2 = v2 ?? string.Empty;
             var result = v1;
             var tabs = new StringBuilder();
             tabs.Append(v1);

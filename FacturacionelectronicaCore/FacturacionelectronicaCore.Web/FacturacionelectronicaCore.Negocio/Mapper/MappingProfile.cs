@@ -16,7 +16,12 @@ namespace EstacionesServicio.Negocio.Mapper
             CreateMap<FacturacionelectronicaCore.Repositorio.Entities.CreacionResolucion, FacturacionelectronicaCore.Negocio.Modelo.CreacionResolucion>().ReverseMap();
             CreateMap<FacturacionelectronicaCore.Repositorio.Entities.Tercero, FacturacionelectronicaCore.Negocio.Modelo.Tercero>().ReverseMap();
             CreateMap<FacturacionelectronicaCore.Repositorio.Entities.Canastilla, FacturacionelectronicaCore.Negocio.Modelo.Canastilla>().ReverseMap();
-            CreateMap<FacturacionelectronicaCore.Negocio.Modelo.Tercero, TerceroInput>().ReverseMap();
+            CreateMap<FacturacionelectronicaCore.Negocio.Modelo.Tercero, TerceroInput>()
+                .ForMember(dest => dest.Apellidos,
+                    opt => opt.MapFrom(src => string.IsNullOrWhiteSpace(src.Apellidos) ? src.Apellido : src.Apellidos))
+                .ReverseMap()
+                .ForMember(dest => dest.Apellidos, opt => opt.MapFrom(src => src.Apellidos))
+                .ForMember(dest => dest.Apellido, opt => opt.MapFrom(src => src.Apellidos));
             CreateMap<Modelo.OrdenesDeDespachoGuids, Repositorio.Entities.OrdenesDeDespachoGuids>();
             CreateMap<Modelo.FacturasEntity, FacturasEntity>();
             CreateMap<FacturacionelectronicaCore.Negocio.Modelo.Estacion, FacturacionelectronicaCore.Repositorio.Entities.Estacion>().ReverseMap();

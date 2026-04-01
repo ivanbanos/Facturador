@@ -255,6 +255,8 @@ namespace MachineUtilizationApi.Repository
 
                 {"@descuento",facturaCanastilla.descuento},
 
+                {"@numeroTransaccion",facturaCanastilla.numeroTransaccion ?? string.Empty},
+
                 {"@placa",facturaCanastilla.placa ?? ""}
             };
             DataTable dt = await LoadDataTableFromStoredProcAsync( "CrearFacturaCanastilla",

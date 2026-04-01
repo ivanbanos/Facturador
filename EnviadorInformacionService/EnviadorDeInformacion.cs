@@ -75,12 +75,9 @@ namespace EnviadorInformacion
                 }
                 else
                 {
-
-                    Logger.Info("No subieron facturas");
+                    Logger.Warn($"No subieron facturas al servidor. TotalPendientes={facturas.Count(x => x.Manguera != null)}");
                 }
             }
-
-
 
             var facturasFechas = _estacionesRepositorio.BuscarFechasReportesNoEnviadas();
             if (facturasFechas.Any())
@@ -123,7 +120,7 @@ namespace EnviadorInformacion
                 }
             }catch(Exception ex)
             {
-                Logger.Warn($"No subieron facturas {ex.Message}");
+                Logger.Warn($"No fue posible sincronizar terceros/facturas/ordenes para impresion: {ex.Message}");
             }
 
             if(!stanByTime.HasValue || stanByTime.Value < DateTime.Now.AddHours(-2))
@@ -169,6 +166,11 @@ namespace EnviadorInformacion
                         var turno = _estacionesRepositorio.ObtenerTurnoIslaPorVenta(factura.ventaId);
                         if (turno != null)
                         {
+                            if (!string.IsNullOrWhiteSpace(turno.Isla))
+                            {
+                                turno.Isla = turno.Isla.Trim();
+                            }
+
                             var okFacturas = _conexionEstacionRemota.SetTurnoFactura(factura.ventaId, turno.FechaApertura, turno.Isla, turno.Numero, estacionFuente, token);
                             if (okFacturas)
                             {
@@ -177,14 +179,22 @@ namespace EnviadorInformacion
                             else
                             {
                                 SincronizarTurno(turno, token);
-                                okFacturas = _conexionEstacionRemota.SetTurnoFactura(factura.ventaId, turno.FechaApertura, turno.Isla, turno.Numero, estacionFuente, token);
+
+                                // Retry a few times after syncing turno to avoid eventual consistency gaps.
+                                okFacturas = false;
+                                for (var intento = 1; intento <= 3 && !okFacturas; intento++)
+                                {
+                                    Thread.Sleep(intento * 1000);
+                                    okFacturas = _conexionEstacionRemota.SetTurnoFactura(factura.ventaId, turno.FechaApertura, turno.Isla, turno.Numero, estacionFuente, token);
+                                }
+
                                 if (okFacturas)
                                 {
                                     _estacionesRepositorio.ActuralizarFacturasEnviadosTurno(factura.ventaId);
                                 }
                                 else
                                 {
-                                    Logger.Warn($"No se pudo actualizar turno retroactivo para venta {factura.ventaId}");
+                                    Logger.Warn($"No se pudo actualizar turno retroactivo para venta {factura.ventaId}. Fecha={turno.FechaApertura:yyyy-MM-dd HH:mm:ss}, Isla={turno.Isla}, Numero={turno.Numero}");
                                 }
                             }
                         }else

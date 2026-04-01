@@ -36,10 +36,7 @@ namespace EnviadorInformacionService
         }
         public bool EnviarFacturas(IEnumerable<FactoradorEstacionesModelo.Objetos.Factura> facturas, IEnumerable<FormasPagos> formas, Guid estacion, string token)
         {
-            foreach (var factura in facturas.Where(x => x?.Tercero != null))
-            {
-                factura.Tercero.Nombre = ObtenerNombreCompleto(factura.Tercero.Nombre, factura.Tercero.Apellidos);
-            }
+           
             RequestEnviarFacturas request = new RequestEnviarFacturas();
             request.facturas = new List<FacturacionelectronicaCore.Negocio.Modelo.Factura>();
             request.ordenDeDespachos = facturas.Select(x =>
@@ -49,7 +46,13 @@ namespace EnviadorInformacionService
                     ? formas.Where(y => y.Id == x.codigoFormaPago2.Value).Select(y => y.Descripcion).FirstOrDefault()
                     : null;
 
-                return new FacturacionelectronicaCore.Negocio.Modelo.OrdenDeDespacho(x, forma1, forma2);
+                var orden = new FacturacionelectronicaCore.Negocio.Modelo.OrdenDeDespacho(x, forma1, forma2);
+                if (x?.Tercero != null && orden?.Tercero != null)
+                {
+                    AplicarNombreYApellidosSeparados(x.Tercero, orden.Tercero);
+                }
+
+                return orden;
             });
             request.Estacion = estacion;
             using (var client = new HttpClient())
@@ -58,17 +61,20 @@ namespace EnviadorInformacionService
                 client.DefaultRequestHeaders.Authorization =
     new AuthenticationHeaderValue("Bearer", token);
                 var path = $"/api/ManejadorInformacionLocal/EnviarFacturas";
-                var content = new StringContent(JsonConvert.SerializeObject(request));
+                var requestJson = JsonConvert.SerializeObject(request);
+                var content = new StringContent(requestJson);
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
 
-                Logger.Info(JsonConvert.SerializeObject(request));
+                Logger.Info($"EnviarFacturas request. Estacion={estacion}, Url={url}{path}, Ordenes={request.ordenDeDespachos?.Count() ?? 0}");
                 var response = client.PostAsync($"{url}{path}", content).Result;
-                if(response.StatusCode != System.Net.HttpStatusCode.OK)
-                {
-                    Logger.Error($"{response.Content.ReadAsStringAsync().Result}");
-                }
-                response.EnsureSuccessStatusCode();
                 string responseBody = response.Content.ReadAsStringAsync().Result;
+                if(!response.IsSuccessStatusCode)
+                {
+                    Logger.Error($"EnviarFacturas fallo. Estacion={estacion}, Url={url}{path}, Status={(int)response.StatusCode} {response.ReasonPhrase}, ResponseBody={TruncarParaLog(responseBody)}, RequestBody={TruncarParaLog(requestJson)}");
+                    return false;
+                }
+
+                //Logger.Info($"EnviarFacturas OK. Estacion={estacion}, Url={url}{path}, ResponseBody={TruncarParaLog(responseBody)}");
                 return response.StatusCode == System.Net.HttpStatusCode.OK;
             }
         }
@@ -86,8 +92,7 @@ namespace EnviadorInformacionService
                     if (!tercerosEnviar.Any(x => x.Identificacion == t.identificacion))
                     {
                         var terceroEnviar = new FacturacionelectronicaCore.Negocio.Modelo.Tercero(t);
-                        terceroEnviar.Nombre = ObtenerNombreCompleto(t.Nombre, t.Apellidos);
-                        terceroEnviar.Apellidos = string.IsNullOrWhiteSpace(t.Apellidos) ? null : t.Apellidos.Trim();
+                        AplicarNombreYApellidosSeparados(t, terceroEnviar);
                         tercerosEnviar.Add(terceroEnviar);
                     }
                 }
@@ -104,6 +109,48 @@ namespace EnviadorInformacionService
         private static string ObtenerNombreCompleto(string nombre, string apellidos)
         {
             return string.Join(" ", new[] { nombre?.Trim(), apellidos?.Trim() }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
+        }
+
+        private static void AplicarNombreYApellidosSeparados(FactoradorEstacionesModelo.Objetos.Tercero origen, FacturacionelectronicaCore.Negocio.Modelo.Tercero destino)
+        {
+            if (origen == null || destino == null)
+            {
+                return;
+            }
+
+            var nombre = string.IsNullOrWhiteSpace(origen.Nombre) ? null : origen.Nombre.Trim();
+            var apellidos = string.IsNullOrWhiteSpace(origen.Apellidos) ? null : origen.Apellidos.Trim();
+
+            // Keep nombre and apellidos separated; only split when natural person arrives with full name and missing apellido.
+            if (string.IsNullOrWhiteSpace(apellidos)
+                && !string.IsNullOrWhiteSpace(nombre)
+                && !string.Equals(origen.tipoIdentificacionS, "Nit", StringComparison.OrdinalIgnoreCase))
+            {
+                var partes = nombre.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (partes.Length > 1)
+                {
+                    apellidos = partes[partes.Length - 1];
+                    nombre = string.Join(" ", partes.Take(partes.Length - 1));
+                }
+            }
+
+            destino.Nombre = string.IsNullOrWhiteSpace(nombre) ? "No informado" : nombre;
+            destino.Apellidos = string.IsNullOrWhiteSpace(apellidos) ? null : apellidos;
+        }
+
+        private static string TruncarParaLog(string texto, int maximo = 4000)
+        {
+            if (string.IsNullOrEmpty(texto))
+            {
+                return string.Empty;
+            }
+
+            if (texto.Length <= maximo)
+            {
+                return texto;
+            }
+
+            return texto.Substring(0, maximo) + $"... [truncado {texto.Length - maximo} caracteres]";
         }
 
         public IEnumerable<string> GetGuidsFacturasPendientes(Guid estacion, string token)
@@ -242,7 +289,7 @@ namespace EnviadorInformacionService
             RequestCambiarFechasReporte request = new RequestCambiarFechasReporte();
             request.facturas = facturasFechas;
             request.Estacion = estacionFuente;
-            Logger.Info(JsonConvert.SerializeObject(request));
+           // Logger.Info(JsonConvert.SerializeObject(request));
             using (var client = new HttpClient())
             {
                 client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
@@ -336,28 +383,61 @@ namespace EnviadorInformacionService
         {
             using (var client = new HttpClient())
             {
-                var path = $"/api/Factura/AgregarTurnoAFactura";
+                var paths = new[]
+                {
+                    "/api/Factura/AgregarTurnoAFactura",
+                    "/api/Facturas/AgregarTurnoAFactura",
+                    "/api/OrdenesDeDespacho/AgregarTurnoAFactura"
+                };
 
-                Logger.Info(path);
                 client.Timeout = new TimeSpan(0, 0, 0, 5, 0);
                 var request = new RequestFacturaTurno()
                 {
                     estacion = estacionFuente,
                     fecha = fechaApertura,
-                    isla = isla,
+                    isla = string.IsNullOrWhiteSpace(isla) ? isla : isla.Trim(),
                     idVentaLocal = ventaId,
                     numero = numero
                 };
                 var content = new StringContent(JsonConvert.SerializeObject(request));
-                Logger.Info(JsonConvert.SerializeObject(request));
+                //Logger.Info(JsonConvert.SerializeObject(request));
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", token);
-                var response = client.PostAsync($"{url}{path}", content).Result;
 
-                Logger.Info(JsonConvert.SerializeObject(response.Content.ReadAsStringAsync().Result));
-                
-                return response.IsSuccessStatusCode;
+                for (var i = 0; i < paths.Length; i++)
+                {
+                    var path = paths[i];
+                    //Logger.Info(path);
+
+                    // Content can be sent only once; recreate it on each attempt.
+                    using (var attemptContent = new StringContent(JsonConvert.SerializeObject(request)))
+                    {
+                        attemptContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+
+                        var response = client.PostAsync($"{url}{path}", attemptContent).Result;
+                        var responseBody = response.Content.ReadAsStringAsync().Result;
+
+                        //Logger.Info($"SetTurnoFactura respuesta ({path}): status={(int)response.StatusCode} {response.StatusCode}, body={(string.IsNullOrWhiteSpace(responseBody) ? "<vacio>" : responseBody)}");
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            return true;
+                        }
+
+                        if (response.StatusCode != System.Net.HttpStatusCode.NotFound)
+                        {
+                            return false;
+                        }
+
+                        if (i == paths.Length - 1)
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                return false;
             }
         }
 
@@ -375,7 +455,7 @@ namespace EnviadorInformacionService
     new AuthenticationHeaderValue("bearer", token);
                 var path = $"/api/Turnos";
 
-                Logger.Info(JsonConvert.SerializeObject(turno));
+                //Logger.Info(JsonConvert.SerializeObject(turno));
                 var content = new StringContent(JsonConvert.SerializeObject(turno));
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
                 var response = client.PostAsync($"{url}{path}", content).Result;
@@ -394,7 +474,7 @@ namespace EnviadorInformacionService
     new AuthenticationHeaderValue("bearer", token);
                 var path = $"/api/CuposInfo";
 
-                Logger.Info(JsonConvert.SerializeObject(cuposInfo));
+                //Logger.Info(JsonConvert.SerializeObject(cuposInfo));
                 var content = new StringContent(JsonConvert.SerializeObject(cuposInfo));
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
                 var response = client.PostAsync($"{url}{path}", content).Result;
