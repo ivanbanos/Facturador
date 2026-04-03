@@ -3,6 +3,7 @@ using FacturadorEstacionesRepositorio;
 using NLog.Targets;
 using ManejadorSurtidor.SICOM;
 using ManejadorSurtidor.Messages;
+using ManejadorSurtidor.Protocols;
 using ControladorEstacion.Messages;
 using Modelo;
 
@@ -67,6 +68,7 @@ namespace ManejadorSurtidor
                     services.AddTransient<IFidelizacion, FidelizacionConexionApi>();
                     services.AddSingleton<Islas>();
                     services.Configure<Sicom>(options => hostContext.Configuration.GetSection("Sicom").Bind(options));
+                    services.AddSingleton<IPumpProtocol, AsproProtocol>();
                     services.AddHostedService<Worker>();
                     services.Configure<InfoEstacion>(options => hostContext.Configuration.GetSection("InfoEstacion").Bind(options));
                     services.Configure<List<ServicioSIGES.CaraImpresora>>(options => hostContext.Configuration.GetSection("CarasImpresoras").Bind(options));
