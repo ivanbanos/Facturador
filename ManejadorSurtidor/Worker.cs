@@ -10,6 +10,7 @@ using NLog;
 using Microsoft.Extensions.Options;
 using ManejadorSurtidor.SICOM;
 using ManejadorSurtidor.Messages;
+using ManejadorSurtidor.Protocols;
 using System;
 using ControladorEstacion.Messages;
 using FactoradorEstacionesModelo.Siges;
@@ -26,6 +27,7 @@ namespace ManejadorSurtidor
         private readonly IMessageProducer _messageProducer;
         private readonly IFidelizacion _fidelizacion;
         private readonly Islas _islas;
+        private readonly IPumpProtocol _pumpProtocol;
 
         public override void Dispose()
         {
@@ -42,9 +44,7 @@ namespace ManejadorSurtidor
             await base.StopAsync(cancellationToken);
             _logger.Log(NLog.LogLevel.Info, "Cerrando");
         }
-        public Worker(ILogger<Worker> logger, IEstacionesRepositorio estacionesRepositorio, IOptions<Sicom> options, ISicomConection sicomConection, IMessageProducer messageProducer, IFidelizacion fidelizacion,
-            //IMessagesReceiver messageReceiver, 
-            Islas islas)
+        public Worker(ILogger<Worker> logger, IEstacionesRepositorio estacionesRepositorio, IOptions<Sicom> options, ISicomConection sicomConection, IMessageProducer messageProducer, IFidelizacion fidelizacion, Islas islas, IPumpProtocol pumpProtocol)
         {
 
            // ((IObservable<string>)messageReceiver).Subscribe(this);
@@ -54,6 +54,7 @@ namespace ManejadorSurtidor
             _messageProducer = messageProducer;
             _fidelizacion = fidelizacion;
             _islas = islas;
+            _pumpProtocol = pumpProtocol;
         }
     
 
@@ -78,7 +79,7 @@ namespace ManejadorSurtidor
             {
                 try
                 {
-                    var operador = new OperadorCara(_logger, surtidores, _estacionesRepositorio, _options, _sicomConection, _messageProducer, _fidelizacion, _islas);
+                    var operador = new OperadorCara(_logger, surtidores, _estacionesRepositorio, _options, _sicomConection, _messageProducer, _fidelizacion, _islas, _pumpProtocol);
                     await operador.OperarCara(stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
