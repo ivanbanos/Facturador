@@ -1,0 +1,45 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #f0f5fb, #e8f0fb);
+  color: #051D38;
+}
+
+.layout {
+  min-height: 100vh;
+}
+
+.topbar {
+  padding: 20px;
+  background: linear-gradient(120deg, #051D38, #0a3d5c);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #7CC5FC;
+}
+
+.topbar nav {
+  display: flex;
+  gap: 14px;
+}
+
+.topbar a {
+  color: #7CC5FC;
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.topbar a:hover {
+  opacity: 0.8;
+}
+
+.content {
+  padding: 20px;
+}

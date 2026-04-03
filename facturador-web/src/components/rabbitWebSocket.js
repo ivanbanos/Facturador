@@ -1,45 +1,78 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Client } from "@stomp/stompjs";
-import { Modal, Button } from "react-bootstrap";
+import { Modal } from "react-bootstrap";
 import "./styles/home.css";
 import "./styles/modal.css";
 
-const characters =
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-const generateString = (length) => {
-  let result = "";
-  const charactersLength = characters.length;
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+const compareDates = (d1, d2) => {
+  const date1 = d1.getTime();
+  const date2 = new Date(d2).getTime();
+  if (Number.isNaN(date2)) {
+    return 1;
   }
 
-  return result;
-};
-
-const compareDates = (d1, d2) => {
-  let date1 = d1.getTime();
-  let date2 = new Date(d2).getTime();
-  console.log(d1);
-  console.log(d2);
-  console.log(date1);
-  console.log(date2);
   if (date1 < date2) {
     return -1;
-  } else if (date1 > date2) {
-    return 1;
-  } else {
-    return 0;
   }
+
+  if (date1 > date2) {
+    return 1;
+  }
+
+  return 0;
 };
 
-const VehiculosSICOMModal = (props) => {
+const getStompConfig = () => {
+  const rabbitWebSocketUrl = window.RabbitWebSocket;
+  const destination = window.RabbitWebSocketDestination || "VehiculosSICOM";
+  const login = window.RabbitWebSocketUser;
+  const passcode = window.RabbitWebSocketPassword;
+
+  const brokerURL =
+    window.location.protocol === "https:" &&
+    rabbitWebSocketUrl?.startsWith("ws://")
+      ? rabbitWebSocketUrl.replace("ws://", "wss://")
+      : rabbitWebSocketUrl;
+
+  return {
+    brokerURL,
+    destination,
+    login,
+    passcode,
+  };
+};
+
+const VehiculosSICOMModal = () => {
   const [show, setShow] = useState(false);
   const [vehiculo, setVehiculo] = useState({ placa: "" });
   const [estado, setEstado] = useState("Autorizado");
   const clientRef = useRef(null);
+  const subscriptionRef = useRef(null);
 
   const handleCloseModal = () => setShow(false);
+
+  const shouldDisplayVehiculo = (vehiculoJson) => {
+    const islaRaw = localStorage.getItem("islaSelectName");
+    if (!islaRaw) {
+      return false;
+    }
+
+    const islaSeleccionada = JSON.parse(islaRaw);
+    return vehiculoJson.isla === islaSeleccionada;
+  };
+
+  const computeEstado = (vehiculoJson) => {
+    if (compareDates(new Date(), vehiculoJson.fechaFin) >= 0) {
+      return "No Autorizado, motivo vencido";
+    }
+
+    if (vehiculoJson.estado !== 0) {
+      return "No Autorizado, motivo " + vehiculoJson.motivoTexto;
+    }
+
+    return "Autorizado";
+  };
+
   useEffect(() => {
     if (!window.RabbitWebSocket) {
       console.error(
@@ -48,11 +81,19 @@ const VehiculosSICOMModal = (props) => {
       return;
     }
 
-    const brokerURL =
-      window.location.protocol === "https:" &&
-      window.RabbitWebSocket.startsWith("ws://")
-        ? window.RabbitWebSocket.replace("ws://", "wss://")
-        : window.RabbitWebSocket;
+    const { brokerURL, destination, login, passcode } = getStompConfig();
+
+    if (!brokerURL) {
+      console.error("[RabbitWebSocket] brokerURL inválido");
+      return;
+    }
+
+    if (!login || !passcode) {
+      console.error(
+        "[RabbitWebSocket] Credenciales no configuradas (RabbitWebSocketUser/RabbitWebSocketPassword)"
+      );
+      return;
+    }
 
     const stompClient = new Client({
       brokerURL,
@@ -60,27 +101,21 @@ const VehiculosSICOMModal = (props) => {
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       connectHeaders: {
-        login: "siges",
-        passcode: "siges",
+        login,
+        passcode,
       },
       onConnect: () => {
-        stompClient.subscribe("VehiculosSICOM", (message) => {
-          const now = new Date();
-          setVehiculo(JSON.parse(message.body));
-          let vehiculoJson = JSON.parse(message.body);
-          if (
-            vehiculoJson.isla ==
-              JSON.parse(localStorage.getItem("islaSelectName")) ||
-            null
-          ) {
-            setEstado("Autorizado");
-            if (compareDates(now, vehiculoJson.fechaFin) >= 0) {
-              setEstado("No Autorizado, motivo vencido");
+        subscriptionRef.current = stompClient.subscribe(destination, (message) => {
+          try {
+            const vehiculoJson = JSON.parse(message.body);
+
+            if (shouldDisplayVehiculo(vehiculoJson)) {
+              setVehiculo(vehiculoJson);
+              setEstado(computeEstado(vehiculoJson));
+              setShow(true);
             }
-            if (vehiculoJson.estado != 0) {
-              setEstado("No Autorizado, motivo " + vehiculoJson.motivoTexto);
-            }
-            setShow(true);
+          } catch (error) {
+            console.error("[RabbitWebSocket] Mensaje inválido", error);
           }
         });
       },
@@ -99,6 +134,11 @@ const VehiculosSICOMModal = (props) => {
     stompClient.activate();
 
     return () => {
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+
       if (clientRef.current && clientRef.current.active) {
         clientRef.current.deactivate();
       }
@@ -108,12 +148,14 @@ const VehiculosSICOMModal = (props) => {
 
   useEffect(() => {
     if (show) {
-      const interval = setInterval(() => {
+      const timeoutId = setTimeout(() => {
         setShow(false);
       }, 30000);
-      return () => clearInterval(interval);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [show]);
+
   return (
     <>
       <Modal
@@ -121,10 +163,9 @@ const VehiculosSICOMModal = (props) => {
         onHide={handleCloseModal}
         backdrop="static"
         keyboard={false}
-        className = "SICOM-modal"
+        className="SICOM-modal"
         dialogClassName="custom-modal SICOM-modal"
         aria-labelledby="contained-modal-title-vcenter"
-        
       >
         <Modal.Header className="header-modal" closeButton>
           <Modal.Title className="SICOM">Vehiculo</Modal.Title>
