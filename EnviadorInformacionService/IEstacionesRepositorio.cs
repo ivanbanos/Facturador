@@ -33,6 +33,7 @@ namespace FacturadorEstacionesRepositorio
         IEnumerable<TurnoSiges> GetTurnosByFechas(DateTime desde, DateTime hasta);
         IEnumerable<FactoradorEstacionesModelo.Siges.TurnoSurtidor> ObtenerTurnoInfo(int id);
         void PrepararRetroactivoTurnosPendientes();
+        void AgregarFacturasDesdeIdVentaPorFecha(DateTime fecha);
 
     }
 }

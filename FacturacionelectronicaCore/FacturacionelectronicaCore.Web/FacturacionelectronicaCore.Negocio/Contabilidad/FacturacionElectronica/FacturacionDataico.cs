@@ -1037,19 +1037,19 @@ Console.WriteLine($"Factura creada, {respuesta.order_reference}, {respuesta.dian
                     {
                         tax_category = "IVA",
                         tax_rate = 19,
-                        tax_amount = (double)articulo.iva,
+                        tax_amount = Math.Round((double)articulo.iva, 2),
                         tax_description = "IVA",
-                        tax_base = (double)articulo.subtotal,
-                        base_amount = (double)articulo.subtotal
+                        tax_base = Math.Round((double)articulo.subtotal, 2),
+                        base_amount = Math.Round((double)articulo.subtotal, 2)
                     });
                 }
                 var item = new ItemDataico()
                 {
                     sku = "C" + articulo.Canastilla.CanastillaId.ToString(),
-                    price = (double)articulo.precio,
-                    original_price = (factura.descuento > 0) ? (double?)articulo.precio : null,
+                    price = Math.Round((double)articulo.precio, 2),
+                    original_price = (factura.descuento > 0) ? (double?)Math.Round((double)articulo.precio, 2) : null,
                     description = articulo.Canastilla.descripcion,
-                    quantity = (double)articulo.cantidad,
+                    quantity = Math.Round((double)articulo.cantidad, 2),
                     taxes = taxes,
                     measuring_unit = "GL",
                     retentions = new List<RetentionDataico>() { },
@@ -1062,7 +1062,7 @@ Console.WriteLine($"Factura creada, {respuesta.order_reference}, {respuesta.dian
                 actions = new ActionsDataico() { send_dian = true, send_email = true },
                 invoice = new InvoiceDataico()
                 {
-                    notes = new List<string>() { $"Placa: {(string.IsNullOrWhiteSpace(factura.Placa) ? "N/A" : factura.Placa.Trim())}, Kilometraje : , Nro Transaccion : " },
+                    notes = new List<string>() { $"Placa: {(string.IsNullOrWhiteSpace(factura.Placa) ? "N/A" : factura.Placa.Trim())}, Kilometraje : , Nro Transaccion : {factura.numeroTransaccion ?? ""}" },
                     env = "PRODUCCION",
                     dataico_account_id = resolucion.idNumeracion,
                     issue_date = DateTime.Now.ToString("dd/MM/yyyy"),

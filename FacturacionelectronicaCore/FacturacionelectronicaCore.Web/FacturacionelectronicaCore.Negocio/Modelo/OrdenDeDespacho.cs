@@ -4,7 +4,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
 {
     public class OrdenDeDespacho
     {
-        public  string numeroTransaccion { get; set; }
+        public string numeroTransaccion { get; set; }
 
         public OrdenDeDespacho()
         {

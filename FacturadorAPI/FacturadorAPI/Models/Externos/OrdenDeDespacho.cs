@@ -32,6 +32,7 @@ namespace FacturadorAPI.Models.Externos
         public double SubTotal { get; set; }
         public string Vendedor { get; set; }
         public Guid estacion { get; set; }
+        public string NumeroTransaccion { get; set; }
 
 
         public OrdenDeDespacho(FacturaSiges x, string forma)
@@ -58,6 +59,7 @@ namespace FacturadorAPI.Models.Externos
             SubTotal = x.Subtotal;
             Vendedor = x.Empleado;
             Identificacion = x.Tercero.identificacion;
+            NumeroTransaccion = x.NumeroTransaccion;
         }
     }
 }

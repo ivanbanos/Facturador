@@ -2102,7 +2102,7 @@ IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ActualizarFactura')
 	DROP PROCEDURE [dbo].[ActualizarFactura]
 GO
 CREATE procedure [dbo].[ActualizarFactura]
-( 
+(
     @facturaPOSId int,
 	@Placa varchar(50) = null,
 	@Kilometraje varchar(50) = null,
@@ -2111,7 +2111,8 @@ CREATE procedure [dbo].[ActualizarFactura]
     @total1 float = null,
     @total2 float = null,
 	@terceroId int = null,
-	@ventaId int
+	@ventaId int,
+	@NumeroTransaccion nvarchar(100) = null
 )
 as
 begin try
@@ -2127,7 +2128,8 @@ begin try
     codigoFormaPago2 = isnull(@codigoFormaPago2, codigoFormaPago2),
     total1 = isnull(@total1, total1),
     total2 = isnull(@total2, total2),
-	terceroId = isnull(@terceroId, terceroId)
+	terceroId = isnull(@terceroId, terceroId),
+	numeroTransaccion = isnull(@NumeroTransaccion, numeroTransaccion)
 	where @facturaPOSId = facturaPOSId
 	  and ventaId = @ventaId
 	select 'Ok' as result

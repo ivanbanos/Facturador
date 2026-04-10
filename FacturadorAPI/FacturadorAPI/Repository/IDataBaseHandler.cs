@@ -8,7 +8,7 @@ namespace MachineUtilizationApi.Repository
     {
         Task AbrirTurno(int isla, string codigo);
         Task ActualizarCanastilla(IEnumerable<Canastilla> canastillas);
-        Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje);
+        Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje, string numeroTransaccion = null);
         Task ActualizarFacturaFidelizada(string identificacion, int ventaId);
         Task ActuralizarFacturasEnviados(List<int> list);
         Task AddFidelizado(string documento, float v);

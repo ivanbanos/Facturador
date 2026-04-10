@@ -29,7 +29,7 @@ namespace FacturadorAPI.Application.Commands
                 var factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
                 if (token == null)
                 {
-                        await _databaseHandler.ActualizarFactura(factura.facturaPOSId, factura.Tercero.terceroId, factura.codigoFormaPago, factura.ventaId, factura.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje);
+                        await _databaseHandler.ActualizarFactura(factura.facturaPOSId, factura.Tercero.terceroId, factura.codigoFormaPago, factura.ventaId, factura.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, request.NumeroTransaccion);
 
                         await _databaseHandler.MandarImprimir(request.VentaId);
                         return "Ok";
@@ -37,7 +37,7 @@ namespace FacturadorAPI.Application.Commands
 
                 if (!factura.enviada)
                 {
-                    await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje);
+                    await _databaseHandler.ActualizarFactura(factura.facturaPOSId, request.TerceroId, request.FormaPago, request.VentaId, request.Placa == "NP" ? "" : request.Placa, request.Kilometraje == "NP" ? "" : request.Kilometraje, request.NumeroTransaccion);
 
                     factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
 

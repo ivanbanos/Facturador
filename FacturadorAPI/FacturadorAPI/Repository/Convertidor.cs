@@ -196,6 +196,7 @@ namespace FacturadorAPI.Repository
                     Empleado = dr.Field<string>("Empleado"),
                     fechaProximoMantenimiento = dr.Field<DateTime?>("fechaProximoMantenimiento"),
                     enviada = dr.Field<bool>("enviada"),
+                    NumeroTransaccion = dr.Table.Columns.Contains("numeroTransaccion") && !dr.IsNull("numeroTransaccion") ? dr.Field<string>("numeroTransaccion") : null,
 
                     Tercero = new Tercero()
                     {

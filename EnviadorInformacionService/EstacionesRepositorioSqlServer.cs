@@ -616,6 +616,15 @@ namespace FacturadorEstacionesRepositorio
                      });
         }
 
+        public void AgregarFacturasDesdeIdVentaPorFecha(DateTime fecha)
+        {
+            LoadDataTableFromStoredProc(_connectionString.estacion, "AgregarFacturasDesdeIdVentaPorFecha",
+                new Dictionary<string, object>
+                {
+                    { "@fecha", fecha.Date }
+                });
+        }
+
 
 
         public List<FactoradorEstacionesModelo.Objetos.Factura> BuscarFacturasNoEnviadasFacturacion()

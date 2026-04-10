@@ -19,6 +19,7 @@ namespace EnviadorInformacion
         private readonly IApiContabilidad _apiContabilidad;
         private readonly Guid estacionFuente;
         private DateTime? stanByTime;
+        private DateTime? ultimaEjecucionAgregarFacturasPorFecha;
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         public EnviadorDeInformacion()
@@ -147,6 +148,19 @@ namespace EnviadorInformacion
             catch (Exception ex)
             {
                 Logger.Warn($"No fue posible preparar retroactivo de turnos pendientes: {ex.Message}");
+            }
+
+            if (!ultimaEjecucionAgregarFacturasPorFecha.HasValue || ultimaEjecucionAgregarFacturasPorFecha.Value < DateTime.Now.AddHours(-1))
+            {
+                try
+                {
+                    _estacionesRepositorio.AgregarFacturasDesdeIdVentaPorFecha(DateTime.Today);
+                    ultimaEjecucionAgregarFacturasPorFecha = DateTime.Now;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"No fue posible agregar facturas desde id venta por fecha: {ex.Message}");
+                }
             }
 
             var facturasPorturno = _estacionesRepositorio.GetFacturaSinEnviarTurno();

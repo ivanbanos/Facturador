@@ -324,7 +324,7 @@ namespace MachineUtilizationApi.Repository
             return dt.ConvertirFacturasSiges();
         }
 
-        public async Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje)
+        public async Task ActualizarFactura(int facturaPOSId, int terceroId, int codigoFormaPago, int idVenta, string placa, string kilometraje, string numeroTransaccion = null)
         {
             await LoadDataTableFromStoredProcAsync("ActualizarFactura",
                             new Dictionary<string, object>{
@@ -334,7 +334,8 @@ namespace MachineUtilizationApi.Repository
                     {"@Kilometraje", kilometraje },
                     {"@codigoFormaPago", codigoFormaPago },
                     {"@terceroId", terceroId },
-                    {"@ventaId", idVenta }
+                    {"@ventaId", idVenta },
+                    {"@NumeroTransaccion", (object?)numeroTransaccion ?? DBNull.Value }
                             });
         }
 

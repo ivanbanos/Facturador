@@ -43,6 +43,7 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
             FechaProximoMantenimiento = orden.FechaProximoMantenimiento;
             Vendedor = orden.Vendedor;
             idFacturaElectronica = orden.idFacturaElectronica;
+            NumeroTransaccion = orden.NumeroTransaccion;
         }
 
         public string EstacionGuid { get; set; }
