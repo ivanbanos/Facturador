@@ -41,6 +41,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public decimal SubTotal { get; set; }
         public string Vendedor { get; set; }
         public string TurnoGuid { get; set; }
+        public string NumeroTransaccion { get; set; }
         public Guid estacion { get; set; }
 
         private static int? GetIntProperty(object source, string name)

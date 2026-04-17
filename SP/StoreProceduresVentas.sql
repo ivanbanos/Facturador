@@ -814,3 +814,97 @@ END CATCH;
 GO
 EXEC AgregarFacturasDesdeIdVentaPorFecha @fecha = '2026-03-18';
 GO
+USE [Ventas]
+GO
+/****** Object:  StoredProcedure [dbo].[getFacturaPorTurno]    Script Date: 14/04/2026 2:09:30 p. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER procedure [dbo].[getFacturaPorTurno]
+(@IdIsla int, @num_tur int, @fecha datetime)
+as
+begin try
+    set nocount on;
+	 
+	
+    select 
+	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
+	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
+	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, OrdenesDeDespacho.[facturaPOSId]
+      ,OrdenesDeDespacho.[fecha]
+      ,OrdenesDeDespacho.[resolucionId]
+      ,OrdenesDeDespacho.[consecutivo]
+      ,OrdenesDeDespacho.[ventaId]
+      ,OrdenesDeDespacho.[estado]
+      ,OrdenesDeDespacho.[terceroId]
+      ,OrdenesDeDespacho.[Placa]
+      ,OrdenesDeDespacho.[Kilometraje]
+      ,OrdenesDeDespacho.[impresa]
+      ,OrdenesDeDespacho.[consolidadoId]
+      ,OrdenesDeDespacho.[enviada]
+      ,OrdenesDeDespacho.[codigoFormaPago]
+      ,OrdenesDeDespacho.[reporteEnviado]
+      ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
+	
+	from Facturacion_Electronica.dbo.OrdenesDeDespacho
+	left join Facturacion_Electronica.dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
+	left join Facturacion_Electronica.dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
+    left join Facturacion_Electronica.dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
+	inner join VENTAS On OrdenesDeDespacho.ventaId = VENTAS.CONSECUTIVO
+	inner join TURN_EST On VENTAS.FECHA_REAL = TURN_EST.FECHA and VENTAS.NUM_TUR = TURN_EST.NUM_TUR and VENTAS.COD_ISL = TURN_EST.COD_ISL
+	where TURN_EST.COD_ISL = @IdISla and TURN_EST.NUM_TUR = @num_tur and dbo.Finteger(TURN_EST.FECHA) = @fecha
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+Go
+USE [Ventas]
+GO
+/****** Object:  StoredProcedure [dbo].[getBolsanumero]    Script Date: 14/04/2026 2:40:08 p. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER procedure [dbo].[getBolsanumero]
+(@IdIsla int, @fecha datetime, @numero int)
+as
+begin try
+    set nocount on;
+	
+select dbo.Finteger(FECHA) as Fecha, Consecutivo, NUM_TUR as NumeroTurno,ISLAS.DESCRIPCION as Isla,
+EMPLEADO.Nombre as Empleado, VR_MONEDA as Moneda, VR_BILLETE as Billete
+from BOLS_TUR
+
+inner join EMPLEADO On EMPLEADO.COD_EMP = BOLS_TUR.COD_EMP
+inner join ISLAS On ISLAS.COD_ISL = BOLS_TUR.COD_ISL
+where dbo.Finteger(BOLS_TUR.FECHA) = @fecha and
+BOLS_TUR.COD_ISL = @IdISla
+and BOLS_TUR.CONSECUTIVO =@numero
+order by BOLS_TUR.NUM_TUR desc
+
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO

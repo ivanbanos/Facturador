@@ -47,6 +47,7 @@ namespace EnviadorInformacionService
                     : null;
 
                 var orden = new FacturacionelectronicaCore.Negocio.Modelo.OrdenDeDespacho(x, forma1, forma2);
+                orden.NumeroTransaccion = x.numeroTransaccion;
                 if (x?.Tercero != null && orden?.Tercero != null)
                 {
                     AplicarNombreYApellidosSeparados(x.Tercero, orden.Tercero);

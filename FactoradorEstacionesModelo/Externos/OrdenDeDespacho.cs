@@ -37,6 +37,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public double? Total2 { get; set; }
         public string Vendedor { get; set; }
         public Guid estacion { get; set; }
+        public string NumeroTransaccion { get; set; }
 
 
         public OrdenDeDespacho(FacturaSiges x, string forma, string forma2)

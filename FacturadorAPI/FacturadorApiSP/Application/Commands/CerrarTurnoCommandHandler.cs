@@ -34,18 +34,32 @@ namespace FacturadorAPI.Application.Commands
 
             var turnoA = await _databaseHandler.ObtenerTurnoPorIsla(request.Isla, cancellationToken);
             var respuesta = send_cmd($"000000CER0{request.Isla}{request.Codigo}*").Trim();
+            if (string.IsNullOrWhiteSpace(respuesta) || string.Equals(respuesta, "Error", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Error de comunicacion con el controlador de isla al cerrar turno.");
+            }
+
             if (!respuesta.Contains("CERA"))
             {
-                throw new Exception("¡Error cerrando turno!");
+                throw new InvalidOperationException($"Respuesta inesperada cerrando turno: {respuesta}");
             }
-            var turno = await _databaseHandler.ObtenerTurnoIslaYFecha(request.Isla, turnoA.FechaApertura, turnoA.numero);
+
+            if (turnoA == null || turnoA.numero <= 0)
+            {
+                _logger.LogWarning("No se encontro turno abierto valido para cierre en isla {Isla}", request.Isla);
+                throw new InvalidOperationException("No se encontro el turno abierto para encolar el cierre.");
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(15), cancellationToken);
+
+            await _databaseHandler.MandarImprimirObjeto(request.Isla, turnoA.FechaApertura, turnoA.numero, "Cierre");
+
+            var turno = await _databaseHandler.ObtenerTurnoIslaYFecha(request.Isla, turnoA.FechaApertura, turnoA.numero)
+                ?? turnoA;
+
             var facturas = await _databaseHandler.getFacturaPorTurno(request.Isla, turno.FechaApertura, turno.numero);
 
             var formas = await _databaseHandler.ListarFormasPagoSP(cancellationToken);
-
-            var fechaObjeto = turnoA?.FechaApertura ?? turno?.FechaApertura ?? DateTime.Now.Date;
-            var numeroObjeto = turnoA?.numero > 0 ? turnoA.numero : (turno?.numero ?? 0);
-            await _databaseHandler.MandarImprimirObjeto(request.Isla, fechaObjeto, numeroObjeto, "Cierre");
             var informacion = new StringBuilder();
             var guiones = new StringBuilder();
             guiones.Append('-', _infoEstacion.CaracteresPorPagina);
@@ -61,7 +75,7 @@ namespace FacturadorAPI.Application.Commands
             informacion.Append("Isla:           " + turno.Isla + "\n\r");
             informacion.Append("Fecha apertura: " + turno.FechaApertura.ToString() + "\n\r");
 
-            informacion.Append("Fecha cierre:   " + turno.FechaCierre.Value.ToString() + "\n\r");
+            informacion.Append("Fecha cierre:   " + turno.FechaCierre?.ToString() + "\n\r");
 
             var totalCantidad = 0m;
             var totalVenta = 0m;
@@ -75,12 +89,13 @@ namespace FacturadorAPI.Application.Commands
                 informacion.Append(formatoTotales("Apertura :", turnosurtidor.Apertura.ToString()) + "\n\r");
                 if (turno.FechaCierre.HasValue)
                 {
-                    informacion.Append(formatoTotales("Cierre :", turnosurtidor.Cierre.ToString()) + "\n\r");
+                    informacion.Append(formatoTotales("Cierre :", turnosurtidor.Cierre?.ToString() ?? string.Empty) + "\n\r");
 
-                    totalCantidad += Convert.ToDecimal(turnosurtidor.Cierre.Value - turnosurtidor.Apertura);
-                    totalVenta += Convert.ToDecimal((turnosurtidor.Cierre.Value - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio);
-                    informacion.Append(formatoTotales("Cantidad :", string.Format("{0:N2}", turnosurtidor.Cierre - turnosurtidor.Apertura)) + "\n\r");
-                    informacion.Append(formatoTotales("Total :", $"${string.Format("{0:N2}", (turnosurtidor.Cierre - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio)}") + "\n\r");
+                    var lecturaCierre = turnosurtidor.Cierre ?? turnosurtidor.Apertura;
+                    totalCantidad += Convert.ToDecimal(lecturaCierre - turnosurtidor.Apertura);
+                    totalVenta += Convert.ToDecimal((lecturaCierre - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio);
+                    informacion.Append(formatoTotales("Cantidad :", string.Format("{0:N2}", lecturaCierre - turnosurtidor.Apertura)) + "\n\r");
+                    informacion.Append(formatoTotales("Total :", $"${string.Format("{0:N2}", (lecturaCierre - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio)}") + "\n\r");
 
                 }
 
@@ -147,9 +162,10 @@ namespace FacturadorAPI.Application.Commands
             return informacion.ToString();
 
         }
+
         public string send_cmd(string szData)
         {
-            Socket m_socClient = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            using var m_socClient = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
             try
             {
@@ -168,16 +184,13 @@ namespace FacturadorAPI.Application.Commands
                 byte[] b = new byte[100];
                 m_socClient.Receive(b);
                 string szReceived = Encoding.ASCII.GetString(b);
-                m_socClient.Close();
-                m_socClient.Dispose();
                 Console.WriteLine($"REspuesta {szReceived}");
                 return szReceived;
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error enviando comando de cierre por socket. Trama: {Trama}", szData);
                 Console.WriteLine($"REspuesta {ex.Message}");
-                m_socClient.Close();
-                m_socClient.Dispose();
                 return "Error";
             }
             //Dispose();

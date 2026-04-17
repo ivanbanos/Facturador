@@ -70,12 +70,7 @@ namespace EnviadorInformacionService
 
             MultiplicarPor10 = GetBool("MultiplicarPor10", false);
             _conexionEstacionRemota = new ConexionEstacionRemota();
-            firstMacAddress = NetworkInterface
-        .GetAllNetworkInterfaces()
-        .Where(nic => nic.OperationalStatus == OperationalStatus.Up && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
-        .Select(nic => nic.GetPhysicalAddress().ToString())
-        .FirstOrDefault();
-            firstMacAddress = firstMacAddress ?? "Mac Unknown";
+            firstMacAddress = ObtenerSerialMaquina();
             Console.WriteLine(GetSetting("Razon"));
             ImpresionAutomatica = GetBool("ImpresionAutomatica", false);
             impresionFormaDePagoOrdenDespacho = GetBool("impresionFormaDePagoOrdenDespacho", false);
@@ -638,7 +633,8 @@ namespace EnviadorInformacionService
 
             lineasImprimirBolsa.Add(new LineasImprimir("Isla: " + bolsaimprimir.Isla, false));
             lineasImprimirBolsa.Add(new LineasImprimir("Turno: " + bolsaimprimir.NumeroTurno, false));
-            lineasImprimirBolsa.Add(new LineasImprimir("Fecha: " + bolsaimprimir.Fecha, false));
+            lineasImprimirBolsa.Add(new LineasImprimir("Fecha de turno: " + bolsaimprimir.Fecha, false));
+            lineasImprimirBolsa.Add(new LineasImprimir("Fecha: " + DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), false));
             lineasImprimirBolsa.Add(new LineasImprimir("Empleado: " + bolsaimprimir.Empleado, false));
             lineasImprimirBolsa.Add(new LineasImprimir("Consecutivo: " + bolsaimprimir.Consecutivo, false));
             lineasImprimirBolsa.Add(new LineasImprimir("Bilete: " + bolsaimprimir.Billete, false));
@@ -754,30 +750,8 @@ namespace EnviadorInformacionService
             {
                 if (reporteCierrePorTotal != null && reporteCierrePorTotal.Any())
                 {
-
-                    //Por forma
-                    lineasImprimirTurno.Add(new LineasImprimir($"Resumen por forma de pago", true));
-                    lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
-                    var groupForma = reporteCierrePorTotal.GroupBy(x => x.codigoFormaPago);
-                    Logger.Info("facturas turno " + JsonConvert.SerializeObject(groupForma));
-
-                    var cantidadTotalmenosEfectivo = 0m;
-                    var ventaTotalmenosEfectivo = 0m;
-                    foreach (var forma in groupForma)
-                    {
-                        if (formas.Any(x => x.Id == forma.Key) && forma.Key != 1)
-                        {
-                            cantidadTotalmenosEfectivo += forma.Sum(x => x.Venta.CANTIDAD);
-                            ventaTotalmenosEfectivo += forma.Sum(x => x.Venta.TOTAL);
-                            lineasImprimirTurno.Add(new LineasImprimir(formatoTotales($"{formas.First(x => x.Id == forma.Key).Descripcion.Trim()} :", $"${string.Format("{0:N2}", forma.Sum(x => x.Venta.TOTAL))}"), false));
-
-                        }
-                    }
-
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", totalVenta)}"), false));
-
-
-                    lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+                    AgregarResumenPorFormaDePagoTurno(lineasImprimirTurno, reporteCierrePorTotal, totalVenta, guiones.ToString());
+                    AgregarResumenFacturasPorFormaDePagoTurno(lineasImprimirTurno, reporteCierrePorTotal, guiones.ToString());
 
                     lineasImprimirTurno.Add(new LineasImprimir($"Resumen por Combustibles", true));
                     //Totalizador
@@ -814,6 +788,214 @@ namespace EnviadorInformacionService
             lineasImprimirTurno.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
             lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? ""), false));
             lineasImprimirTurno.Add(new LineasImprimir(".", true));
+        }
+
+        private void AgregarResumenPorFormaDePagoTurno(List<LineasImprimir> lineas, IEnumerable<FactoradorEstacionesModelo.Objetos.Factura> facturas, decimal totalVenta, string guiones)
+        {
+            var totalesPorForma = new Dictionary<int, decimal>();
+
+            foreach (var factura in facturas)
+            {
+                var totalFactura = ObtenerTotalFacturaTurno(factura);
+                var valorPagoPrincipal = ObtenerValorPagoPrincipal(factura, totalFactura);
+                var valorPagoSecundario = ObtenerValorPagoSecundario(factura, totalFactura, valorPagoPrincipal);
+                ValidarConsistenciaPagosTurno(factura, totalFactura, valorPagoPrincipal, valorPagoSecundario);
+
+                AcumularPagoTurno(totalesPorForma, factura.codigoFormaPago, valorPagoPrincipal);
+                if (factura.codigoFormaPago2.HasValue)
+                {
+                    AcumularPagoTurno(totalesPorForma, factura.codigoFormaPago2.Value, valorPagoSecundario);
+                }
+            }
+
+            lineas.Add(new LineasImprimir("Resumen por forma de pago", true));
+            lineas.Add(new LineasImprimir(guiones, false));
+            Logger.Info("facturas turno agrupadas por forma de pago " + JsonConvert.SerializeObject(totalesPorForma));
+
+            foreach (var forma in totalesPorForma.Where(x => x.Value > 0).OrderBy(x => x.Key))
+            {
+                lineas.Add(new LineasImprimir(
+                    formatoTotales($"{ObtenerDescripcionFormaPagoTurno(forma.Key)} :", $"${string.Format("{0:N2}", forma.Value)}"),
+                    false));
+            }
+
+            lineas.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", totalVenta)}"), false));
+            lineas.Add(new LineasImprimir(guiones, false));
+        }
+
+        private void AgregarResumenFacturasPorFormaDePagoTurno(List<LineasImprimir> lineas, IEnumerable<FactoradorEstacionesModelo.Objetos.Factura> facturas, string guiones)
+        {
+            var totalGeneral = 0m;
+
+            lineas.Add(new LineasImprimir(string.Empty, false));
+            lineas.Add(new LineasImprimir("RESUMEN DE FACTURAS Y FORMAS DE PAGO", true));
+            lineas.Add(new LineasImprimir(guiones, false));
+            lineas.Add(new LineasImprimir("Factura   Total        Forma de Pago", false));
+            lineas.Add(new LineasImprimir(guiones, false));
+
+            foreach (var factura in facturas.OrderBy(x => x.Consecutivo))
+            {
+                var totalFactura = ObtenerTotalFacturaTurno(factura);
+                var valorPagoPrincipal = ObtenerValorPagoPrincipal(factura, totalFactura);
+                var valorPagoSecundario = ObtenerValorPagoSecundario(factura, totalFactura, valorPagoPrincipal);
+                ValidarConsistenciaPagosTurno(factura, totalFactura, valorPagoPrincipal, valorPagoSecundario);
+                var imprimioLinea = false;
+
+                if (factura.codigoFormaPago > 0 && valorPagoPrincipal > 0)
+                {
+                    lineas.Add(new LineasImprimir(
+                        string.Format("{0,-10}{1,12:N2}  {2}", factura.Consecutivo, valorPagoPrincipal, ObtenerDescripcionFormaPagoTurno(factura.codigoFormaPago)),
+                        false));
+                    imprimioLinea = true;
+                }
+
+                if (factura.codigoFormaPago2.HasValue && valorPagoSecundario > 0)
+                {
+                    lineas.Add(new LineasImprimir(
+                        string.Format("{0,-10}{1,12:N2}  {2}", string.Empty, valorPagoSecundario, ObtenerDescripcionFormaPagoTurno(factura.codigoFormaPago2.Value)),
+                        false));
+                    imprimioLinea = true;
+                }
+
+                if (!imprimioLinea && factura.codigoFormaPago > 0)
+                {
+                    lineas.Add(new LineasImprimir(
+                        string.Format("{0,-10}{1,12:N2}  {2}", factura.Consecutivo, totalFactura, ObtenerDescripcionFormaPagoTurno(factura.codigoFormaPago)),
+                        false));
+                }
+                else if (!imprimioLinea)
+                {
+                    Logger.Warn($"Factura {factura?.Consecutivo} sin forma de pago valida para resumen de turno.");
+                    lineas.Add(new LineasImprimir(
+                        string.Format("{0,-10}{1,12:N2}  {2}", factura?.Consecutivo ?? 0, totalFactura, "Sin registro"),
+                        false));
+                }
+
+                totalGeneral += totalFactura;
+            }
+
+            lineas.Add(new LineasImprimir(guiones, false));
+            lineas.Add(new LineasImprimir(string.Format("TOTAL GENERAL:                        {0,12:N2}", totalGeneral), true));
+            lineas.Add(new LineasImprimir(guiones, false));
+            lineas.Add(new LineasImprimir(string.Empty, false));
+        }
+
+        private void AcumularPagoTurno(Dictionary<int, decimal> totalesPorForma, int formaPagoId, decimal valor)
+        {
+            if (formaPagoId <= 0 || valor <= 0)
+            {
+                return;
+            }
+
+            if (!totalesPorForma.ContainsKey(formaPagoId))
+            {
+                totalesPorForma[formaPagoId] = 0m;
+            }
+
+            totalesPorForma[formaPagoId] += valor;
+        }
+
+        private decimal ObtenerTotalFacturaTurno(FactoradorEstacionesModelo.Objetos.Factura factura)
+        {
+            if (factura == null)
+            {
+                return 0m;
+            }
+
+            if (factura.total > 0)
+            {
+                if (factura.Venta != null)
+                {
+                    var totalVenta = Convert.ToDecimal(factura.Venta.TOTAL);
+                    if (totalVenta > 0m && Math.Abs(factura.total - totalVenta) > 0.01m)
+                    {
+                        Logger.Warn($"Factura {factura.Consecutivo} con total desincronizado. Factura={factura.total:N2}, Venta={totalVenta:N2}");
+                    }
+                }
+
+                return factura.total;
+            }
+
+            if (factura.Venta != null)
+            {
+                return Convert.ToDecimal(factura.Venta.TOTAL);
+            }
+
+            return 0m;
+        }
+
+        private decimal ObtenerValorPagoPrincipal(FactoradorEstacionesModelo.Objetos.Factura factura, decimal totalFactura)
+        {
+            if (factura == null)
+            {
+                return 0m;
+            }
+
+            if (!factura.codigoFormaPago2.HasValue)
+            {
+                return factura.total1 ?? totalFactura;
+            }
+
+            var valorPrincipal = factura.total1 ?? 0m;
+            var valorSecundario = factura.total2 ?? 0m;
+
+            if (valorPrincipal <= 0m && valorSecundario <= 0m)
+            {
+                Logger.Warn($"Factura {factura.Consecutivo} marcada como multipago sin valores distribuidos. Se asigna el total a la forma principal.");
+                return totalFactura;
+            }
+
+            if (valorPrincipal <= 0m)
+            {
+                return Math.Max(0m, totalFactura - valorSecundario);
+            }
+
+            return valorPrincipal;
+        }
+
+        private decimal ObtenerValorPagoSecundario(FactoradorEstacionesModelo.Objetos.Factura factura, decimal totalFactura, decimal valorPagoPrincipal)
+        {
+            if (factura == null || !factura.codigoFormaPago2.HasValue)
+            {
+                return 0m;
+            }
+
+            if (factura.total2.HasValue && factura.total2.Value > 0m)
+            {
+                return factura.total2.Value;
+            }
+
+            return Math.Max(0m, totalFactura - valorPagoPrincipal);
+        }
+
+        private string ObtenerDescripcionFormaPagoTurno(int formaPagoId)
+        {
+            var forma = formas?.FirstOrDefault(x => x.Id == formaPagoId);
+            if (!string.IsNullOrWhiteSpace(forma?.Descripcion))
+            {
+                return forma.Descripcion.Trim();
+            }
+
+            return "Sin registro";
+        }
+
+        private void ValidarConsistenciaPagosTurno(FactoradorEstacionesModelo.Objetos.Factura factura, decimal totalFactura, decimal valorPagoPrincipal, decimal valorPagoSecundario)
+        {
+            if (factura == null || totalFactura <= 0m)
+            {
+                return;
+            }
+
+            var sumaPagos = valorPagoPrincipal + valorPagoSecundario;
+            if (sumaPagos <= 0m)
+            {
+                return;
+            }
+
+            if (Math.Abs(sumaPagos - totalFactura) > 0.05m)
+            {
+                Logger.Warn($"Factura {factura.Consecutivo} con discrepancia entre total y formas de pago. Total={totalFactura:N2}, Pagos={sumaPagos:N2}");
+            }
         }
 
         private Font printFont;
@@ -1034,7 +1216,7 @@ namespace EnviadorInformacionService
             }
             else
             {
-                lineasImprimir.Add(new LineasImprimir(getLienaTarifas("Producto", "   Cant.", "  Precio", "   Total") + "", false));
+                lineasImprimir.Add(new LineasImprimir(getLienaTarifas("Producto", "    Cant.", "   Precio", "       Total") + "", false));
                 lineasImprimir.Add(new LineasImprimir(getLienaTarifas(_mangueras.DESCRIPCION.Trim(), String.Format("{0:#,0.000}", _venta.CANTIDAD), _venta.PRECIO_UNI.ToString("F"), String.Format("{0:#,0.00}", _venta.VALORNETO), true) + "", false));
             }
             lineasImprimir.Add(new LineasImprimir(guiones.ToString() + "", false));
@@ -1050,7 +1232,7 @@ namespace EnviadorInformacionService
             }
             else
             {
-                lineasImprimir.Add(new LineasImprimir(getLienaTarifas("Producto", "   Cant.", "  Tafira", "   Total") + "", false));
+                lineasImprimir.Add(new LineasImprimir(getLienaTarifas("Producto", "    Cant.", "   Tafira", "       Total") + "", false));
                 lineasImprimir.Add(new LineasImprimir(getLienaTarifas(_mangueras.DESCRIPCION.Trim(), String.Format("{0:#,0.000}", _venta.CANTIDAD), "0%", String.Format("{0:#,0.00}", _venta.VALORNETO), true) + "", false));
             }
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
@@ -1482,23 +1664,24 @@ namespace EnviadorInformacionService
             var tabs = new StringBuilder();
             if (_charactersPerPage == 40)
             {
-                tabs.Append(v1.Substring(0, v1.Length < 12 ? v1.Length : 12));
-                var whitespaces = 12 - v1.Length;
+                // columnas: Producto=10 | Cant=9 | Precio/Tarifa/Iva=9 | Total=12 = 40
+                tabs.Append(v1.Substring(0, v1.Length < 10 ? v1.Length : 10));
+                var whitespaces = 10 - v1.Length;
                 whitespaces = whitespaces < 0 ? 0 : whitespaces;
                 tabs.Append(' ', whitespaces);
 
 
                 if (after)
                 {
-                    whitespaces = 8 - v2.Length;
+                    whitespaces = 9 - v2.Length;
                     whitespaces = whitespaces < 0 ? 0 : whitespaces;
                     tabs.Append(' ', whitespaces);
-                    tabs.Append(v2.Substring(0, v2.Length < 8 ? v2.Length : 8));
+                    tabs.Append(v2.Substring(0, v2.Length < 9 ? v2.Length : 9));
 
-                    whitespaces = 8 - v3.Length;
+                    whitespaces = 9 - v3.Length;
                     whitespaces = whitespaces < 0 ? 0 : whitespaces;
                     tabs.Append(' ', whitespaces);
-                    tabs.Append(v3.Substring(0, v3.Length < 8 ? v3.Length : 8));
+                    tabs.Append(v3.Substring(0, v3.Length < 9 ? v3.Length : 9));
 
                     whitespaces = 12 - v4.Length;
                     whitespaces = whitespaces < 0 ? 0 : whitespaces;
@@ -1507,13 +1690,13 @@ namespace EnviadorInformacionService
                 }
                 else
                 {
-                    tabs.Append(v2.Substring(0, v2.Length < 8 ? v2.Length : 8));
-                    whitespaces = 8 - v2.Length;
+                    tabs.Append(v2.Substring(0, v2.Length < 9 ? v2.Length : 9));
+                    whitespaces = 9 - v2.Length;
                     whitespaces = whitespaces < 0 ? 0 : whitespaces;
                     tabs.Append(' ', whitespaces);
 
-                    tabs.Append(v3.Substring(0, v3.Length < 8 ? v3.Length : 8));
-                    whitespaces = 8 - v3.Length;
+                    tabs.Append(v3.Substring(0, v3.Length < 9 ? v3.Length : 9));
+                    whitespaces = 9 - v3.Length;
                     whitespaces = whitespaces < 0 ? 0 : whitespaces;
                     tabs.Append(' ', whitespaces);
 
@@ -1621,6 +1804,72 @@ namespace EnviadorInformacionService
 
             image.Save($"{AppContext.BaseDirectory}/file.bmp", ImageFormat.Bmp);
 
+        }
+
+        private string ObtenerSerialMaquina()
+        {
+            try
+            {
+                var interfaces = NetworkInterface.GetAllNetworkInterfaces();
+
+                var macPreferida = interfaces
+                    .Where(nic => nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                    .Where(nic => nic.OperationalStatus == OperationalStatus.Up)
+                    .Select(nic => nic.GetPhysicalAddress()?.ToString())
+                    .FirstOrDefault(EsMacValida);
+
+                if (EsMacValida(macPreferida))
+                {
+                    return macPreferida;
+                }
+
+                var macAlterna = interfaces
+                    .Where(nic => nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                    .Select(nic => nic.GetPhysicalAddress()?.ToString())
+                    .FirstOrDefault(EsMacValida);
+
+                if (EsMacValida(macAlterna))
+                {
+                    return macAlterna;
+                }
+
+                var macCualquiera = interfaces
+                    .Select(nic => nic.GetPhysicalAddress()?.ToString())
+                    .FirstOrDefault(EsMacValida);
+
+                if (EsMacValida(macCualquiera))
+                {
+                    return macCualquiera;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"No fue posible obtener MAC de red: {ex.Message}");
+            }
+
+            var nombreMaquina = Environment.MachineName;
+            if (!string.IsNullOrWhiteSpace(nombreMaquina))
+            {
+                return nombreMaquina.Trim();
+            }
+
+            return "Mac Unknown";
+        }
+
+        private static bool EsMacValida(string mac)
+        {
+            if (string.IsNullOrWhiteSpace(mac))
+            {
+                return false;
+            }
+
+            var normalizada = mac.Trim();
+            if (normalizada.Length < 12)
+            {
+                return false;
+            }
+
+            return normalizada.Any(c => c != '0');
         }
     }
 

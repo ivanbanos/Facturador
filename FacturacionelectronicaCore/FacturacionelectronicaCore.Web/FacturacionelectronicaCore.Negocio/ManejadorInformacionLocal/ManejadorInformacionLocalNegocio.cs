@@ -171,6 +171,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                     Total = x.Total,
                                     idFacturaElectronica = x.idFacturaElectronica,
                                     Vendedor = x.Vendedor,
+                                    NumeroTransaccion = x.numeroTransaccion,
                                 }
                             };
                             await _ordenDeDespachoRepositorio.AddRange(ordenesentityUpdate, estacion);
@@ -221,6 +222,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                 Total = x.Total,
                                 idFacturaElectronica = x.idFacturaElectronica ?? ordenDeDespachoEntity?.idFacturaElectronica,
                                 Vendedor = x.Vendedor,
+                                NumeroTransaccion = x.numeroTransaccion,
                             }
                         };
                         await _ordenDeDespachoRepositorio.AddRange(ordenesentity, estacion);
