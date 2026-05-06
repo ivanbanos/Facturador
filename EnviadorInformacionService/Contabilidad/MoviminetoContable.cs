@@ -63,6 +63,7 @@ namespace EnviadorInformacionService.Contabilidad
         public string F351_DOCTO_BANCO { get; set; }
         public string F351_NRO_DOCTO_BANCO { get; set; }
         public string F351_NOTAS { get; set; }
+        public string F351_ID_SUCURSAL { get; set; }
     }
 
     public class MovimientoCxC

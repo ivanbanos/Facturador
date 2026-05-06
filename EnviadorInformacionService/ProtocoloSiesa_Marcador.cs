@@ -34,6 +34,8 @@ namespace EnviadorInformacionService
         public void RunOnce()
         {
             var _estacionesRepositorio = new EstacionesRepositorioSqlServer();
+            var fechaMinimaEnvioSiesa = ObtenerFechaEnvioSiesa(ConfigurationManager.AppSettings["FechaMinimaEnvioSiesa"], "appSettings.FechaMinimaEnvioSiesa");
+            var fechaMaximaEnvioSiesa = ObtenerFechaEnvioSiesa(ConfigurationManager.AppSettings["FechaMaximaEnvioSiesa"], "appSettings.FechaMaximaEnvioSiesa");
 
             Guid estacionFuente;
             try
@@ -46,11 +48,18 @@ namespace EnviadorInformacionService
                 return;
             }
 
-            var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadasSiesa();
+            var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadasSiesa(fechaMinimaEnvioSiesa, fechaMaximaEnvioSiesa);
             if (facturas == null || !facturas.Any())
             {
                 Logger.Info("No hay facturas pendientes de envío a Siesa.");
                 return;
+            }
+
+            if (fechaMinimaEnvioSiesa.HasValue || fechaMaximaEnvioSiesa.HasValue)
+            {
+                var fechaInicioLog = fechaMinimaEnvioSiesa?.ToString("yyyy-MM-dd HH:mm:ss") ?? "sin límite";
+                var fechaFinalLog = fechaMaximaEnvioSiesa?.ToString("yyyy-MM-dd HH:mm:ss") ?? "sin límite";
+                Logger.Info($"Marcador Siesa ejecutado con filtro de fechas. Inicio: {fechaInicioLog}, Final: {fechaFinalLog}, Facturas obtenidas: {facturas.Count()}");
             }
 
             foreach (var factura in facturas)
@@ -169,6 +178,30 @@ namespace EnviadorInformacionService
                     }
                 }
             }
+        }
+
+        private DateTime? ObtenerFechaEnvioSiesa(string fechaConfig, string origenConfig)
+        {
+            if (string.IsNullOrWhiteSpace(fechaConfig))
+            {
+                return null;
+            }
+
+            var formatos = new[] { "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss", "dd/MM/yyyy", "dd/MM/yyyy HH:mm:ss" };
+            if (DateTime.TryParseExact(fechaConfig.Trim(), formatos, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaCorte))
+            {
+                Logger.Info($"Filtro de fecha Siesa activo ({origenConfig}): {fechaCorte:yyyy-MM-dd HH:mm:ss}");
+                return fechaCorte;
+            }
+
+            if (DateTime.TryParse(fechaConfig.Trim(), out fechaCorte))
+            {
+                Logger.Info($"Filtro de fecha Siesa activo ({origenConfig}): {fechaCorte:yyyy-MM-dd HH:mm:ss}");
+                return fechaCorte;
+            }
+
+            Logger.Warn($"No se pudo interpretar {origenConfig}='{fechaConfig}'. Se ignora el filtro de fecha para el marcador Siesa.");
+            return null;
         }
     }
 }

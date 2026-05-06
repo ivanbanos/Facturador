@@ -19,6 +19,7 @@ namespace EnviadorInformacionService
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly IConexionEstacionRemota _conexionEstacionRemota = new ConexionEstacionRemota();
+        private static readonly HashSet<int> FormasPagoNoEnviarSiesa = new HashSet<int> { 6, 10, 98 };
         
         // Control de rate limiting: máximo 25 facturas por minuto
         private static readonly int MAX_FACTURAS_POR_MINUTO = 25;
@@ -118,7 +119,7 @@ namespace EnviadorInformacionService
                             factura.total = (decimal)(cantidadRedondeada * precioCalculado) - factura.Venta.Descuento;
                             factura.subtotal = (decimal)cantidadRedondeada * (decimal)precioCalculado;
 
-                            if (factura.codigoFormaPago != 6)
+                            if (!EsFormaPagoExcluidaSiesa(factura.codigoFormaPago))
                             {
                                 Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Venta.Combustible} Enviandose a Siesa");
 
@@ -193,6 +194,15 @@ namespace EnviadorInformacionService
 
                                             string auxiliarContable = _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, true).Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
                                             string auxiliarCruce = _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, false).Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
+
+                                            // Build per-form cruce dictionary so each payment form uses its own auxiliar cruce
+                                            var crucesPorForma = new System.Collections.Generic.Dictionary<int, string> { { factura.codigoFormaPago, auxiliarCruce } };
+                                            if (factura.codigoFormaPago2.HasValue)
+                                            {
+                                                var auxiliarCruce2 = _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago2.Value, factura.Venta.Combustible, true, false).Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
+                                                crucesPorForma[factura.codigoFormaPago2.Value] = auxiliarCruce2;
+                                                Logger.Info($"Factura {factura.ventaId} cruces por forma: {string.Join(", ", crucesPorForma.Select(kv => $"forma {kv.Key}={kv.Value}"))}");
+                                            }
 
                                             // Dynamic discount auxiliary lookup (after cruce)
                                             string auxiliarDescuento = ObtenerAuxiliarDescuento(factura.codigoFormaPago, factura.Venta.Combustible);
@@ -331,14 +341,23 @@ namespace EnviadorInformacionService
                                                             Logger.Error($"Error parseando fecha de facturación '{fechaFacturacion}': {exFecha.Message}");
                                                             throw;
                                                         }
-                                                        if (descuento > 0){
-
-                                                            factura.descuento = descuento;
-                                                            factura.total = total;
-                                                            factura.subtotal = subtotal;
-                                                        } else{
-                                                            factura.total = total;
-                                                            factura.subtotal = factura.descuento + total;
+                                                        if (total > 0)
+                                                        {
+                                                            if (descuento > 0)
+                                                            {
+                                                                factura.descuento = descuento;
+                                                                factura.total = total;
+                                                                factura.subtotal = subtotal;
+                                                            }
+                                                            else
+                                                            {
+                                                                factura.total = total;
+                                                                factura.subtotal = factura.descuento + total;
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            Logger.Warn($"Factura {factura.ventaId}: Dataico devolvió total=0, se conserva el total calculado ({factura.total:0.00}). subtotal={subtotal}, descuento={descuento}");
                                                         }
 
                                                         if (auxiliarContable == null)
@@ -371,7 +390,7 @@ namespace EnviadorInformacionService
                                                     // Control de rate limiting
                                                     WaitForRateLimit();
                                                     Logger.Info($"Iniciando envío de factura - ID: {factura.ventaId}, Total: {factura.total}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Venta.Combustible}");
-                                                    _apiContabilidad.EnviarFactura(factura, facturaElectronica[1], numeros, auxiliarContable, auxiliarCruce, auxiliarDescuento);
+                                                    _apiContabilidad.EnviarFactura(factura, facturaElectronica[1], numeros, auxiliarContable, auxiliarCruce, auxiliarDescuento, crucesPorForma);
                                                     facturasEnviadas.Add(factura.ventaId);
                                                     Logger.Info($"Factura enviada exitosamente - ID: {factura.ventaId}, Total: {factura.total}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Venta.Combustible}");
                                                 }
@@ -412,6 +431,7 @@ namespace EnviadorInformacionService
                             }
                             else
                             {
+                                Logger.Info($"Factura {factura.ventaId} omitida de envío a Siesa por forma de pago excluida: {factura.codigoFormaPago}");
                                 facturasEnviadas.Add(factura.ventaId);
                             }
                         }
@@ -462,6 +482,11 @@ namespace EnviadorInformacionService
                 return valor;
             // Si no existe, usar el general
             return ConfigurationManager.AppSettings["auxiliardescuento"];
+        }
+
+        private static bool EsFormaPagoExcluidaSiesa(int codigoFormaPago)
+        {
+            return FormasPagoNoEnviarSiesa.Contains(codigoFormaPago);
         }
 
         private DateTime? ObtenerFechaMinimaEnvioSiesa(string fechaConfig, string origenConfig)

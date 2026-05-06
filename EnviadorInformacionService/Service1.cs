@@ -30,9 +30,9 @@ namespace EnviadorInformacionService
         public Service1()
         {
             InitializeComponent();
-            enviadorDeInformacion = new EnviadorDeInformacion();
-            impresionService = new ImpresionService();
-            // protocoloSiesa = new ProtocoloSiesa();
+            // enviadorDeInformacion = new EnviadorDeInformacion();
+            // impresionService = new ImpresionService();
+            protocoloSiesa = new ProtocoloSiesa();
         // protocoloSiesaCanastilla = new ProtocoloSiesaCanastilla();
             //canastillaService = new CanastillaService();
         }
@@ -43,14 +43,14 @@ namespace EnviadorInformacionService
             {
 
                 Logger.Error("Iniciando ");
-                if (ConfigurationManager.AppSettings["EnvioInformacion"] == "true")
-                {
-                    envioThread = new Thread(new ThreadStart(enviadorDeInformacion.EnviarInformacion));
-                    envioThread.Start();
-                }
+                // if (ConfigurationManager.AppSettings["EnvioInformacion"] == "true")
+                // {
+                //     envioThread = new Thread(new ThreadStart(enviadorDeInformacion.EnviarInformacion));
+                //     envioThread.Start();
+                // }
 
-                impresionThread = new Thread(new ThreadStart(impresionService.Execute));
-                impresionThread.Start();
+                // impresionThread = new Thread(new ThreadStart(impresionService.Execute));
+                // impresionThread.Start();
                 // if (canastillaService != null)
                 // {
                 //     canastillaServiceThread = new Thread(new ThreadStart(canastillaService.ProcesoCanastilla));
@@ -62,8 +62,8 @@ namespace EnviadorInformacionService
                 // {
                 //     Logger.Warn("canastillaService no esta inicializado. No se iniciaran hilos de canastilla.");
                 // }
-                // siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
-                // siesaThread.Start();
+                siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
+                siesaThread.Start();
                 //  siesaCanastillaThread = new Thread(new ThreadStart(protocoloSiesaCanastilla.Ejecutar));
                 //  siesaCanastillaThread.Start();
 

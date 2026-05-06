@@ -105,12 +105,23 @@ IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaSinEnviarSiesaSig
     DROP PROCEDURE [dbo].[getFacturaSinEnviarSiesaSiges]
 GO
 CREATE PROCEDURE [dbo].[getFacturaSinEnviarSiesaSiges]
+(
+    @fechaInicio DATETIME = NULL,
+    @fechaFinal DATETIME = NULL
+)
 AS
 BEGIN TRY
     SET NOCOUNT ON;
+
     DECLARE @facturasTemp AS TABLE(id INT)
     INSERT INTO @facturasTemp (id)
-    SELECT TOP(10) ventaId FROM OrdenesDeDespacho WHERE (enviada =1 and (EnviadaSiesa = 0 OR EnviadaSiesa IS NULL)) ORDER BY ventaId desc
+    SELECT TOP(10) ventaId
+    FROM OrdenesDeDespacho
+    WHERE enviada = 1
+      AND (EnviadaSiesa = 0 OR EnviadaSiesa IS NULL)
+      AND (@fechaInicio IS NULL OR OrdenesDeDespacho.fecha >= @fechaInicio)
+      AND (@fechaFinal IS NULL OR OrdenesDeDespacho.fecha <= @fechaFinal)
+    ORDER BY ventaId desc
     select 
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
 	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
@@ -127,6 +138,9 @@ BEGIN TRY
       ,OrdenesDeDespacho.[consolidadoId]
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
+      ,OrdenesDeDespacho.[codigoFormaPago2]
+      ,OrdenesDeDespacho.[total1]
+      ,OrdenesDeDespacho.[total2]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	

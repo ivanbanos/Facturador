@@ -41,6 +41,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 case "FACTURA1":
                     services.AddScoped<IFacturacionElectronicaFacade, FacturacionFactura1>();
                     break;
+                case "CELESTE":
+                    services.AddScoped<IFacturacionElectronicaFacade, FacturacionCeleste>();
+                    break;
             }
 
             services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));

@@ -144,7 +144,7 @@ namespace FacturacionelectronicaCore.Worker
                                             && !(o.idFacturaElectronica?.Contains("Ya existe una factura con este nroCruce", StringComparison.OrdinalIgnoreCase) ?? false)
                                         ))
                                     // Exclude Crédito Directo payments (trim + case-insensitive)
-                                    && !(o.FormaDePago?.Trim().Equals("Crédito Directo", StringComparison.OrdinalIgnoreCase) ?? false)
+                                    //&& !(o.FormaDePago?.Trim().Equals("Crédito Directo", StringComparison.OrdinalIgnoreCase) ?? false)
                                     && (_alegraOptions.EnviaCreditos || (!(o.FormaDePago?.ToLower().Contains("dir") ?? false) && !(o.FormaDePago?.ToLower().Contains("calibra") ?? false) && !(o.FormaDePago?.ToLower().Contains("consum") ?? false) && !(o.FormaDePago?.ToLower().Contains("puntos") ?? false))))
                                 .Take(20) // Limit per month to avoid overwhelming the system
                                 .ToList();

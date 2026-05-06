@@ -746,8 +746,8 @@ namespace EnviadorInformacionService
 
         private static bool EsFormaPagoEfectivo(int formaPagoId)
         {
-            // En instalaciones históricas se usa 1 o 4 para efectivo.
-            return formaPagoId == 1 || formaPagoId == 4;
+            // Regla de negocio: solo la forma de pago 4 se envía por caja.
+            return formaPagoId == 4;
         }
 
         /// <summary>

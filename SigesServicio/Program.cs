@@ -53,14 +53,14 @@ try
         services.Configure<InformacionCuenta>(options => hostContext.Configuration.GetSection("InformacionCuenta").Bind(options));
 
         services.AddSingleton<IConexionEstacionRemota, ConexionEstacionRemota>();
-    services.AddSingleton<IWorkerHeartbeatTracker, WorkerHeartbeatTracker>();
-        services.AddHostedService<WorkerImpresion>();
-        // services.AddHostedService<SubirVentasWorker>();
-        services.AddHostedService<ObtenerVehiculosWorker>();
-        // // services.AddHostedService<CanastillaWorker>();
-        services.AddHostedService<FacturasWorker>();
-    services.AddHostedService<WorkerHealthMonitor>();
-        // services.AddHostedService<SiesaWorker>();
+     services.AddSingleton<IWorkerHeartbeatTracker, WorkerHeartbeatTracker>();
+    //     services.AddHostedService<WorkerImpresion>();
+    //     // services.AddHostedService<SubirVentasWorker>();
+    //     services.AddHostedService<ObtenerVehiculosWorker>();
+    //     // // services.AddHostedService<CanastillaWorker>();
+    //     services.AddHostedService<FacturasWorker>();
+    // services.AddHostedService<WorkerHealthMonitor>();
+        services.AddHostedService<SiesaWorker>();
 
     })
 

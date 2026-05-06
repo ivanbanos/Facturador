@@ -452,27 +452,33 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         private string GetPaymentType(string formaDePago)
         {
-            if (formaDePago.ToLower().Contains("dé") && formaDePago.ToLower().Contains("tran"))
-            {
-                return "DEBIT_TRANSFER";
-            }
-            else if (formaDePago.ToLower().Contains("dé") && formaDePago.ToLower().Contains("tar"))
-            {
-                return "DEBIT_CARD";
-            }
-            else if (formaDePago.ToLower().Contains("cré") && formaDePago.ToLower().Contains("ban") && formaDePago.ToLower().Contains("tran"))
+            var lower = formaDePago.ToLower().Trim();
+            // Transferencias, NEQUI, Datafono → BANK_TRANSFER
+            if (lower.Contains("transferencia") || lower.Contains("nequi") || lower.Contains("datafono") || lower.Contains("datafóno"))
             {
                 return "BANK_TRANSFER";
             }
-            else if (formaDePago.ToLower().Contains("cré") && formaDePago.ToLower().Contains("tran"))
+            else if (lower.Contains("dé") && lower.Contains("tran"))
+            {
+                return "DEBIT_TRANSFER";
+            }
+            else if (lower.Contains("dé") && lower.Contains("tar"))
+            {
+                return "DEBIT_CARD";
+            }
+            else if (lower.Contains("cré") && lower.Contains("ban") && lower.Contains("tran"))
+            {
+                return "BANK_TRANSFER";
+            }
+            else if (lower.Contains("cré") && lower.Contains("tran"))
             {
                 return "CREDIT_TRANSFER";
             }
-            else if (formaDePago.ToLower().Contains("cré") && formaDePago.ToLower().Contains("tar"))
+            else if (lower.Contains("cré") && lower.Contains("tar"))
             {
                 return "CREDIT_CARD";
             }
-            else if (formaDePago.ToLower().Contains("ban") && formaDePago.ToLower().Contains("cons"))
+            else if (lower.Contains("ban") && lower.Contains("cons"))
             {
                 return "DEBIT_BANK_TRANSFER";
             }
@@ -485,27 +491,33 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         private string GetPaymentMeansType(string formaDePago)
         {
-            if (formaDePago.ToLower().Contains("dé") && formaDePago.ToLower().Contains("tran"))
+            var lower = formaDePago.ToLower().Trim();
+            // Transferencias, NEQUI, Datafono → DEBITO
+            if (lower.Contains("transferencia") || lower.Contains("nequi") || lower.Contains("datafono") || lower.Contains("datafóno"))
             {
                 return "DEBITO";
             }
-            else if (formaDePago.ToLower().Contains("dé") && formaDePago.ToLower().Contains("tar"))
+            else if (lower.Contains("dé") && lower.Contains("tran"))
             {
                 return "DEBITO";
             }
-            else if (formaDePago.ToLower().Contains("cré") && formaDePago.ToLower().Contains("ban") && formaDePago.ToLower().Contains("tran"))
+            else if (lower.Contains("dé") && lower.Contains("tar"))
             {
                 return "DEBITO";
             }
-            else if (formaDePago.ToLower().Contains("cré") && formaDePago.ToLower().Contains("tran"))
+            else if (lower.Contains("cré") && lower.Contains("ban") && lower.Contains("tran"))
+            {
+                return "DEBITO";
+            }
+            else if (lower.Contains("cré") && lower.Contains("tran"))
             {
                 return "CREDITO";
             }
-            else if (formaDePago.ToLower().Contains("cré") && formaDePago.ToLower().Contains("tar"))
+            else if (lower.Contains("cré") && lower.Contains("tar"))
             {
                 return "CREDITO";
             }
-            else if (formaDePago.ToLower().Contains("ban") && formaDePago.ToLower().Contains("cons"))
+            else if (lower.Contains("ban") && lower.Contains("cons"))
             {
                 return "DEBITO";
             }

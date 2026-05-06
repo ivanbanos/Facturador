@@ -42,6 +42,7 @@ namespace SigesServicio
         public string? IdDOcumentoCliente { get; set; }
         public string? FechaMinimaEnvioSiesa { get; set; }
         public string? FechaMaximaEnvioSiesa { get; set; }
+        public string? FormasPagoCaja { get; set; }
         public string CentroOperacionesContableDescuento { get; set; }
         public string AuxiliarDescuento { get; set; }
         public string MovimientoContableDescuento { get; set; }

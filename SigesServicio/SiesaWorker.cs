@@ -30,6 +30,7 @@ namespace EnviadorInformacionService.Contabilidad
         private readonly InformacionCuenta _informacionCuenta;
         private readonly IConexionEstacionRemota _conexionEstacionRemota;
         private readonly IFidelizacion _fidelizacon;
+        private readonly HashSet<int> _formasPagoCaja;
 
 
         public override void Dispose()
@@ -54,6 +55,8 @@ namespace EnviadorInformacionService.Contabilidad
             _conexionEstacionRemota = conexionEstacionRemota;
             _fidelizacon = fidelizacon;
             _siesa = siesa.Value;
+            _formasPagoCaja = ParseFormasPagoCaja(_siesa.FormasPagoCaja);
+            Logger.Info($"Regla caja/banco SiesaWorker. Formas de pago para caja: {string.Join(",", _formasPagoCaja.OrderBy(x => x))}");
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -68,30 +71,22 @@ namespace EnviadorInformacionService.Contabilidad
                     try
                     {
 
-                        var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadasSiesa().ToList();
-                        if (fechaMinimaEnvioSiesa.HasValue)
+                        var facturas = _estacionesRepositorio
+                            .BuscarFacturasNoEnviadasSiesa(fechaMinimaEnvioSiesa, fechaMaximaEnvioSiesa)
+                            .ToList();
+                        if (fechaMinimaEnvioSiesa.HasValue || fechaMaximaEnvioSiesa.HasValue)
                         {
-                            var facturasBloqueadasPorMinima = facturas.Where(x => EsFacturaMasViejaQueCorte(x.fecha, fechaMinimaEnvioSiesa)).ToList();
-                            if (facturasBloqueadasPorMinima.Any())
-                            {
-                                Logger.Warn($"Se omiten {facturasBloqueadasPorMinima.Count} facturas por ser más antiguas que la fecha mínima de envío a Siesa ({fechaMinimaEnvioSiesa:yyyy-MM-dd HH:mm:ss}). IDs: {string.Join(", ", facturasBloqueadasPorMinima.Select(x => x.ventaId))}");
-                            }
-
-                            facturas = facturas.Where(x => !EsFacturaMasViejaQueCorte(x.fecha, fechaMinimaEnvioSiesa)).ToList();
+                            var fechaInicioLog = fechaMinimaEnvioSiesa?.ToString("yyyy-MM-dd HH:mm:ss") ?? "sin límite";
+                            var fechaFinalLog = fechaMaximaEnvioSiesa?.ToString("yyyy-MM-dd HH:mm:ss") ?? "sin límite";
+                            Logger.Info($"Consulta de facturas Siesa con filtro de fechas. Inicio: {fechaInicioLog}, Final: {fechaFinalLog}, Facturas obtenidas: {facturas.Count}");
                         }
 
-                        if (fechaMaximaEnvioSiesa.HasValue)
-                        {
-                            var facturasBloqueadasPorFecha = facturas.Where(x => EsFacturaMasNuevaQueCorte(x.fecha, fechaMaximaEnvioSiesa)).ToList();
-                            if (facturasBloqueadasPorFecha.Any())
-                            {
-                                Logger.Warn($"Se omiten {facturasBloqueadasPorFecha.Count} facturas por ser más nuevas que la fecha máxima de envío a Siesa ({fechaMaximaEnvioSiesa:yyyy-MM-dd HH:mm:ss}). IDs: {string.Join(", ", facturasBloqueadasPorFecha.Select(x => x.ventaId))}");
-                            }
-
-                            facturas = facturas.Where(x => !EsFacturaMasNuevaQueCorte(x.fecha, fechaMaximaEnvioSiesa)).ToList();
-                        }
-
-                        var terceros = facturas.Select(x => x.Tercero).GroupBy(t => t.terceroId).Select(g => g.First()).ToList();
+                        var terceros = facturas
+                            .Select(x => x.Tercero)
+                            .Where(t => t != null)
+                            .GroupBy(t => t.terceroId)
+                            .Select(g => g.First())
+                            .ToList();
 
                         Logger.Info("facturas a procesar: " + facturas.Count());
                         Logger.Info("terceros a procesar: " + terceros.Count());
@@ -102,6 +97,13 @@ namespace EnviadorInformacionService.Contabilidad
 
                             foreach (var t in terceros.Where(x => !x.EnviadoSiesa.HasValue || !x.EnviadoSiesa.Value))
                             {
+                                if (string.IsNullOrWhiteSpace(t.identificacion))
+                                {
+                                    tercerosFallidos.Add($"ID: {t.terceroId}, Identificación vacía");
+                                    Logger.Warn($"Tercero omitido por identificación vacía - ID: {t.terceroId}, Nombre: {t.Nombre}");
+                                    continue;
+                                }
+
                                 if (await EnviarTercero(t))
                                 {
                                     tercerosEnviados.Add(t.terceroId);
@@ -136,7 +138,7 @@ namespace EnviadorInformacionService.Contabilidad
                                 var infoTemp = "";
                                 var facelec = "";
 
-                                if (factura.codigoFormaPago != 2)
+                                if (!EsFormaPagoExcluidaSiesa(factura.codigoFormaPago))
                                 {
                                     try
                                     {
@@ -160,6 +162,10 @@ namespace EnviadorInformacionService.Contabilidad
                                             infoTemp = infoTemp.Replace("\n\r", " ");
 
                                             var facturaElectronica = infoTemp.Split(' ');
+                                            if (facturaElectronica.Length < 5)
+                                            {
+                                                throw new InvalidOperationException($"Formato inesperado de info factura electrónica para venta {factura.ventaId}. Valor: {infoTemp}");
+                                            }
 
                                             Match match = Regex.Match(facturaElectronica[2], @"^([A-Za-z]+)(\d+)$");
                                             facelec = facturaElectronica[4];
@@ -168,8 +174,8 @@ namespace EnviadorInformacionService.Contabilidad
                                                 string letras = match.Groups[1].Value;
                                                 string numeros = match.Groups[2].Value;
 
-                                                string auxiliarContable = _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Combustible, true, true).Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
-                                                string auxiliarCruce = _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Combustible, true, false).Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
+                                                string auxiliarContable = LimpiarTexto(_estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Combustible, true, true));
+                                                string auxiliarCruce = LimpiarTexto(_estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Combustible, true, false));
 
                                                 // Obtener fecha de facturación desde Dataico
                                                 try
@@ -317,14 +323,25 @@ namespace EnviadorInformacionService.Contabilidad
                                                 }
 
 
-                                                if (auxiliarContable == null)
+                                                if (string.IsNullOrWhiteSpace(auxiliarContable))
                                                 {
                                                     Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Combustible} no se envió no exite auxiliar contrable creado");
                                                 }
-                                                if (auxiliarCruce == null)
+                                                if (string.IsNullOrWhiteSpace(auxiliarCruce))
                                                 {
                                                     Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Combustible} no se envió no exite auxiliar cruce creado");
                                                 }
+
+                                                if (string.IsNullOrWhiteSpace(factura?.Tercero?.identificacion))
+                                                {
+                                                    throw new InvalidOperationException($"Factura {factura.ventaId} no se puede enviar: identificación de tercero vacía.");
+                                                }
+
+                                                if (string.IsNullOrWhiteSpace(auxiliarContable) || string.IsNullOrWhiteSpace(auxiliarCruce))
+                                                {
+                                                    throw new InvalidOperationException($"Factura {factura.ventaId} no se puede enviar: auxiliar contable/cruce no configurado para formaPago={factura.codigoFormaPago}, combustible='{factura.Combustible}'.");
+                                                }
+
                                                 await EnviarFactura(factura, facturaElectronica[2], numeros, auxiliarContable, auxiliarCruce);
                                                 //_apiContabilidad.EnviarRecibo(factura, facturaElectronica[2], numeros, _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, true), _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, false));
                                                 facturasEnviadas.Add(factura.ventaId);
@@ -341,6 +358,7 @@ namespace EnviadorInformacionService.Contabilidad
                                 }
                                 else
                                 {
+                                    Logger.Info($"Factura {factura.ventaId} omitida de envío a Siesa por forma de pago excluida: {factura.codigoFormaPago}");
                                     facturasEnviadas.Add(factura.ventaId);
                                 }
                             }
@@ -365,8 +383,7 @@ namespace EnviadorInformacionService.Contabilidad
                     }
                     catch (Exception ex)
                     {
-
-                        Logger.Info("Ex" + ex.Message);
+                        Logger.Error(ex, "Error en ciclo principal de SiesaWorker");
                         Thread.Sleep(5000);
                     }
                 }
@@ -421,22 +438,19 @@ namespace EnviadorInformacionService.Contabilidad
             return null;
         }
 
-        private static bool EsFacturaMasNuevaQueCorte(DateTime fechaFactura, DateTime? fechaCorteMaxima)
-        {
-            return fechaCorteMaxima.HasValue && fechaFactura > fechaCorteMaxima.Value;
-        }
-
-        private static bool EsFacturaMasViejaQueCorte(DateTime fechaFactura, DateTime? fechaCorteMinima)
-        {
-            return fechaCorteMinima.HasValue && fechaFactura < fechaCorteMinima.Value;
-        }
-
         private async Task EnviarFactura(FacturaSiges factura, string facturaelectronica, string consecutivo, string? auxiliarContable, string? auxiliarCruce)
         {
             var contentString = "";
             var responseString = "";
+            var pagos = ConstruirPagosFactura(factura);
 
-            if (factura.codigoFormaPago == 1)
+            if (pagos.Count > 1)
+            {
+                var requestContent = ConvertirAMovimientoSiesaMultipago(factura, facturaelectronica, consecutivo, auxiliarContable, auxiliarCruce, pagos);
+                contentString = JsonConvert.SerializeObject(requestContent);
+                Logger.Info($"Factura {factura.ventaId} enviada con multipago Siesa: {string.Join(", ", pagos.Select(x => $"forma {x.FormaPagoId}={x.Valor.ToString("0.00", CultureInfo.InvariantCulture)} ({(EsFormaPagoEfectivo(x.FormaPagoId) ? "caja" : "banco")})"))}");
+            }
+            else if (EsFormaPagoEfectivo(factura.codigoFormaPago))
             {
                 // Pago en efectivo - usar formato con Caja
                 var requestContent = ConvertirAMovimientoSiesaCaja(factura, facturaelectronica, consecutivo, auxiliarContable, auxiliarCruce);
@@ -496,8 +510,131 @@ namespace EnviadorInformacionService.Contabilidad
             }
         }
 
+        private object ConvertirAMovimientoSiesaMultipago(FacturaSiges factura, string facturaelectronica, string consecutivo, string? auxiliarContable, string? auxiliarCruce, List<PagoFacturaSiesa> pagos)
+        {
+            var combustible = ObtenerCombustibleSeguro(factura);
+            var identificacion = ObtenerIdentificacionTerceroSeguro(factura);
+            var movimientos = new List<object>
+            {
+                new
+                {
+                    F_CIA = "1",
+                    F350_ID_CO = _siesa.CentroOperaciones,
+                    F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F351_ID_AUXILIAR = auxiliarContable ?? string.Empty,
+                    F351_ID_TERCERO = identificacion,
+                    F351_ID_CO_MOV = _siesa.Movimiento,
+                    F351_ID_UN = _siesa.UnidadNegocio,
+                    F351_ID_CCOSTO = _siesa.CentroCosto,
+                    F351_ID_FE = consecutivo,
+                    F351_VALOR_DB = "0",
+                    F351_VALOR_CR = factura.TOTALCalculado.ToString("0.00", CultureInfo.InvariantCulture),
+                    F351_BASE_GRAVABLE = string.Empty,
+                    F351_DOCTO_BANCO = string.Empty,
+                    F351_NRO_DOCTO_BANCO = string.Empty,
+                    F351_NOTAS = $"Factura combustible {combustible} id local {consecutivo}"
+                }
+            };
+
+            if (factura.Descuento > 0)
+            {
+                movimientos.Add(new
+                {
+                    F_CIA = "1",
+                    F350_ID_CO = _siesa.CentroOperacionesContableDescuento ?? "101",
+                    F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F351_ID_AUXILIAR = _siesa.AuxiliarDescuento ?? "58904001",
+                    F351_ID_TERCERO = identificacion,
+                    F351_ID_CO_MOV = _siesa.MovimientoContableDescuento ?? "101",
+                    F351_ID_UN = _siesa.UnidadNegocioDescuento ?? "03",
+                    F351_ID_CCOSTO = _siesa.CentroCostoDescuento ?? "0203",
+                    F351_ID_FE = _siesa.IdFeDescuento ?? "1",
+                    F351_VALOR_DB = factura.Descuento.ToString("0.00", CultureInfo.InvariantCulture),
+                    F351_VALOR_CR = string.Empty,
+                    F351_BASE_GRAVABLE = "1",
+                    F351_DOCTO_BANCO = string.Empty,
+                    F351_NRO_DOCTO_BANCO = string.Empty,
+                    F351_NOTAS = $"FAC {consecutivo} DESCUENTO PROMOCIÓN",
+                    F351_ID_SUCURSAL = _siesa.Sucursal ?? "001"
+                });
+            }
+
+            foreach (var pagoBanco in pagos.Where(x => !EsFormaPagoEfectivo(x.FormaPagoId)))
+            {
+                movimientos.Add(new
+                {
+                    F_CIA = "1",
+                    F350_ID_CO = _siesa.CentroOperacionesOtros ?? string.Empty,
+                    F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F351_ID_AUXILIAR = auxiliarCruce ?? string.Empty,
+                    F351_ID_TERCERO = string.Empty,
+                    F351_ID_CO_MOV = _siesa.MovimientoOtros ?? string.Empty,
+                    F351_ID_UN = _siesa.UnidadNegocioOtros ?? string.Empty,
+                    F351_ID_CCOSTO = _siesa.CentroCostoOtros ?? string.Empty,
+                    F351_ID_FE = _siesa.IdFeOtros ?? string.Empty,
+                    F351_VALOR_DB = pagoBanco.Valor.ToString("0.00", CultureInfo.InvariantCulture),
+                    F351_VALOR_CR = "0",
+                    F351_BASE_GRAVABLE = string.Empty,
+                    F351_DOCTO_BANCO = "CG",
+                    F351_NRO_DOCTO_BANCO = factura.fecha.ToString("yyyyMMdd"),
+                    F351_NOTAS = $"Factura combustible {combustible} id local {consecutivo} forma {pagoBanco.FormaPagoId}"
+                });
+            }
+
+            var caja = pagos
+                .Where(x => EsFormaPagoEfectivo(x.FormaPagoId))
+                .Select(x => new Caja
+                {
+                    F_CIA = "1",
+                    F350_ID_CO = _siesa.CentroOperacionesCaja,
+                    F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F351_NOTAS = $"Venta combustible forma {x.FormaPagoId}",
+                    F351_ID_AUXILIAR = auxiliarCruce ?? string.Empty,
+                    F351_ID_CCOSTO = _siesa.CentroCostoCaja,
+                    F351_ID_CO_MOV = _siesa.MovimientoCaja,
+                    F351_ID_UN = _siesa.UnidadNegocioCaja,
+                    F351_VALOR_CR = "0",
+                    F351_VALOR_DB = x.Valor.ToString("0.00", CultureInfo.InvariantCulture),
+                    F351_ID_FE = _siesa.IdFe,
+                    F358_COD_SEGURIDAD = string.Empty,
+                    F358_FECHA_VCTO = factura.fecha.ToString("yyyyMMdd"),
+                    F358_ID_CAJA = _siesa.Caja,
+                    F358_ID_MEDIOS_PAGO = ObtenerMedioPagoSiesa(x.FormaPagoId),
+                    F358_NOTAS = $"Factura combustible {combustible} id local {consecutivo} forma {x.FormaPagoId}",
+                    F358_NRO_AUTORIZACION = string.Empty,
+                    F358_NRO_CUENTA = auxiliarCruce ?? string.Empty,
+                    F358_REFERENCIA_OTROS = string.Empty
+                })
+                .ToList();
+
+            return new
+            {
+                Inicial = new List<object> { new { F_CIA = "1" } },
+                Final = new List<object> { new { F_CIA = "1" } },
+                Caja = caja,
+                Documentocontable = new List<object> { new {
+                    F_CIA = "1",
+                    F_CONSEC_AUTO_REG = _siesa.ConsecutivoAutoRegulado,
+                    F350_ID_CO = _siesa.CentroOperacionesDocumento,
+                    F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F350_FECHA = factura.fecha.ToString("yyyyMMdd"),
+                    F350_ID_TERCERO = identificacion,
+                    F350_IND_ESTADO = "1",
+                    F350_NOTAS = $"Factura combustible {combustible} id local {consecutivo}",
+                }},
+                Movimientocontable = movimientos
+            };
+        }
+
         private object ConvertirAMovimientoSiesa(FacturaSiges factura, string facturaelectronica, string consecutivo, string? auxiliarContable, string? auxiliarCruce)
         {
+            var combustible = ObtenerCombustibleSeguro(factura);
+            var identificacion = ObtenerIdentificacionTerceroSeguro(factura);
             var movimientos = new List<object>();
             // Primer movimiento contable
             movimientos.Add(new
@@ -507,7 +644,7 @@ namespace EnviadorInformacionService.Contabilidad
                 F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
                 F350_CONSEC_DOCTO = consecutivo,
                 F351_ID_AUXILIAR = auxiliarContable ?? "",
-                F351_ID_TERCERO = factura.Tercero.identificacion?.ToString() ?? "",
+                F351_ID_TERCERO = identificacion,
                 F351_ID_CO_MOV = _siesa.MovimientoContableOtros ?? "",
                 F351_ID_UN = _siesa.UnidadNegocioContableOtros ?? "",
                 F351_ID_CCOSTO = _siesa.CentroCostoContableOtros ?? "",
@@ -517,7 +654,7 @@ namespace EnviadorInformacionService.Contabilidad
                 F351_BASE_GRAVABLE = "",
                 F351_DOCTO_BANCO = "",
                 F351_NRO_DOCTO_BANCO = "",
-                F351_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}"
+                F351_NOTAS = $"Factura combustible {combustible} id local {consecutivo}"
             });
             // Segundo movimiento contable
             movimientos.Add(new
@@ -537,7 +674,7 @@ namespace EnviadorInformacionService.Contabilidad
                 F351_BASE_GRAVABLE = "",
                 F351_DOCTO_BANCO = "CG",
                 F351_NRO_DOCTO_BANCO = factura.fecha.ToString("yyyyMMdd"),
-                F351_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}"
+                F351_NOTAS = $"Factura combustible {combustible} id local {consecutivo}"
             });
             // Movimiento de descuento si aplica
             if (factura.Descuento != null && factura.Descuento > 0)
@@ -549,7 +686,7 @@ namespace EnviadorInformacionService.Contabilidad
                     F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
                     F350_CONSEC_DOCTO = consecutivo,
                     F351_ID_AUXILIAR = _siesa.AuxiliarDescuento ?? "58904001",
-                    F351_ID_TERCERO = factura.Tercero.identificacion?.ToString() ?? "",
+                    F351_ID_TERCERO = identificacion,
                     F351_ID_CO_MOV = _siesa.MovimientoContableDescuento ?? "101",
                     F351_ID_UN = _siesa.UnidadNegocioDescuento ?? "03",
                     F351_ID_CCOSTO = _siesa.CentroCostoDescuento ?? "0203",
@@ -573,9 +710,9 @@ namespace EnviadorInformacionService.Contabilidad
                     F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
                     F350_CONSEC_DOCTO = consecutivo,
                     F350_FECHA = factura.fecha.ToString("yyyyMMdd"),
-                    F350_ID_TERCERO = factura.Tercero.identificacion?.ToString() ?? "",
+                    F350_ID_TERCERO = identificacion,
                     F350_IND_ESTADO = "1",
-                    F350_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}",
+                    F350_NOTAS = $"Factura combustible {combustible} id local {consecutivo}",
                 }},
                 Movimientocontable = movimientos,
                 Final = new List<object> { new { F_CIA = "1" } }
@@ -585,6 +722,8 @@ namespace EnviadorInformacionService.Contabilidad
 
         private MovimientosCaja ConvertirAMovimientoSiesaCaja(FacturaSiges factura, string facturaelectronica, string consecutivo, string? auxiliarContable, string? auxiliarCruce)
         {
+            var combustible = ObtenerCombustibleSeguro(factura);
+            var identificacion = ObtenerIdentificacionTerceroSeguro(factura);
             var requestContent = new MovimientosCaja()
             {
                 Inicial = new List<Compania> { new Compania() { F_CIA = "1" } },
@@ -608,7 +747,7 @@ namespace EnviadorInformacionService.Contabilidad
                         F358_FECHA_VCTO = factura.fecha.ToString("yyyyMMdd"),
                         F358_ID_CAJA = _siesa.Caja,
                         F358_ID_MEDIOS_PAGO = "EFE",
-                        F358_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}",
+                        F358_NOTAS = $"Factura combustible {combustible} id local {consecutivo}",
                         F358_NRO_AUTORIZACION="",
                         F358_NRO_CUENTA=auxiliarCruce ?? "",
                         F358_REFERENCIA_OTROS=""
@@ -624,9 +763,9 @@ namespace EnviadorInformacionService.Contabilidad
                 F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
                 F350_CONSEC_DOCTO = consecutivo,
                 F350_FECHA = factura.fecha.ToString("yyyyMMdd"),
-                F350_ID_TERCERO = factura.Tercero.identificacion.ToString(),
+                F350_ID_TERCERO = identificacion,
                 F350_IND_ESTADO = "1",
-                F350_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}",
+                F350_NOTAS = $"Factura combustible {combustible} id local {consecutivo}",
 
 
                 }
@@ -640,9 +779,9 @@ namespace EnviadorInformacionService.Contabilidad
                         F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
                         F350_CONSEC_DOCTO = consecutivo,
                         F351_BASE_GRAVABLE = "",
-                        F351_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}",
+                        F351_NOTAS = $"Factura combustible {combustible} id local {consecutivo}",
                         F351_DOCTO_BANCO = "",
-                        F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
+                        F351_ID_TERCERO = identificacion,
                         F351_ID_AUXILIAR = auxiliarContable ?? "",
                         F351_ID_CCOSTO = _siesa.CentroCosto,
                         F351_ID_CO_MOV = _siesa.Movimiento,
@@ -660,6 +799,119 @@ namespace EnviadorInformacionService.Contabilidad
 
             };
             return requestContent;
+        }
+
+        private List<PagoFacturaSiesa> ConstruirPagosFactura(FacturaSiges factura)
+        {
+            var totalFactura = decimal.Round(Convert.ToDecimal(factura.TOTALCalculado), 2);
+            var valorPago2 = factura.codigoFormaPago2.HasValue && factura.total2.HasValue && factura.total2.Value > 0
+                ? decimal.Round(Convert.ToDecimal(factura.total2.Value), 2)
+                : 0m;
+            var valorPago1 = factura.total1.HasValue && factura.total1.Value > 0
+                ? decimal.Round(Convert.ToDecimal(factura.total1.Value), 2)
+                : decimal.Round(Math.Max(0m, totalFactura - valorPago2), 2);
+
+            if (valorPago1 + valorPago2 > totalFactura && totalFactura > 0)
+            {
+                valorPago1 = decimal.Round(Math.Max(0m, totalFactura - valorPago2), 2);
+            }
+
+            var pagos = new List<PagoFacturaSiesa>();
+            if (factura.codigoFormaPago > 0 && valorPago1 > 0)
+            {
+                pagos.Add(new PagoFacturaSiesa
+                {
+                    FormaPagoId = factura.codigoFormaPago,
+                    Valor = valorPago1
+                });
+            }
+
+            if (factura.codigoFormaPago2.HasValue && factura.codigoFormaPago2.Value > 0 && valorPago2 > 0)
+            {
+                pagos.Add(new PagoFacturaSiesa
+                {
+                    FormaPagoId = factura.codigoFormaPago2.Value,
+                    Valor = valorPago2
+                });
+            }
+
+            if (!pagos.Any())
+            {
+                pagos.Add(new PagoFacturaSiesa
+                {
+                    FormaPagoId = factura.codigoFormaPago,
+                    Valor = totalFactura
+                });
+            }
+
+            return pagos
+                .GroupBy(x => x.FormaPagoId)
+                .Select(g => new PagoFacturaSiesa
+                {
+                    FormaPagoId = g.Key,
+                    Valor = decimal.Round(g.Sum(x => x.Valor), 2)
+                })
+                .Where(x => x.Valor > 0)
+                .ToList();
+        }
+
+            private static string ObtenerCombustibleSeguro(FacturaSiges factura)
+            {
+                return (factura?.Combustible ?? string.Empty).Trim();
+            }
+
+            private static string ObtenerIdentificacionTerceroSeguro(FacturaSiges factura)
+            {
+                return factura?.Tercero?.identificacion?.ToString() ?? string.Empty;
+            }
+
+        private bool EsFormaPagoEfectivo(int formaPagoId)
+        {
+            return _formasPagoCaja.Contains(formaPagoId);
+        }
+
+        private string ObtenerMedioPagoSiesa(int formaPagoId)
+        {
+            return EsFormaPagoEfectivo(formaPagoId) ? "EFE" : "OTR";
+        }
+
+        private static HashSet<int> ParseFormasPagoCaja(string? formasPagoCajaConfig)
+        {
+            var valores = string.IsNullOrWhiteSpace(formasPagoCajaConfig) ? "4" : formasPagoCajaConfig;
+
+            var parsed = valores
+                .Split(new[] { ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => int.TryParse(x, out _))
+                .Select(int.Parse)
+                .ToHashSet();
+
+            if (!parsed.Any())
+            {
+                parsed.Add(4);
+            }
+
+            return parsed;
+        }
+
+        private static string LimpiarTexto(string? valor)
+        {
+            return (valor ?? string.Empty)
+                .Replace("\r\n", string.Empty)
+                .Replace("\r", string.Empty)
+                .Replace("\n", string.Empty)
+                .Trim();
+        }
+
+        private static bool EsFormaPagoExcluidaSiesa(int codigoFormaPago)
+        {
+            return codigoFormaPago == 6 || codigoFormaPago == 10 || codigoFormaPago == 98;
+        }
+
+        private sealed class PagoFacturaSiesa
+        {
+            public int FormaPagoId { get; init; }
+            public decimal Valor { get; init; }
         }
 
         private async Task<bool> EnviarTercero(Tercero t)
@@ -704,6 +956,14 @@ namespace EnviadorInformacionService.Contabilidad
             var nombre = "";
             var apellido = "";
             var nombreCompleto = x?.Nombre?.Trim() ?? "";
+            var identificacion = x?.identificacion?.Trim() ?? string.Empty;
+            var telefono = (x?.Telefono ?? string.Empty).Trim();
+            var telefonoCorto = telefono.Length > 20 ? telefono.Substring(0, 20) : telefono;
+            var direccion = (x?.Direccion ?? string.Empty).Trim();
+            var direccionCorta = direccion.Length > 40 ? direccion.Substring(0, 40) : direccion;
+            var correo = x?.Correo ?? string.Empty;
+            var tipoIdentificacion = x?.tipoIdentificacionS ?? string.Empty;
+
             if (nombreCompleto.Split(' ').Count() > 1)
             {
                 nombre = nombreCompleto.Substring(0, nombreCompleto.LastIndexOf(" "));
@@ -726,7 +986,7 @@ namespace EnviadorInformacionService.Contabilidad
                     {
                         F_TIPO_REG = "46",
                         F_CIA = "1",
-                        F_ID_TERCERO= x.identificacion?.Trim() ?? "",
+                        F_ID_TERCERO= identificacion,
                         F_ID_SUCURSAL = _siesa.Sucursal,
                         F_ID_CLASE = "1",
                         F_ID_VALOR_TERCERO = "1"
@@ -736,7 +996,7 @@ namespace EnviadorInformacionService.Contabilidad
                     {
                         F_TIPO_REG = "46",
                         F_CIA = "1",
-                        F_ID_TERCERO= x.identificacion?.Trim() ?? "",
+                        F_ID_TERCERO= identificacion,
                         F_ID_SUCURSAL = _siesa.Sucursal,
                         F_ID_CLASE = "2",
                         F_ID_VALOR_TERCERO = "1"
@@ -747,7 +1007,7 @@ namespace EnviadorInformacionService.Contabilidad
                     new ClienteSiesa
                     {
                         F_CIA = "1",
-                        F201_ID_TERCERO = x.identificacion?.Trim() ?? "",
+                        F201_ID_TERCERO = identificacion,
                         F201_ID_SUCURSAL =_siesa.Sucursal,
                         F201_DESCRIPCION_SUCURSAL = "YAVEGAS",
                         F201_ID_VENDEDOR = "",
@@ -766,8 +1026,8 @@ namespace EnviadorInformacionService.Contabilidad
                         F015_ID_PAIS = "169",
                         F015_ID_DEPTO="05",
                         F015_ID_CIUDAD = "001",
-                         F015_TELEFONO = x.Telefono.Trim().Length > 20 ? x.Telefono.Substring(0, 20) : x.Telefono.Trim(),
-                    F015_EMAIL = x.Correo,
+                            F015_TELEFONO = telefonoCorto,
+                        F015_EMAIL = correo,
                     F201_FECHA_INGRESO = DateTime.Now.ToString("yyyyMMdd"),
                     F201_ID_CO_MOVTO_FACTURA = "",
                     F201_ID_UN_MOVTO_FACTURA = "",
@@ -779,27 +1039,27 @@ namespace EnviadorInformacionService.Contabilidad
                     new TerceroSiesa
                     {
                         F_CIA = "1",
-                        F200_ID = x.identificacion?.Trim() ?? "",
-                        F200_NIT = x.identificacion?.Trim() ?? "",
-                    F200_ID_TIPO_IDENT = x.tipoIdentificacionS == "Nit" ? "N" : "C",
-                    F200_IND_TIPO_TERCERO = x.tipoIdentificacionS == "Nit" ? "2" :"1",
+                        F200_ID = identificacion,
+                        F200_NIT = identificacion,
+                    F200_ID_TIPO_IDENT = tipoIdentificacion == "Nit" ? "N" : "C",
+                    F200_IND_TIPO_TERCERO = tipoIdentificacion == "Nit" ? "2" :"1",
                     F200_RAZON_SOCIAL = nombreCompleto.Length > 40 ? nombreCompleto.Substring(0, 40) : nombreCompleto,
                     F200_APELLIDO1 = apellido,
                     F200_APELLIDO2 = "NA",
                     F200_NOMBRES = nombre,
                     F200_NOMBRE_EST = nombre,
                     F015_CONTACTO = "SIGES",
-                        F015_DIRECCION1 = x.Direccion.Trim().Length > 40 ? x.Direccion.Substring(0, 40) : x.Direccion.Trim(),
+                        F015_DIRECCION1 = direccionCorta,
                         F015_DIRECCION2 = "",
                         F015_DIRECCION3 = "",
                     F015_ID_PAIS = "169",
                     F015_ID_DEPTO = "05",
                     F015_ID_CIUDAD = "001",
-                    F015_TELEFONO = x.Telefono.Trim().Length > 20 ? x.Telefono.Substring(0, 20) : x.Telefono.Trim(),
-                    F015_EMAIL = x.Correo,
+                    F015_TELEFONO = telefonoCorto,
+                    F015_EMAIL = correo,
                     F200_FECHA_NACIMIENTO = "20000101",
                     F200_ID_CIIU = "0010",
-                    F015_CELULAR = x.Telefono.Trim().Length > 20 ? x.Telefono.Substring(0, 20) : x.Telefono.Trim()
+                    F015_CELULAR = telefonoCorto
                 }
                 }
             };

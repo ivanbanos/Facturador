@@ -23,10 +23,22 @@ namespace EnviadorInformacionService.Contabilidad
         private readonly string idCompania = ConfigurationManager.AppSettings["idcompania"].ToString();
         private readonly string idDocumento = ConfigurationManager.AppSettings["iddocumento"].ToString();
         private readonly string idDocumentoCliente = ConfigurationManager.AppSettings["iddocumentocliente"].ToString();
+        private readonly HashSet<int> formasPagoCaja;
+        private readonly HashSet<int> formasPagoCxC;
+        private readonly HashSet<int> formasPagoBanco;
+
+        public ApiSiesa()
+        {
+            formasPagoCaja = ParseFormasPagoCaja();
+            formasPagoCxC = ParseFormasPagoCxC();
+            formasPagoBanco = ParseFormasPagoBanco();
+            Logger.Info($"Regla caja/banco ApiSiesa. Formas de pago para caja: {string.Join(",", formasPagoCaja.OrderBy(x => x))}. CxC: {string.Join(",", formasPagoCxC.OrderBy(x => x))}. Banco: {string.Join(",", formasPagoBanco.OrderBy(x => x))}");
+        }
 
         internal void EnviarRecibo(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce)
         {
             var requestContent = ConvertirAReciboSiesa(factura, facturaelectronica, consecutivo, auxiliarContable, cruce);
+            var requestJson = JsonConvert.SerializeObject(requestContent);
             var responseString = "";
             try
             {
@@ -35,7 +47,8 @@ namespace EnviadorInformacionService.Contabilidad
                 var request = new HttpRequestMessage(HttpMethod.Post, $"{urlSiesa}/api/siesa/v3.1/conectoresimportar?idCompania={idCompania}&idSistema={idsistema}&idDocumento={idDocumento}&nombreDocumento=Documento_Contablev2");
                 request.Headers.Add("ConniKey", ConfigurationManager.AppSettings["key"].ToString());
                 request.Headers.Add("ConniToken", ConfigurationManager.AppSettings["token"].ToString());
-                var content = new StringContent(JsonConvert.SerializeObject(requestContent), null, "application/json");
+                Logger.Info($"Siesa OUT [Recibo] FacturaLocal={factura.ventaId} Consecutivo={consecutivo} Payload={requestJson}");
+                var content = new StringContent(requestJson, null, "application/json");
                 request.Content = content;
                 var response = client.SendAsync(request).Result;
                 responseString = response.Content.ReadAsStringAsync().Result;
@@ -156,10 +169,13 @@ namespace EnviadorInformacionService.Contabilidad
             return requestContent;
         }
 
-        internal void EnviarFactura(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce, string auxiliarDescuento)
+        internal void EnviarFactura(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce, string auxiliarDescuento, Dictionary<int, string> crucesPorForma = null)
         {
             var contentString = "";
             var responseString = "";
+            var requestIncluyeCaja = false;
+            var permiteFallbackCajaABanco = false;
+            var tipoFormatoEnvio = "banco";
             var pagos = ConstruirPagosFactura(
                 factura.codigoFormaPago,
                 factura.codigoFormaPago2,
@@ -169,19 +185,32 @@ namespace EnviadorInformacionService.Contabilidad
 
             if (pagos.Count > 1)
             {
-                var requestContent = ConvertirAMovimientoSiesaCajaMultipago(factura, facturaelectronica, consecutivo, auxiliarContable, cruce, auxiliarDescuento, pagos);
-                contentString = JsonConvert.SerializeObject(requestContent);
+                tipoFormatoEnvio = "multipago";
+                requestIncluyeCaja = pagos.Any(x => EsFormaPagoEfectivo(x.FormaPagoId));
+                Logger.Info($"Factura {factura.ventaId} con multipago Siesa: {string.Join(", ", pagos.Select(x => $"forma {x.FormaPagoId}={x.Valor.ToString("0.00", CultureInfo.InvariantCulture)} ({(EsFormaPagoEfectivo(x.FormaPagoId) ? "caja" : EsFormaPagoCxC(x.FormaPagoId) ? "cxc" : "banco")})"))}");
+                var requestContent = ConvertirAMovimientoSiesaCajaMultipago(factura, facturaelectronica, consecutivo, auxiliarContable, cruce, auxiliarDescuento, pagos, crucesPorForma);
+                contentString = JsonConvert.SerializeObject(requestContent, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
             }
             else if (EsFormaPagoEfectivo(factura.codigoFormaPago))
             {
+                tipoFormatoEnvio = "caja";
+                requestIncluyeCaja = true;
+                permiteFallbackCajaABanco = true;
                 // Pago en efectivo - usar formato con Caja
                 var requestContent = ConvertirAMovimientoSiesaCaja(factura, facturaelectronica, consecutivo, auxiliarContable, cruce, auxiliarDescuento);
                 contentString = JsonConvert.SerializeObject(requestContent);
             }
+            else if (EsFormaPagoCxC(factura.codigoFormaPago))
+            {
+                tipoFormatoEnvio = "cxc";
+                var requestContent = ConvertirAMovimientoSiesa(factura, facturaelectronica, consecutivo, auxiliarContable, cruce, auxiliarDescuento);
+                contentString = JsonConvert.SerializeObject(requestContent);
+            }
             else
             {
-                // Otros métodos de pago - usar formato con MovimientoCxC
-                var requestContent = ConvertirAMovimientoSiesa(factura, facturaelectronica, consecutivo, auxiliarContable, cruce, auxiliarDescuento);
+                // Banco es el default para formas no configuradas como caja ni cxc
+                tipoFormatoEnvio = "banco";
+                var requestContent = ConvertirAMovimientoSiesaBanco(factura, facturaelectronica, consecutivo, auxiliarContable, cruce, auxiliarDescuento);
                 contentString = JsonConvert.SerializeObject(requestContent);
             }
 
@@ -193,6 +222,7 @@ namespace EnviadorInformacionService.Contabilidad
                 request.Headers.Add("ConniKey", ConfigurationManager.AppSettings["key"].ToString());
                 request.Headers.Add("ConniToken", ConfigurationManager.AppSettings["token"].ToString());
 
+                Logger.Info($"Siesa OUT [Factura:{tipoFormatoEnvio}] FacturaLocal={factura.ventaId} Consecutivo={consecutivo} Payload={contentString}");
                 var content = new StringContent(contentString, null, "application/json");
                 request.Content = content;
                 var response = client.SendAsync(request).Result;
@@ -205,6 +235,38 @@ namespace EnviadorInformacionService.Contabilidad
                     {
                         Logger.Info($"Factura ya existe en Siesa (marcada como exitosa) - {contentString}. Respuesta: {responseString}");
                         return; // Salir sin lanzar excepción, se considera exitosa
+                    }
+                    else if (requestIncluyeCaja && permiteFallbackCajaABanco && EsErrorAuxiliarNoManejaCaja(responseString))
+                    {
+                        Logger.Warn($"Factura rechazada en formato caja por auxiliar sin manejo de caja. Se reintenta como banco. Factura local: {factura.ventaId}, consecutivo Siesa: {consecutivo}. Respuesta: {responseString}");
+
+                        var requestContentBanco = ConvertirAMovimientoSiesa(factura, facturaelectronica, consecutivo, auxiliarContable, cruce, auxiliarDescuento);
+                        var contentStringBanco = JsonConvert.SerializeObject(requestContentBanco);
+
+                        var requestBanco = new HttpRequestMessage(HttpMethod.Post, $"{urlSiesa}/api/siesa/v3.1/conectoresimportar?idCompania={idCompania}&idSistema={idsistema}&idDocumento={idDocumento}&nombreDocumento=Documento_Contablev2");
+                        requestBanco.Headers.Add("ConniKey", ConfigurationManager.AppSettings["key"].ToString());
+                        requestBanco.Headers.Add("ConniToken", ConfigurationManager.AppSettings["token"].ToString());
+                        Logger.Info($"Siesa OUT [Factura:banco-fallback] FacturaLocal={factura.ventaId} Consecutivo={consecutivo} Payload={contentStringBanco}");
+                        requestBanco.Content = new StringContent(contentStringBanco, null, "application/json");
+
+                        var responseBanco = client.SendAsync(requestBanco).Result;
+                        var responseStringBanco = responseBanco.Content.ReadAsStringAsync().Result;
+
+                        if (responseBanco.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                        {
+                            if (responseStringBanco.Contains("El documento ya existe"))
+                            {
+                                Logger.Info($"Factura ya existe en Siesa después de reintento como banco (marcada como exitosa) - {contentStringBanco}. Respuesta: {responseStringBanco}");
+                                return;
+                            }
+
+                            Logger.Warn($"Factura no enviada tras reintento como banco (Bad Request) - {contentStringBanco}. Respuesta: {responseStringBanco}");
+                            throw new HttpRequestException($"Bad Request (reintento banco): {responseStringBanco}");
+                        }
+
+                        responseBanco.EnsureSuccessStatusCode();
+                        Logger.Info($"Factura enviada exitosamente tras fallback a banco - {contentStringBanco}. Respuesta {responseStringBanco}");
+                        return;
                     }
                     else
                     {
@@ -237,60 +299,69 @@ namespace EnviadorInformacionService.Contabilidad
             }
         }
 
-        private object ConvertirAMovimientoSiesa(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce, string auxiliarDescuento)
+        private static bool EsErrorAuxiliarNoManejaCaja(string response)
         {
-            var movimientos = new List<object>();
-            // Primer movimiento contable
-            movimientos.Add(new
+            return !string.IsNullOrWhiteSpace(response)
+                && response.IndexOf("debe manejar caja", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        // Banco: two Movimientocontable entries — revenue credit + bank debit (DOCTO_BANCO=CG).
+        private object ConvertirAMovimientoSiesaBanco(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce, string auxiliarDescuento)
+        {
+            var nota = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}";
+            var docTipo = ConfigurationManager.AppSettings["documentofactura"].ToString();
+            var tercero = factura.Tercero.identificacion.ToString();
+
+            var movimientos = new List<Movimientocontable>();
+            movimientos.Add(new Movimientocontable()
             {
                 F_CIA = "1",
                 F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescontableotros"].ToString(),
-                F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
+                F350_ID_TIPO_DOCTO = docTipo,
                 F350_CONSEC_DOCTO = consecutivo,
                 F351_ID_AUXILIAR = auxiliarContable,
-                F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
+                F351_ID_TERCERO = tercero,
                 F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocontableotros"].ToString(),
                 F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocontableotros"].ToString(),
                 F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocontableotros"].ToString(),
-                F351_ID_FE = "",
+                F351_ID_FE = ConfigurationManager.AppSettings["idfe"].ToString(),
                 F351_VALOR_DB = "0",
-                F351_VALOR_CR = factura.subtotal.ToString("0.00", CultureInfo.InvariantCulture),
+                F351_VALOR_CR = factura.total.ToString("0.00", CultureInfo.InvariantCulture),
                 F351_BASE_GRAVABLE = "",
                 F351_DOCTO_BANCO = "",
                 F351_NRO_DOCTO_BANCO = "",
-                F351_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}"
+                F351_NOTAS = nota
             });
-            // Segundo movimiento contable
-            movimientos.Add(new
+            movimientos.Add(new Movimientocontable()
             {
                 F_CIA = "1",
                 F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionesotros"].ToString(),
-                F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
+                F350_ID_TIPO_DOCTO = docTipo,
                 F350_CONSEC_DOCTO = consecutivo,
                 F351_ID_AUXILIAR = cruce,
-                F351_ID_TERCERO = "",
+                F351_ID_TERCERO = tercero,
                 F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientootros"].ToString(),
                 F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociootros"].ToString(),
                 F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostootros"].ToString(),
-                F351_ID_FE = ConfigurationManager.AppSettings["idfeotros"].ToString(),
+                F351_ID_FE = "",
                 F351_VALOR_DB = factura.total.ToString("0.00", CultureInfo.InvariantCulture),
                 F351_VALOR_CR = "0",
                 F351_BASE_GRAVABLE = "",
                 F351_DOCTO_BANCO = "CG",
                 F351_NRO_DOCTO_BANCO = factura.fecha.ToString("yyyyMMdd"),
-                F351_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}"
+                F351_NOTAS = nota
             });
-            // Movimiento de descuento si aplica
+
             if (factura.Venta.Descuento > 0)
             {
-                movimientos.Add(new
+                movimientos.Add(new Movimientocontable()
                 {
                     F_CIA = "1",
                     F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescontabledescuento"]?.ToString() ?? "101",
-                    F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
+                    F350_ID_TIPO_DOCTO = docTipo,
                     F350_CONSEC_DOCTO = consecutivo,
                     F351_ID_AUXILIAR = auxiliarDescuento,
-                    F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
+                    F351_ID_TERCERO = tercero,
                     F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocontabledescuento"]?.ToString() ?? "101",
                     F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociodescuento"]?.ToString() ?? "03",
                     F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostodescuento"]?.ToString() ?? "",
@@ -304,7 +375,8 @@ namespace EnviadorInformacionService.Contabilidad
                     F351_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"]?.ToString() ?? "001"
                 });
             }
-            var requestContent = new
+
+            return new
             {
                 Inicial = new List<object> { new { F_CIA = "1" } },
                 Final = new List<object> { new { F_CIA = "1" } },
@@ -312,19 +384,117 @@ namespace EnviadorInformacionService.Contabilidad
                     F_CIA = "1",
                     F_CONSEC_AUTO_REG = "0",
                     F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionesdocuemnto"].ToString(),
-                    F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
+                    F350_ID_TIPO_DOCTO = docTipo,
                     F350_CONSEC_DOCTO = consecutivo,
                     F350_FECHA = factura.fecha.ToString("yyyyMMdd"),
-                    F350_ID_TERCERO = factura.Tercero.identificacion.ToString(),
+                    F350_ID_TERCERO = tercero,
                     F350_IND_ESTADO = "1",
-                    F350_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}",
+                    F350_NOTAS = nota,
                 }},
                 Movimientocontable = movimientos
             };
-            return requestContent;
         }
 
-        private object ConvertirAMovimientoSiesaCajaMultipago(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce, string auxiliarDescuento, List<PagoFacturaSiesa> pagos)
+        private Movimientos ConvertirAMovimientoSiesa(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce, string auxiliarDescuento)
+        {
+            var nota = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}";
+            var docTipo = ConfigurationManager.AppSettings["documentofactura"].ToString();
+            var tercero = factura.Tercero.identificacion.ToString();
+
+            var movimientos = new List<Movimientocontable>();
+            movimientos.Add(new Movimientocontable()
+            {
+                F_CIA = "1",
+                F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescontableotros"].ToString(),
+                F350_ID_TIPO_DOCTO = docTipo,
+                F350_CONSEC_DOCTO = consecutivo,
+                F351_ID_AUXILIAR = auxiliarContable,
+                F351_ID_TERCERO = tercero,
+                F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocontableotros"].ToString(),
+                F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocontableotros"].ToString(),
+                F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocontableotros"].ToString(),
+                F351_ID_FE = "",
+                F351_VALOR_DB = "0",
+                F351_VALOR_CR = factura.total.ToString("0.00", CultureInfo.InvariantCulture),
+                F351_BASE_GRAVABLE = "",
+                F351_DOCTO_BANCO = "",
+                F351_NRO_DOCTO_BANCO = "",
+                F351_NOTAS = nota
+            });
+
+            // Movimiento de descuento si aplica
+            if (factura.Venta.Descuento > 0)
+            {
+                movimientos.Add(new Movimientocontable()
+                {
+                    F_CIA = "1",
+                    F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescontabledescuento"]?.ToString() ?? "101",
+                    F350_ID_TIPO_DOCTO = docTipo,
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F351_ID_AUXILIAR = auxiliarDescuento,
+                    F351_ID_TERCERO = tercero,
+                    F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocontabledescuento"]?.ToString() ?? "101",
+                    F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociodescuento"]?.ToString() ?? "03",
+                    F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostodescuento"]?.ToString() ?? "",
+                    F351_ID_FE = ConfigurationManager.AppSettings["idfedescuento"]?.ToString() ?? "1",
+                    F351_VALOR_DB = factura.descuento.ToString("0.00", CultureInfo.InvariantCulture),
+                    F351_VALOR_CR = "",
+                    F351_BASE_GRAVABLE = "1",
+                    F351_DOCTO_BANCO = "",
+                    F351_NRO_DOCTO_BANCO = "",
+                    F351_NOTAS = $"FAC {consecutivo} DESCUENTO PROMOCIÓN",
+                    F351_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"]?.ToString() ?? "001"
+                });
+            }
+
+            var cxcList = new List<MovimientoCxC>
+            {
+                new MovimientoCxC()
+                {
+                    F_CIA = "1",
+                    F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescxc"].ToString(),
+                    F350_ID_TIPO_DOCTO = docTipo,
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F351_ID_AUXILIAR = cruce,
+                    F351_ID_TERCERO = tercero,
+                    F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocxc"].ToString(),
+                    F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocxc"].ToString(),
+                    F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocxc"].ToString(),
+                    F351_VALOR_DB = factura.total.ToString("0.00", CultureInfo.InvariantCulture),
+                    F351_VALOR_CR = "0",
+                    F351_NOTAS = nota,
+                    F353_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"].ToString(),
+                    F353_ID_TIPO_DOCTO_CRUCE = docTipo,
+                    F353_CONSEC_DOCTO_CRUCE = ConfigurationManager.AppSettings["documentocruce"].ToString(),
+                    F353_NRO_CUOTA_CRUCE = "11",
+                    F353_FECHA_VCTO = factura.fecha.ToString("yyyyMMdd"),
+                    F353_FECHA_DSCTO_PP = factura.fecha.ToString("yyyyMMdd"),
+                    F354_TERCERO_VEND = ConfigurationManager.AppSettings["vendedor"].ToString(),
+                    F354_NOTAS = $"{docTipo} {consecutivo}"
+                }
+            };
+
+            return new Movimientos()
+            {
+                Inicial = new List<Compania> { new Compania() { F_CIA = "1" } },
+                Documentocontable = new List<Documentocontable> { new Documentocontable() {
+                    F_CIA = "1",
+                    F_CONSEC_AUTO_REG = "0",
+                    F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionesdocuemnto"].ToString(),
+                    F350_ID_TIPO_DOCTO = docTipo,
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F350_FECHA = factura.fecha.ToString("yyyyMMdd"),
+                    F350_ID_TERCERO = tercero,
+                    F350_IND_ESTADO = "1",
+                    F350_NOTAS = nota,
+                }},
+                Movimientocontable = movimientos,
+                MovimientoCxC = cxcList,
+                Final = new List<Compania> { new Compania() { F_CIA = "1" } }
+            };
+        }
+
+        private object ConvertirAMovimientoSiesaCajaMultipago(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce, string auxiliarDescuento, List<PagoFacturaSiesa> pagos, Dictionary<int, string> crucesPorForma = null)
         {
             var movimientos = new List<Movimientocontable>();
             movimientos.Add(new Movimientocontable()
@@ -343,12 +513,14 @@ namespace EnviadorInformacionService.Contabilidad
                 F351_ID_FE = consecutivo,
                 F351_NRO_DOCTO_BANCO = "",
                 F351_ID_UN = ConfigurationManager.AppSettings["unidadnegocio"].ToString(),
-                F351_VALOR_CR = factura.subtotal.ToString("0.00", CultureInfo.InvariantCulture),
+                // Use sum of actual payment amounts + discount so debits always equal credits exactly,
+                // avoiding rounding drift introduced by the unit-price recalculation in ProtocoloSiesa.cs.
+                F351_VALOR_CR = (pagos.Sum(p => p.Valor) + factura.Venta.Descuento).ToString("0.00", CultureInfo.InvariantCulture),
                 F351_VALOR_DB = "0",
             });
 
             // Movimiento de descuento si aplica
-            if (factura.descuento > 0)
+            if (factura.Venta.Descuento > 0)
             {
                 movimientos.Add(new Movimientocontable()
                 {
@@ -362,7 +534,7 @@ namespace EnviadorInformacionService.Contabilidad
                     F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociodescuento"]?.ToString() ?? "03",
                     F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostodescuento"]?.ToString() ?? "",
                     F351_ID_FE = ConfigurationManager.AppSettings["idfedescuento"]?.ToString() ?? "1",
-                    F351_VALOR_DB = factura.descuento.ToString("0.00", CultureInfo.InvariantCulture),
+                    F351_VALOR_DB = factura.Venta.Descuento.ToString("0.00", CultureInfo.InvariantCulture),
                     F351_VALOR_CR = "",
                     F351_BASE_GRAVABLE = "1",
                     F351_DOCTO_BANCO = "",
@@ -372,7 +544,16 @@ namespace EnviadorInformacionService.Contabilidad
             }
 
             var pagosCaja = pagos.Where(p => EsFormaPagoEfectivo(p.FormaPagoId)).ToList();
-            var pagosBanco = pagos.Where(p => !EsFormaPagoEfectivo(p.FormaPagoId)).ToList();
+            var pagosCxC = pagos.Where(p => !EsFormaPagoEfectivo(p.FormaPagoId) && EsFormaPagoCxC(p.FormaPagoId)).ToList();
+            // Banco = explicitly configured as banco, OR not in any other list (default)
+            var pagosBanco = pagos.Where(p => !EsFormaPagoEfectivo(p.FormaPagoId) && !EsFormaPagoCxC(p.FormaPagoId)).ToList();
+
+            // Helper: returns the DB-configured cruce for a specific payment form,
+            // falling back to the primary cruce if the form is not in the dictionary.
+            Func<int, string> crucePorForma = formaPagoId =>
+                (crucesPorForma != null && crucesPorForma.ContainsKey(formaPagoId))
+                    ? crucesPorForma[formaPagoId]
+                    : cruce;
 
             var caja = pagosCaja.Select(p => new Caja
             {
@@ -381,7 +562,7 @@ namespace EnviadorInformacionService.Contabilidad
                 F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
                 F350_CONSEC_DOCTO = consecutivo,
                 F351_NOTAS = $"Venta combustible forma {p.FormaPagoId}",
-                F351_ID_AUXILIAR = cruce,
+                F351_ID_AUXILIAR = crucePorForma(p.FormaPagoId),
                 F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocaja"].ToString(),
                 F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocaja"].ToString(),
                 F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocaja"].ToString(),
@@ -394,7 +575,7 @@ namespace EnviadorInformacionService.Contabilidad
                 F358_ID_MEDIOS_PAGO = p.MedioSiesa,
                 F358_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {consecutivo} forma {p.FormaPagoId}",
                 F358_NRO_AUTORIZACION = "",
-                F358_NRO_CUENTA = cruce,
+                F358_NRO_CUENTA = crucePorForma(p.FormaPagoId),
                 F358_REFERENCIA_OTROS = ""
             }).ToList();
 
@@ -406,12 +587,12 @@ namespace EnviadorInformacionService.Contabilidad
                     F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionesotros"].ToString(),
                     F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
                     F350_CONSEC_DOCTO = consecutivo,
-                    F351_ID_AUXILIAR = cruce,
-                    F351_ID_TERCERO = "",
+                    F351_ID_AUXILIAR = crucePorForma(pagoBanco.FormaPagoId),
+                    F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
                     F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientootros"].ToString(),
                     F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociootros"].ToString(),
                     F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostootros"].ToString(),
-                    F351_ID_FE = ConfigurationManager.AppSettings["idfeotros"].ToString(),
+                    F351_ID_FE = "",
                     F351_VALOR_DB = pagoBanco.Valor.ToString("0.00", CultureInfo.InvariantCulture),
                     F351_VALOR_CR = "0",
                     F351_BASE_GRAVABLE = "",
@@ -421,21 +602,50 @@ namespace EnviadorInformacionService.Contabilidad
                 });
             }
 
+            var docTipo = ConfigurationManager.AppSettings["documentofactura"].ToString();
+            var tercero = factura.Tercero.identificacion.ToString();
+            var nota = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}";
+
+            var cxcMultipago = pagosCxC.Select(p => new MovimientoCxC()
+            {
+                F_CIA = "1",
+                F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescxc"].ToString(),
+                F350_ID_TIPO_DOCTO = docTipo,
+                F350_CONSEC_DOCTO = consecutivo,
+                F351_ID_AUXILIAR = crucePorForma(p.FormaPagoId),
+                F351_ID_TERCERO = tercero,
+                F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocxc"].ToString(),
+                F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocxc"].ToString(),
+                F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocxc"].ToString(),
+                F351_VALOR_DB = p.Valor.ToString("0.00", CultureInfo.InvariantCulture),
+                F351_VALOR_CR = "0",
+                F351_NOTAS = nota,
+                F353_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"].ToString(),
+                F353_ID_TIPO_DOCTO_CRUCE = docTipo,
+                F353_CONSEC_DOCTO_CRUCE = ConfigurationManager.AppSettings["documentocruce"].ToString(),
+                F353_NRO_CUOTA_CRUCE = "11",
+                F353_FECHA_VCTO = factura.fecha.ToString("yyyyMMdd"),
+                F353_FECHA_DSCTO_PP = factura.fecha.ToString("yyyyMMdd"),
+                F354_TERCERO_VEND = ConfigurationManager.AppSettings["vendedor"].ToString(),
+                F354_NOTAS = $"{docTipo} {consecutivo}"
+            }).ToList();
+
             return new
             {
                 Inicial = new List<Compania> { new Compania() { F_CIA = "1" } },
                 Final = new List<Compania> { new Compania() { F_CIA = "1" } },
-                Caja = caja,
+                Caja = caja.Any() ? caja : (List<Caja>)null,
+                MovimientoCxC = cxcMultipago.Any() ? cxcMultipago : (List<MovimientoCxC>)null,
                 Documentocontable = new List<Documentocontable> { new Documentocontable() {
                     F_CIA = "1",
                     F_CONSEC_AUTO_REG = ConfigurationManager.AppSettings["consecutivoautoregulado"].ToString(),
                     F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionesdocuemnto"].ToString(),
-                    F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
+                    F350_ID_TIPO_DOCTO = docTipo,
                     F350_CONSEC_DOCTO = consecutivo,
                     F350_FECHA = factura.fecha.ToString("yyyyMMdd"),
-                    F350_ID_TERCERO = factura.Tercero.identificacion.ToString(),
+                    F350_ID_TERCERO = tercero,
                     F350_IND_ESTADO = "1",
-                    F350_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}",
+                    F350_NOTAS = nota,
                 }},
                 Movimientocontable = movimientos
             };
@@ -500,9 +710,70 @@ namespace EnviadorInformacionService.Contabilidad
                 .ToList();
         }
 
-        private static bool EsFormaPagoEfectivo(int formaPagoId)
+        private bool EsFormaPagoEfectivo(int formaPagoId)
         {
-            return formaPagoId == 1 || formaPagoId == 4;
+            return formasPagoCaja.Contains(formaPagoId);
+        }
+
+        private bool EsFormaPagoCxC(int formaPagoId)
+        {
+            return formasPagoCxC.Contains(formaPagoId);
+        }
+
+        private bool EsFormaPagoBanco(int formaPagoId)
+        {
+            return formasPagoBanco.Contains(formaPagoId);
+        }
+
+        private static HashSet<int> ParseFormasPagoCaja()
+        {
+            var valores = ConfigurationManager.AppSettings["formaspagocaja"];
+            if (string.IsNullOrWhiteSpace(valores))
+            {
+                valores = "4";
+            }
+
+            var parsed = valores
+                .Split(new[] { ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => int.TryParse(x, out _))
+                .Select(int.Parse)
+                .ToHashSet();
+
+            if (!parsed.Any())
+            {
+                parsed.Add(4);
+            }
+
+            return parsed;
+        }
+
+        private static HashSet<int> ParseFormasPagoCxC()
+        {
+            var valores = ConfigurationManager.AppSettings["formaspagocxc"];
+            if (string.IsNullOrWhiteSpace(valores))
+                return new HashSet<int>();
+
+            return valores
+                .Split(new[] { ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => int.TryParse(x, out _))
+                .Select(int.Parse)
+                .ToHashSet();
+        }
+
+        private static HashSet<int> ParseFormasPagoBanco()
+        {
+            var valores = ConfigurationManager.AppSettings["formaspagobanco"];
+            if (string.IsNullOrWhiteSpace(valores))
+                return new HashSet<int>();
+
+            return valores
+                .Split(new[] { ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => int.TryParse(x, out _))
+                .Select(int.Parse)
+                .ToHashSet();
         }
 
         private string ObtenerMedioPagoSiesa(int formaPagoId)
@@ -552,7 +823,7 @@ namespace EnviadorInformacionService.Contabilidad
                 F351_VALOR_DB = "0",
             });
             // Movimiento de descuento si aplica
-            if (factura.descuento > 0)
+            if (factura.Venta.Descuento > 0)
             {
                 movimientos.Add(new Movimientocontable()
                 {
@@ -566,7 +837,7 @@ namespace EnviadorInformacionService.Contabilidad
                     F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociodescuento"]?.ToString() ?? "03",
                     F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostodescuento"]?.ToString() ?? "",
                     F351_ID_FE = ConfigurationManager.AppSettings["idfedescuento"]?.ToString() ?? "1",
-                    F351_VALOR_DB = factura.descuento.ToString("0.00", CultureInfo.InvariantCulture),
+                    F351_VALOR_DB = factura.Venta.Descuento.ToString("0.00", CultureInfo.InvariantCulture),
                     F351_VALOR_CR = "",
                     F351_BASE_GRAVABLE = "1",
                     F351_DOCTO_BANCO = "",

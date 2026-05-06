@@ -176,6 +176,9 @@ begin try
       ,OrdenesDeDespacho.[consolidadoId]
       ,OrdenesDeDespacho.[enviada]
       ,OrdenesDeDespacho.[codigoFormaPago]
+      ,OrdenesDeDespacho.[codigoFormaPago2]
+      ,OrdenesDeDespacho.[total1]
+      ,OrdenesDeDespacho.[total2]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.numeroTransaccion
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*

@@ -1101,10 +1101,12 @@ namespace FacturadorEstacionesRepositorio
             return _convertidor.ConvertirTurnoSurtidoresSiges(dt);
         }
 
-        public IEnumerable<FacturaSiges> BuscarFacturasNoEnviadasSiesa()
+        public IEnumerable<FacturaSiges> BuscarFacturasNoEnviadasSiesa(DateTime? fechaInicio = null, DateTime? fechaFinal = null)
         {
             var parameters = new Dictionary<string, object>
             {
+            {"@fechaInicio", (object?)fechaInicio ?? DBNull.Value },
+            {"@fechaFinal", (object?)fechaFinal ?? DBNull.Value }
             };
             DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviarSiesaSiges",
                          parameters);

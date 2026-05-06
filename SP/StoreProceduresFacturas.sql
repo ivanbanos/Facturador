@@ -1307,7 +1307,7 @@ begin try
 		if @impresa >=0
 		begin
 		update OrdenesDeDespacho
-				set impresa = -1,
+				set impresa = -1*@veces,
 				enviada=0
 				from OrdenesDeDespacho
 				where OrdenesDeDespacho.ventaId = @ventaId
@@ -1315,7 +1315,7 @@ begin try
 		else begin
 		
 		update OrdenesDeDespacho
-				set impresa = impresa-1,
+				set impresa = -1*@veces,
 				enviada=0
 				from OrdenesDeDespacho
 				where OrdenesDeDespacho.ventaId = @ventaId
@@ -1328,7 +1328,7 @@ begin try
 		if @impresa >=0
 		begin
 		Update OrdenesDeDespacho
-				set impresa = -1,
+				set impresa = -1*@veces,
 				enviada=0
 				from OrdenesDeDespacho
 				where OrdenesDeDespacho.ventaId = @ventaId
@@ -1336,7 +1336,7 @@ begin try
 		else begin
 		
 		Update OrdenesDeDespacho
-				set impresa = impresa-1,
+				set impresa = -1*@veces,
 				enviada=0
 				from OrdenesDeDespacho
 				where OrdenesDeDespacho.ventaId = @ventaId
