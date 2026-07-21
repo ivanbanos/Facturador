@@ -161,6 +161,7 @@
     <Compile Include="IEstacionesRepositorio.cs" />
     <Compile Include="IFidelizacion.cs" />
     <Compile Include="ImpresionService.cs" />
+    <Compile Include="Models\Anticipo.cs" />
     <Compile Include="Models\Bolsa.cs" />
     <Compile Include="Models\Canastilla.cs" />
     <Compile Include="Models\CanastillaFactura.cs" />

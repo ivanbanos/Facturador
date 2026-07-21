@@ -124,17 +124,17 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
     public class TaxDataico
     {
         public string tax_category { get; set; }
-        public double tax_rate { get; set; }
+        public int tax_rate { get; set; }
         public double tax_amount { get; set; }
         public string tax_description { get; set; }
-        public double tax_base { get; set; }
+        public int tax_base { get; set; }
         public double base_amount { get; set; }
     }
 
     public class RetentionDetailDataico
     {
         public string tax_category { get; set; }
-        public double tax_rate { get; set; }
+        public string tax_rate { get; set; }
         public double base_amount { get; set; }
         public double amount { get; set; }
     }
@@ -142,7 +142,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
     public class RetentionDataico
     {
         public string tax_category { get; set; }
-        public double tax_rate { get; set; }
+        public string tax_rate { get; set; }
     }
 
     public class PrepaymentDataico

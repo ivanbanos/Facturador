@@ -43,6 +43,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
 
         public Tercero Tercero { get; set; }
         public string idFacturaElectronica { get; set; }
+        public bool enviadoContabilidad { get; set; }
         public DateTime FechaReporte { get; set; }
         public decimal TotalPrice { get { return ((decimal)Cantidad * (decimal)Precio) - Descuento; } }
 

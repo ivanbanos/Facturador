@@ -60,5 +60,6 @@ namespace FacturadorAPI.Models
         public string RabbitHost { get; set; }
         public string Isla { get; set; }
         public string ArchivoSiCOM { get; set; }
+        public string TipoFidelizacion { get; set; } = "Siges";
     }
 }

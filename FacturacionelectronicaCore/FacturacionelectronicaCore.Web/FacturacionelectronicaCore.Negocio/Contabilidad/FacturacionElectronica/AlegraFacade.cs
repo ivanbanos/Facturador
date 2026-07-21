@@ -288,7 +288,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     responseBody = await invoiceHandler.CrearFatura(invoiceRequest, option);
                     invoice = JsonConvert.DeserializeObject<ResponseInvoice>(responseBody);
 
-                    return "Ok:" + invoice?.numberTemplate?.prefix + invoice?.numberTemplate?.number + ":" + invoice?.stamp?.cufe + ":" + JsonConvert.SerializeObject(invoice) + ":" + JsonConvert.SerializeObject(factura.ConvertirAInvoice(tercero, items)) + ":" + JsonConvert.SerializeObject(tercero.ConvertirAContact());
+                    return "Ok:" + invoice?.numberTemplate?.prefix + invoice?.numberTemplate?.number + ":" + invoice?.stamp?.cufe + ":" + responseBody + ":" + JsonConvert.SerializeObject(invoice) + ":" + JsonConvert.SerializeObject(factura.ConvertirAInvoice(tercero, items)) + ":" + JsonConvert.SerializeObject(tercero.ConvertirAContact());
                 }
                 catch (Exception ex)
                 {

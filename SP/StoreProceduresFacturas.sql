@@ -132,10 +132,7 @@ END;
 
 GO
 
-IF EXISTS (SELECT * FROM sysobjects WHERE name='FacturasPOS' and xtype='U')
-BEGIN
-    DROP TABLE dbo.FacturasPOS;
-END
+
 
 
 GO
@@ -862,14 +859,8 @@ CREATE procedure [dbo].[SetFacturaImpresa]
 	@ventaid int )
 as
 begin try
-    
-			
+
 		update OrdenesDeDespacho
-				set impresa = 1
-				from OrdenesDeDespacho
-				where OrdenesDeDespacho.ventaId = @ventaid
-			
-		Update OrdenesDeDespacho
 				set impresa = 1
 				from OrdenesDeDespacho
 				where OrdenesDeDespacho.ventaId = @ventaid
@@ -1299,48 +1290,11 @@ CREATE procedure [dbo].[MandarImprimir]
 	@ventaId int, @veces int )
 as
 begin try
-		declare @impresa int
-		
-		select @impresa = impresa from OrdenesDeDespacho
-				where OrdenesDeDespacho.ventaId = @ventaId
-
-		if @impresa >=0
-		begin
 		update OrdenesDeDespacho
 				set impresa = -1*@veces,
 				enviada=0
 				from OrdenesDeDespacho
 				where OrdenesDeDespacho.ventaId = @ventaId
-		end
-		else begin
-		
-		update OrdenesDeDespacho
-				set impresa = -1*@veces,
-				enviada=0
-				from OrdenesDeDespacho
-				where OrdenesDeDespacho.ventaId = @ventaId
-		end
-
-
-		
-		select @impresa = impresa from OrdenesDeDespacho
-				where OrdenesDeDespacho.ventaId = @ventaId
-		if @impresa >=0
-		begin
-		Update OrdenesDeDespacho
-				set impresa = -1*@veces,
-				enviada=0
-				from OrdenesDeDespacho
-				where OrdenesDeDespacho.ventaId = @ventaId
-		end
-		else begin
-		
-		Update OrdenesDeDespacho
-				set impresa = -1*@veces,
-				enviada=0
-				from OrdenesDeDespacho
-				where OrdenesDeDespacho.ventaId = @ventaId
-		end
 end try
 begin catch
     declare 
@@ -2487,6 +2441,110 @@ end catch;
 GO
 drop procedure [dbo].AddFidelizado
 GO
+
+-- =============================================
+-- ANTICIPOS DE EFECTIVO
+-- =============================================
+
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Anticipos' AND xtype='U')
+BEGIN
+    CREATE TABLE dbo.Anticipos (
+        AnticipoId    INT          PRIMARY KEY IDENTITY(1,1),
+        turnoGuid     VARCHAR(50)  NULL,
+        idIsla        INT          NOT NULL,
+        numTurno      INT          NOT NULL,
+        fechaTurno    DATE         NOT NULL,
+        nombre        VARCHAR(100) NULL,
+        placa         VARCHAR(50)  NULL,
+        monto         DECIMAL(18,2) NOT NULL,
+        fechaRegistro DATETIME     NOT NULL DEFAULT GETDATE()
+    );
+END
+GO
+
+IF EXISTS (SELECT * FROM sys.procedures WHERE Name = 'CrearAnticipo')
+    DROP PROCEDURE [dbo].[CrearAnticipo]
+GO
+CREATE PROCEDURE [dbo].[CrearAnticipo]
+(
+    @turnoGuid  VARCHAR(50),
+    @idIsla     INT,
+    @numTurno   INT,
+    @fechaTurno DATE,
+    @nombre     VARCHAR(100),
+    @placa      VARCHAR(50),
+    @monto      DECIMAL(18,2)
+)
+AS
+BEGIN TRY
+    SET NOCOUNT ON;
+    DECLARE @anticipoId INT;
+
+    INSERT INTO dbo.Anticipos (turnoGuid, idIsla, numTurno, fechaTurno, nombre, placa, monto)
+    VALUES (@turnoGuid, @idIsla, @numTurno, @fechaTurno, @nombre, @placa, @monto);
+
+    SET @anticipoId = CAST(SCOPE_IDENTITY() AS INT);
+
+    IF EXISTS (SELECT 1 FROM sysobjects WHERE name='ObjetoImprimir' AND xtype='U')
+    BEGIN
+        INSERT INTO dbo.ObjetoImprimir (fecha, Isla, Numero, Objeto, impreso)
+        VALUES (CAST(@fechaTurno AS DATETIME), @idIsla, @anticipoId, 'Anticipo', 0);
+    END
+
+    SELECT @anticipoId AS AnticipoId;
+END TRY
+BEGIN CATCH
+    DECLARE @errorMessage VARCHAR(2000), @errorProcedure VARCHAR(255), @errorLine INT;
+    SELECT @errorMessage = ERROR_MESSAGE(), @errorProcedure = ERROR_PROCEDURE(), @errorLine = ERROR_LINE();
+    RAISERROR(N'<message>Error in %s :: %s :: Line: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+END CATCH;
+GO
+
+IF EXISTS (SELECT * FROM sys.procedures WHERE Name = 'GetAnticipoPorId')
+    DROP PROCEDURE [dbo].[GetAnticipoPorId]
+GO
+CREATE PROCEDURE [dbo].[GetAnticipoPorId]
+(
+    @anticipoId INT
+)
+AS
+BEGIN TRY
+    SET NOCOUNT ON;
+    SELECT TOP 1 AnticipoId, turnoGuid, idIsla, numTurno, fechaTurno, nombre, placa, monto, fechaRegistro
+    FROM dbo.Anticipos
+    WHERE AnticipoId = @anticipoId;
+END TRY
+BEGIN CATCH
+    DECLARE @errorMessage VARCHAR(2000), @errorProcedure VARCHAR(255), @errorLine INT;
+    SELECT @errorMessage = ERROR_MESSAGE(), @errorProcedure = ERROR_PROCEDURE(), @errorLine = ERROR_LINE();
+    RAISERROR(N'<message>Error in %s :: %s :: Line: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+END CATCH;
+GO
+
+IF EXISTS (SELECT * FROM sys.procedures WHERE Name = 'GetAnticiposPorTurno')
+    DROP PROCEDURE [dbo].[GetAnticiposPorTurno]
+GO
+CREATE PROCEDURE [dbo].[GetAnticiposPorTurno]
+(
+    @idIsla     INT,
+    @numTurno   INT,
+    @fechaTurno DATE
+)
+AS
+BEGIN TRY
+    SET NOCOUNT ON;
+    SELECT AnticipoId, turnoGuid, idIsla, numTurno, fechaTurno, nombre, placa, monto, fechaRegistro
+    FROM dbo.Anticipos
+    WHERE idIsla = @idIsla
+      AND numTurno = @numTurno
+      AND fechaTurno = @fechaTurno;
+END TRY
+BEGIN CATCH
+    DECLARE @errorMessage VARCHAR(2000), @errorProcedure VARCHAR(255), @errorLine INT;
+    SELECT @errorMessage = ERROR_MESSAGE(), @errorProcedure = ERROR_PROCEDURE(), @errorLine = ERROR_LINE();
+    RAISERROR(N'<message>Error in %s :: %s :: Line: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+END CATCH;
+GO
 CREATE procedure [dbo].AddFidelizado
 (@documento varchar(50),@puntos float)
 as
@@ -2564,6 +2622,43 @@ BEGIN
 END
     GO
     GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'GetVentaFidelizarAutomaticaPorVenta')
+	DROP PROCEDURE [dbo].[GetVentaFidelizarAutomaticaPorVenta]
+GO
+CREATE procedure [dbo].[GetVentaFidelizarAutomaticaPorVenta]
+(@idVenta int)
+as
+begin try
+    set nocount on;
+
+    select top (1)
+        isnull(convert(float, v.TOTAL), 0) as ValorVenta,
+        '' as DocumentoFidelizado,
+        od.ventaId as Factura
+    from dbo.OrdenesDeDespacho od
+    left join Ventas.dbo.VENTAS v on v.CONSECUTIVO = od.ventaId
+    where od.ventaId = @idVenta
+    order by od.facturaPOSId desc
+
+    if @@ROWCOUNT = 0
+    begin
+        select 0 as ValorVenta, '' as DocumentoFidelizado, '' as Factura
+    end
+end try
+begin catch
+    declare
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+    select
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+    raiserror(N'<message>Error occurred in %s :: %s :: Line number: %d</message>',
+        16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ActualizarFacturaFidelizada')
 	DROP PROCEDURE [dbo].[ActualizarFacturaFidelizada]
 GO

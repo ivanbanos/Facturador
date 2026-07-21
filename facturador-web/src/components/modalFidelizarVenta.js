@@ -32,7 +32,8 @@ const ModalFidelizarVenta = (props) => {
       try {
         const respuestaFidelizar = await FidelizarVenta(
           identificacionFidelizar,
-          props.ventaId
+          props.ventaId,
+          props.ultimaFactura
         );
         if (respuestaFidelizar === "fail") {
           props.handleSetShowAlertError(true);

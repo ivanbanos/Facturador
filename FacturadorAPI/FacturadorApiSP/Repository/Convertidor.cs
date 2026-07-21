@@ -691,8 +691,8 @@ namespace FacturadorAPI.Repository
             var response = new Bolsa();
             var drBolsa = dt.Rows[0];
             response.Fecha = drBolsa.Field<DateTime>("Fecha");
-            response.Consecutivo = drBolsa.Field<int>("Consecutivo");
-            response.NumeroTurno = drBolsa.Field<int>("NumeroTurno");
+            response.Consecutivo = Convert.ToInt32(drBolsa["Consecutivo"]);
+            response.NumeroTurno = Convert.ToInt32(drBolsa["NumeroTurno"]);
             response.Isla = drBolsa.Field<string>("Isla");
             response.Empleado = drBolsa.Field<string>("Empleado");
             response.Moneda = Convert.ToDouble(drBolsa.Field<decimal>("Moneda"));

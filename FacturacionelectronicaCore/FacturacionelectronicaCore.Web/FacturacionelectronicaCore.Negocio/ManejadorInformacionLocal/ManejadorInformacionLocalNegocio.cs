@@ -29,15 +29,19 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         private readonly ICanastillaRepositorio _canastillaRepositorio;
         private readonly ICombustiblesEstacionRepository _combustiblesEstacionRepository;
         private readonly IValidadorGuidAFacturaElectronica _validadorGuidAFacturaElectronica;
+        private readonly ISyscafeService _syscafeService;
         private readonly Alegra _alegra;
 
         // In-memory cache to track orders being processed or sent (IdVentaLocal)
         private static readonly ConcurrentDictionary<string, bool> _ordenesEnviadasCache = new ConcurrentDictionary<string, bool>();
 
+        // In-memory cache to prevent concurrent duplicate processing of the same canastilla invoice
+        private static readonly ConcurrentDictionary<string, bool> _canastillasEnProceso = new ConcurrentDictionary<string, bool>();
+
         public ManejadorInformacionLocalNegocio(ITerceroRepositorio tercerosRepositorio, IMapper mapper, IResolucionRepositorio resolucionRepositorio,
                 IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio,
                 IApiContabilidad apiContabilidad, ITipoIdentificacionRepositorio tipoIdentificacionRepositorio,
-                IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, IFacturaCanastillaRepository facturaCanastillaRepository, ICanastillaRepositorio canastillaRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, IEstacionesRepository estacionesRepository, ICombustiblesEstacionRepository combustiblesEstacionRepository)
+                IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, IFacturaCanastillaRepository facturaCanastillaRepository, ICanastillaRepositorio canastillaRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, IEstacionesRepository estacionesRepository, ICombustiblesEstacionRepository combustiblesEstacionRepository, ISyscafeService syscafeService)
         {
             _terceroRepositorio = tercerosRepositorio;
             _resolucionRepositorio = resolucionRepositorio;
@@ -53,6 +57,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
             _estacionesRepository = estacionesRepository;
             _combustiblesEstacionRepository = combustiblesEstacionRepository;
+            _syscafeService = syscafeService;
         }
 
         public async Task EnviarOrdenesDespacho(IEnumerable<Modelo.OrdenDeDespacho> ordenDeDespachos, Guid estacion)
@@ -100,9 +105,11 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                         x.Precio = _alegra.MultiplicarPorDies ? x.Precio * 10 : x.Precio;
                     }
                     var ordenDeDespachoEntity = (await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorIdVentaLocal(x.IdVentaLocal, estacion)).FirstOrDefault();
+                    var esMismaVentaExistente = EsMismaVenta(ordenDeDespachoEntity, x);
 
                     bool envioFactura = (
                         ordenDeDespachoEntity == null
+                        || !esMismaVentaExistente
                         || ordenDeDespachoEntity.idFacturaElectronica == null
                         || ordenDeDespachoEntity.idFacturaElectronica.StartsWith("error")
                         || ordenDeDespachoEntity.idFacturaElectronica.StartsWith("Error")
@@ -132,6 +139,13 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                             await Task.Delay(2000); // Esperar 2 segundos para no saturar el servicio
                             
                             x.idFacturaElectronica = id;
+                            
+                            // Enviar a Syscafe (contabilidad) si Alegra fue exitosa y aún no se ha enviado
+                            if (!string.IsNullOrEmpty(x.idFacturaElectronica)
+                                && x.idFacturaElectronica.StartsWith("Ok:", StringComparison.OrdinalIgnoreCase))
+                            {
+                                x.enviadoContabilidad = await _syscafeService.EnviarFacturaCombustible(x);
+                            }
 
                             // Persist the new idFacturaElectronica immediately to avoid duplicate sending
                             var ordenesentityUpdate = new List<Repositorio.Entities.OrdenDeDespacho>
@@ -180,10 +194,9 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                         }
                     }
 
-                    // Only add/update if not already handled above
-                    if (ordenDeDespachoEntity == null
-                        || ordenDeDespachoEntity.idFacturaElectronica == null
-                        || ordenDeDespachoEntity.idFacturaElectronica.Contains("error") || !_alegra.Desactivado)
+                    // Siempre persistimos los cambios locales (forma de pago, placa, etc.) aunque no se
+                    // reenvie a facturacion electronica; _alegra.Desactivado solo debe afectar el envio (envioFactura),
+                    // no la actualizacion local de la orden ya existente.
                     {
                         var ordenesentity = new List<Repositorio.Entities.OrdenDeDespacho>
                         {
@@ -220,7 +233,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                 TurnoGuid = x.TurnoGuid,
                                 Surtidor = x.Surtidor,
                                 Total = x.Total,
-                                idFacturaElectronica = x.idFacturaElectronica ?? ordenDeDespachoEntity?.idFacturaElectronica,
+                                idFacturaElectronica = x.idFacturaElectronica ?? (esMismaVentaExistente ? ordenDeDespachoEntity?.idFacturaElectronica : null),
                                 Vendedor = x.Vendedor,
                                 NumeroTransaccion = x.numeroTransaccion,
                             }
@@ -235,6 +248,45 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                     _ordenesEnviadasCache.TryRemove(cacheKey, out removed);
                 }
             }
+        }
+
+        private static bool EsMismaVenta(Repositorio.Entities.OrdenDeDespacho existente, Modelo.OrdenDeDespacho actual)
+        {
+            if (existente == null || actual == null)
+            {
+                return false;
+            }
+
+            if (existente.IdVentaLocal != actual.IdVentaLocal)
+            {
+                return false;
+            }
+
+            if (existente.IdLocal > 0 && actual.IdLocal > 0 && existente.IdLocal != actual.IdLocal)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(existente.Identificacion)
+                && !string.IsNullOrWhiteSpace(actual.Identificacion)
+                && !string.Equals(existente.Identificacion.Trim(), actual.Identificacion.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(existente.Placa)
+                && !string.IsNullOrWhiteSpace(actual.Placa)
+                && !string.Equals(existente.Placa.Trim(), actual.Placa.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (Math.Abs(existente.Total - actual.Total) > 0.01d)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private static bool EsCombustibleGas(string combustible)
@@ -367,6 +419,22 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                             Console.WriteLine("Error parsing JSON: " + ex.Message);
                         }
                     }
+                    else if (_alegra.Proveedor == "CELESTE")
+                    {
+                        // Celeste stores: "OK:<prefijo><numero_factura>:<gen_uuid>"
+                        // e.g. "OK:FAEDM1224:550e8400-e29b-41d4-a716-446655440000"
+                        if (idFactura.StartsWith("OK:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var parts = idFactura.Split(':');
+                            if (parts.Length >= 3)
+                            {
+                                var numeroFactura = parts[1]; // prefijo+numero
+                                var uuid = parts[2];
+                                var issuedate = ordenDeDespachoEntity.Fecha.ToString("dd/MM/yyyy HH:mm:ss");
+                                return $"Factura electrónica\n\r{numeroFactura}\n\rUUID:\n\r{uuid}\n\rFecha emisión: {issuedate}";
+                            }
+                        }
+                    }
                     else
                     {
                         var parts = idFactura.Split(':');
@@ -398,11 +466,32 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                 var canastillasRepo = await _canastillaRepositorio.GetCanastillas(estacion);
                 foreach (var factura in facturas)
                 {
+                    var cacheKeyCanastilla = $"{estacion}:{factura.FacturasCanastillaId}";
+                    if (!_canastillasEnProceso.TryAdd(cacheKeyCanastilla, true))
+                    {
+                        // Another concurrent call is already processing this canastilla — skip to avoid duplicate sends.
+                        Console.WriteLine($"[AddFacturaCanastilla] Canastilla {factura.FacturasCanastillaId} ya está en proceso, se omite.");
+                        continue;
+                    }
                     try
                     {
                         if (!string.IsNullOrWhiteSpace(factura.Isla) && string.IsNullOrWhiteSpace(factura.TurnoGuid))
                         {
                             Console.WriteLine($"Advertencia: factura canastilla {factura.FacturasCanastillaId} llega con Isla={factura.Isla} pero sin TurnoGuid");
+                        }
+
+                        // Guard: verificar que esta factura no haya sido enviada previamente como combustible
+                        // para evitar duplicar la factura electrónica por la misma venta en ambos flujos.
+                        var ordenCombustibleExistente = (await _ordenDeDespachoRepositorio
+                            .ObtenerOrdenDespachoPorIdVentaLocal(factura.FacturasCanastillaId, estacion))
+                            .FirstOrDefault();
+                        if (ordenCombustibleExistente != null
+                            && !string.IsNullOrEmpty(ordenCombustibleExistente.idFacturaElectronica)
+                            && !ordenCombustibleExistente.idFacturaElectronica.StartsWith("error", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Console.WriteLine($"[AddFacturaCanastilla] Canastilla {factura.FacturasCanastillaId} ya fue enviada como combustible " +
+                                $"(idFacturaElectronica={ordenCombustibleExistente.idFacturaElectronica}). Se omite para evitar factura duplicada.");
+                            continue;
                         }
 
                         // Replace campoextra in each factura.canastillas from repo
@@ -427,6 +516,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                         if (facturaElectronicaEnviada)
                         {
                             factura.idFacturaElectronica = idExistente;
+                            factura.enviadoContabilidad = facturaCanastilla?.enviadoContabilidad ?? false;
                         }
                         else if (facturaCanastilla == null
                             || facturaCanastilla.idFacturaElectronica == null
@@ -458,33 +548,37 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                         try
                                         {
                                             var response = await _alegraFacade.GenerarFacturaElectronica(factura, tercero, estacion);
-                                            
-                                            // If response contains specific errors related to tercero not found, retry
-                                            if (response != null && 
-                                                (response.Contains("Producto canastilla no creado") || 
+
+                                            // Solo reintentar cuando el error es por timing (tercero recien creado aun no indexado).
+                                            // Cualquier otro error (p.ej. validaciones deterministicas del proveedor) se guarda tal cual, sin reintentar.
+                                            var esErrorDeTiming = response != null &&
+                                                (response.Contains("Producto canastilla no creado") ||
                                                  response.Contains("contact not found") ||
-                                                 response.Contains("tercero") ||
-                                                 (response.StartsWith("error:") && attempt < maxRetries)))
+                                                 response.Contains("tercero"));
+
+                                            if (esErrorDeTiming && attempt < maxRetries)
                                             {
                                                 Console.WriteLine($"Canastilla attempt {attempt} failed for tercero {tercero.Identificacion}: {response}. Retrying in {retryDelay}ms...");
                                                 await Task.Delay(retryDelay);
                                                 continue;
                                             }
-                                            
+
                                             idFactruraElectronica = response;
                                             break;
                                         }
-                                        catch (Exception ex) when (attempt < maxRetries)
+                                        catch (Exception ex)
                                         {
-                                            Console.WriteLine($"Canastilla attempt {attempt} failed for tercero {tercero.Identificacion}: {ex.Message}. Retrying in {retryDelay}ms...");
-                                            await Task.Delay(retryDelay);
+                                            if (attempt < maxRetries)
+                                            {
+                                                Console.WriteLine($"Canastilla attempt {attempt} failed for tercero {tercero.Identificacion}: {ex.Message}. Retrying in {retryDelay}ms...");
+                                                await Task.Delay(retryDelay);
+                                                continue;
+                                            }
+
+                                            // Ultimo intento: no reintentar mas, pero guardar el error para no perder la respuesta.
+                                            Console.WriteLine($"Canastilla attempt {attempt} failed for tercero {tercero.Identificacion}: {ex.Message}. No se reintentara mas.");
+                                            idFactruraElectronica = "error:" + ex.Message;
                                         }
-                                    }
-                                    
-                                    // If still null after retries, try one final attempt
-                                    if (string.IsNullOrEmpty(idFactruraElectronica))
-                                    {
-                                        idFactruraElectronica = await _alegraFacade.GenerarFacturaElectronica(factura, tercero, estacion);
                                     }
                                 }
                                 
@@ -507,39 +601,51 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                         try
                                         {
                                             var response = await _alegraFacade.GenerarFacturaElectronica(factura, factura.terceroId, estacion);
-                                            
-                                            // If response contains specific errors related to tercero not found, retry
-                                            if (response != null && 
-                                                (response.Contains("Producto canastilla no creado") || 
+
+                                            // Solo reintentar cuando el error es por timing (tercero recien creado aun no indexado).
+                                            // Cualquier otro error (p.ej. validaciones deterministicas del proveedor) se guarda tal cual, sin reintentar.
+                                            var esErrorDeTiming = response != null &&
+                                                (response.Contains("Producto canastilla no creado") ||
                                                  response.Contains("contact not found") ||
-                                                 response.Contains("tercero") ||
-                                                 (response.StartsWith("error:") && attempt < maxRetries)))
+                                                 response.Contains("tercero"));
+
+                                            if (esErrorDeTiming && attempt < maxRetries)
                                             {
                                                 Console.WriteLine($"Canastilla direct tercero attempt {attempt} failed: {response}. Retrying in {retryDelay}ms...");
                                                 await Task.Delay(retryDelay);
                                                 continue;
                                             }
-                                            
+
                                             idFactruraElectronica = response;
                                             break;
                                         }
-                                        catch (Exception ex) when (attempt < maxRetries)
+                                        catch (Exception ex)
                                         {
-                                            Console.WriteLine($"Canastilla direct tercero attempt {attempt} failed: {ex.Message}. Retrying in {retryDelay}ms...");
-                                            await Task.Delay(retryDelay);
+                                            if (attempt < maxRetries)
+                                            {
+                                                Console.WriteLine($"Canastilla direct tercero attempt {attempt} failed: {ex.Message}. Retrying in {retryDelay}ms...");
+                                                await Task.Delay(retryDelay);
+                                                continue;
+                                            }
+
+                                            // Ultimo intento: no reintentar mas, pero guardar el error para no perder la respuesta.
+                                            Console.WriteLine($"Canastilla direct tercero attempt {attempt} failed: {ex.Message}. No se reintentara mas.");
+                                            idFactruraElectronica = "error:" + ex.Message;
                                         }
                                     }
-                                    
-                                    // If still null after retries, try one final attempt
-                                    if (string.IsNullOrEmpty(idFactruraElectronica))
-                                    {
-                                        idFactruraElectronica = await _alegraFacade.GenerarFacturaElectronica(factura, factura.terceroId, estacion);
-                                    }
-                                    
+
                                     await Task.Delay(2000);
                                     factura.idFacturaElectronica = idFactruraElectronica;
                                 }
                             }
+                        }
+
+                        // Enviar a Syscafe (contabilidad) si Alegra fue exitosa y aún no se ha enviado
+                        if (!string.IsNullOrEmpty(factura.idFacturaElectronica)
+                            && factura.idFacturaElectronica.StartsWith("Ok:", StringComparison.OrdinalIgnoreCase)
+                            && !factura.enviadoContabilidad)
+                        {
+                            factura.enviadoContabilidad = await _syscafeService.EnviarFacturaCanastilla(factura);
                         }
 
                         var facturaRepo = _mapper.Map<Modelo.FacturaCanastilla, Repositorio.Entities.FacturaCanastilla>(factura);
@@ -549,7 +655,23 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                     {
                         Console.WriteLine(ex.Message);
                         Console.WriteLine(ex.StackTrace);
-                        factura.idFacturaElectronica = ex.Message + ex.StackTrace;
+                        factura.idFacturaElectronica = "error:" + ex.Message + ex.StackTrace;
+
+                        // Guardar la respuesta de error tambien: si falla, no debe perderse la informacion.
+                        try
+                        {
+                            var facturaRepoError = _mapper.Map<Modelo.FacturaCanastilla, Repositorio.Entities.FacturaCanastilla>(factura);
+                            await _facturaCanastillaRepository.Add(facturaRepoError, facturaRepoError.canastillas, estacion);
+                        }
+                        catch (Exception exGuardado)
+                        {
+                            Console.WriteLine($"No se pudo guardar el estado de error de la factura canastilla {factura.FacturasCanastillaId}: {exGuardado.Message}");
+                            Console.WriteLine(exGuardado.StackTrace);
+                        }
+                    }
+                    finally
+                    {
+                        _canastillasEnProceso.TryRemove(cacheKeyCanastilla, out _);
                     }
                 }
                 return 1;
@@ -649,6 +771,48 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                         {
                             var prefijoConsecutivo = parts[1];
                             var cufe = parts[2];
+
+                            // Fallback: if prefix/consecutive or CUFE is empty, try to extract from embedded JSON blobs
+                            if (string.IsNullOrEmpty(prefijoConsecutivo) || string.IsNullOrEmpty(cufe))
+                            {
+                                try
+                                {
+                                    for (int i = 0; i < idFactura.Length; i++)
+                                    {
+                                        if (idFactura[i] != '{') continue;
+                                        int depth = 0, end = -1;
+                                        for (int j = i; j < idFactura.Length; j++)
+                                        {
+                                            if (idFactura[j] == '{') depth++;
+                                            else if (idFactura[j] == '}') depth--;
+                                            if (depth == 0) { end = j; break; }
+                                        }
+                                        if (end <= 0) continue;
+                                        var candidate = idFactura.Substring(i, end - i + 1);
+                                        try
+                                        {
+                                            var obj = Newtonsoft.Json.Linq.JObject.Parse(candidate);
+                                            if (string.IsNullOrEmpty(prefijoConsecutivo))
+                                            {
+                                                var prefix = obj.SelectToken("numberTemplate.prefix")?.ToString() ?? string.Empty;
+                                                var number = obj.SelectToken("numberTemplate.number")?.ToString() ?? string.Empty;
+                                                if (!string.IsNullOrEmpty(prefix) || !string.IsNullOrEmpty(number))
+                                                    prefijoConsecutivo = prefix + number;
+                                            }
+                                            if (string.IsNullOrEmpty(cufe))
+                                            {
+                                                cufe = obj.SelectToken("stamp.cufe")?.ToString() ?? string.Empty;
+                                            }
+                                            if (!string.IsNullOrEmpty(prefijoConsecutivo) && !string.IsNullOrEmpty(cufe))
+                                                break;
+                                        }
+                                        catch { }
+                                        i = end;
+                                    }
+                                }
+                                catch (Exception ex) { Console.WriteLine("Error parsing canastilla JSON fallback: " + ex.Message); }
+                            }
+
                             return $"Factura electrónica\n\r{prefijoConsecutivo}\n\rCUFE:\n\r{cufe}";
                         }
                         if (_alegra.Proveedor == "SIIGO")

@@ -9,6 +9,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
     public class FacturaCanastilla
     {
         public string idFacturaElectronica { get; set; }
+        public bool enviadoContabilidad { get; set; }
 
         public int FacturasCanastillaId { get; set; }
 		public DateTime fecha { get; set; }

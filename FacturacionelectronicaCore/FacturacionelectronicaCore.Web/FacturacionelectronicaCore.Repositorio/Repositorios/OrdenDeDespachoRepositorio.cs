@@ -47,18 +47,37 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             {
                 var facturaMongo = facturasMongo.First();
                 var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", facturaMongo.guid);
-                var update = Builders<OrdenesMongo>.Update
-                    .Set(x => x.Identificacion, factura.Identificacion)
-                    .Set(x => x.NombreTercero, factura.NombreTercero)
-                    .Set(x => x.Placa, factura.Placa)
-                    .Set(x => x.idFacturaElectronica, factura.idFacturaElectronica)
-                    .Set(x => x.TurnoGuid, factura.TurnoGuid)
-                    .Set(x => x.FormaDePago, factura.FormaDePago)
-                    .Set(x => x.FormaDePago2, factura.FormaDePago2)
-                    .Set(x => x.Total1, factura.Total1)
-                    .Set(x => x.Total2, factura.Total2)
-                    .Set(x => x.Kilometraje, factura.Kilometraje)
-                    .Set(x => x.NumeroTransaccion, factura.NumeroTransaccion);
+
+                var facturaYaGenerada = !string.IsNullOrEmpty(facturaMongo.idFacturaElectronica)
+                    && !facturaMongo.idFacturaElectronica.StartsWith("error", StringComparison.OrdinalIgnoreCase);
+
+                UpdateDefinition<OrdenesMongo> update;
+                if (facturaYaGenerada)
+                {
+                    // La factura electronica ya fue generada: solo se actualizan los datos de forma de pago,
+                    // el resto de la orden queda tal como se genero la factura.
+                    update = Builders<OrdenesMongo>.Update
+                        .Set(x => x.FormaDePago, factura.FormaDePago)
+                        .Set(x => x.FormaDePago2, factura.FormaDePago2)
+                        .Set(x => x.Total1, factura.Total1)
+                        .Set(x => x.Total2, factura.Total2);
+                }
+                else
+                {
+                    update = Builders<OrdenesMongo>.Update
+                        .Set(x => x.Identificacion, factura.Identificacion)
+                        .Set(x => x.NombreTercero, factura.NombreTercero)
+                        .Set(x => x.Placa, factura.Placa)
+                        .Set(x => x.idFacturaElectronica, factura.idFacturaElectronica)
+                        .Set(x => x.TurnoGuid, factura.TurnoGuid)
+                        .Set(x => x.FormaDePago, factura.FormaDePago)
+                        .Set(x => x.FormaDePago2, factura.FormaDePago2)
+                        .Set(x => x.Total1, factura.Total1)
+                        .Set(x => x.Total2, factura.Total2)
+                        .Set(x => x.Kilometraje, factura.Kilometraje)
+                        .Set(x => x.NumeroTransaccion, factura.NumeroTransaccion);
+                }
+
                 await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "ordenes", filterGuid, update);
 
             }

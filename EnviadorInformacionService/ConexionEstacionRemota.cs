@@ -36,47 +36,55 @@ namespace EnviadorInformacionService
         }
         public bool EnviarFacturas(IEnumerable<FactoradorEstacionesModelo.Objetos.Factura> facturas, IEnumerable<FormasPagos> formas, Guid estacion, string token)
         {
-           
-            RequestEnviarFacturas request = new RequestEnviarFacturas();
-            request.facturas = new List<FacturacionelectronicaCore.Negocio.Modelo.Factura>();
-            request.ordenDeDespachos = facturas.Select(x =>
+            string requestJson = null;
+            try
             {
-                var forma1 = formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).FirstOrDefault();
-                var forma2 = x.codigoFormaPago2.HasValue
-                    ? formas.Where(y => y.Id == x.codigoFormaPago2.Value).Select(y => y.Descripcion).FirstOrDefault()
-                    : null;
-
-                var orden = new FacturacionelectronicaCore.Negocio.Modelo.OrdenDeDespacho(x, forma1, forma2);
-                orden.NumeroTransaccion = x.numeroTransaccion;
-                if (x?.Tercero != null && orden?.Tercero != null)
+                RequestEnviarFacturas request = new RequestEnviarFacturas();
+                request.facturas = new List<FacturacionelectronicaCore.Negocio.Modelo.Factura>();
+                request.ordenDeDespachos = facturas.Select(x =>
                 {
-                    AplicarNombreYApellidosSeparados(x.Tercero, orden.Tercero);
-                }
+                    var forma1 = formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).FirstOrDefault();
+                    var forma2 = x.codigoFormaPago2.HasValue
+                        ? formas.Where(y => y.Id == x.codigoFormaPago2.Value).Select(y => y.Descripcion).FirstOrDefault()
+                        : null;
 
-                return orden;
-            });
-            request.Estacion = estacion;
-            using (var client = new HttpClient())
+                    var orden = new FacturacionelectronicaCore.Negocio.Modelo.OrdenDeDespacho(x, forma1, forma2);
+                    orden.NumeroTransaccion = x.numeroTransaccion;
+                    if (x?.Tercero != null && orden?.Tercero != null)
+                    {
+                        AplicarNombreYApellidosSeparados(x.Tercero, orden.Tercero);
+                    }
+
+                    return orden;
+                }).ToList();
+                request.Estacion = estacion;
+                using (var client = new HttpClient())
+                {
+                    client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
+                    client.DefaultRequestHeaders.Authorization =
+        new AuthenticationHeaderValue("Bearer", token);
+                    var path = $"/api/ManejadorInformacionLocal/EnviarFacturas";
+                    requestJson = JsonConvert.SerializeObject(request);
+                    var content = new StringContent(requestJson);
+                    content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+
+                    Logger.Info($"EnviarFacturas request. Estacion={estacion}, Url={url}{path}, Ordenes={request.ordenDeDespachos?.Count() ?? 0}");
+                    var response = client.PostAsync($"{url}{path}", content).Result;
+                    string responseBody = response.Content.ReadAsStringAsync().Result;
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        Logger.Error($"EnviarFacturas fallo. Estacion={estacion}, Url={url}{path}, Status={(int)response.StatusCode} {response.ReasonPhrase}, ResponseBody={responseBody}, RequestBody={TruncarParaLog(requestJson)}");
+                        return false;
+                    }
+
+                    Logger.Info($"EnviarFacturas OK. Estacion={estacion}, Url={url}{path}");
+                    return response.StatusCode == System.Net.HttpStatusCode.OK;
+                }
+            }
+            catch (Exception ex)
             {
-                client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
-                client.DefaultRequestHeaders.Authorization =
-    new AuthenticationHeaderValue("Bearer", token);
-                var path = $"/api/ManejadorInformacionLocal/EnviarFacturas";
-                var requestJson = JsonConvert.SerializeObject(request);
-                var content = new StringContent(requestJson);
-                content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-
-                Logger.Info($"EnviarFacturas request. Estacion={estacion}, Url={url}{path}, Ordenes={request.ordenDeDespachos?.Count() ?? 0}");
-                var response = client.PostAsync($"{url}{path}", content).Result;
-                string responseBody = response.Content.ReadAsStringAsync().Result;
-                if(!response.IsSuccessStatusCode)
-                {
-                    Logger.Error($"EnviarFacturas fallo. Estacion={estacion}, Url={url}{path}, Status={(int)response.StatusCode} {response.ReasonPhrase}, ResponseBody={TruncarParaLog(responseBody)}, RequestBody={TruncarParaLog(requestJson)}");
-                    return false;
-                }
-
-                //Logger.Info($"EnviarFacturas OK. Estacion={estacion}, Url={url}{path}, ResponseBody={TruncarParaLog(responseBody)}");
-                return response.StatusCode == System.Net.HttpStatusCode.OK;
+                Logger.Error(ex, $"EnviarFacturas excepcion. Estacion={estacion}, Url={url}/api/ManejadorInformacionLocal/EnviarFacturas, RequestBody={TruncarParaLog(requestJson)}");
+                throw;
             }
         }
 
@@ -193,8 +201,12 @@ namespace EnviadorInformacionService
                 client.DefaultRequestHeaders.Authorization =
     new AuthenticationHeaderValue("Bearer", token);
                 var response = client.GetAsync($"{url}{path}").Result;
-                response.EnsureSuccessStatusCode();
                 string responseBody = response.Content.ReadAsStringAsync().Result;
+                if (!response.IsSuccessStatusCode)
+                {
+                    Logger.Error($"RecibirFacturasImprimir fallo. Estacion={estacion}, Url={url}{path}, Status={(int)response.StatusCode} {response.ReasonPhrase}, ResponseBody={responseBody}");
+                    response.EnsureSuccessStatusCode();
+                }
                 return JsonConvert.DeserializeObject<IEnumerable<FacturacionelectronicaCore.Negocio.Modelo.Factura>>(responseBody);
             }
         }
@@ -210,8 +222,12 @@ namespace EnviadorInformacionService
                 client.DefaultRequestHeaders.Authorization =
     new AuthenticationHeaderValue("Bearer", token);
                 var response = client.GetAsync($"{url}{path}").Result;
-                response.EnsureSuccessStatusCode();
                 string responseBody = response.Content.ReadAsStringAsync().Result;
+                if (!response.IsSuccessStatusCode)
+                {
+                    Logger.Error($"RecibirOrdenesImprimir fallo. Estacion={estacion}, Url={url}{path}, Status={(int)response.StatusCode} {response.ReasonPhrase}, ResponseBody={responseBody}");
+                    response.EnsureSuccessStatusCode();
+                }
                 return JsonConvert.DeserializeObject<IEnumerable<FacturacionelectronicaCore.Negocio.Modelo.OrdenDeDespacho>>(responseBody);
             }
         }
@@ -225,8 +241,12 @@ namespace EnviadorInformacionService
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", token);
                 var response = client.GetAsync($"{url}{path}").Result;
-                response.EnsureSuccessStatusCode();
                 string responseBody = response.Content.ReadAsStringAsync().Result;
+                if (!response.IsSuccessStatusCode)
+                {
+                    Logger.Error($"RecibirTercerosActualizados fallo. Estacion={estacion}, Url={url}{path}, Status={(int)response.StatusCode} {response.ReasonPhrase}, ResponseBody={responseBody}");
+                    response.EnsureSuccessStatusCode();
+                }
                 var terceros = JsonConvert.DeserializeObject<IEnumerable<FacturacionelectronicaCore.Negocio.Modelo.Tercero>>(responseBody);
                 return terceros.Select(x => new FactoradorEstacionesModelo.Objetos.Tercero(x));
             }

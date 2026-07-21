@@ -142,48 +142,70 @@ namespace FactoradorEstacionesModelo.Convertidor
         {
             List<Factura> response = new List<Factura>();
 
-            response.AddRange(
-                dt.AsEnumerable().Select(dr => new Factura()
+            int fila = 0;
+            foreach (var dr in dt.AsEnumerable())
+            {
+                fila++;
+                try
                 {
-                    facturaPOSId = dr.Field<int>("facturaPOSId"),
-                    ventaId = dr.Field<int>("ventaId"),
-                    Consecutivo = dr.Field<int>("CONSECUTIVO"),
-                    DescripcionResolucion = dr.Field<string>("descripcionRes"),
-                    Autorizacion = dr.Field<string>("autorizacion"),
-                    Placa = dr.Field<string>("Placa"),
-                    Kilometraje = dr.Field<string>("Kilometraje"),
-                    fecha = dr.Field<DateTime>("fecha"),
-                    Final = dr.Field<int>("consecutivoFinal"),
-                    Inicio = dr.Field<int>("consecutivoInicio"),
-                    FechaFinalResolucion = dr.Field<DateTime>("fechafinal"),
-                    FechaInicioResolucion = dr.Field<DateTime>("fechaInicio"),
-                    habilitada = dr.Field<bool>("habilitada"),
-                    impresa = dr.Field<int>("impresa"),
-                    Estado = dr.Field<string>("estado"),
-                    codigoFormaPago = dr.Field<int>("codigoFormaPago"),
-                    codigoFormaPago2 = dr.Table.Columns.Contains("codigoFormaPago2") && !dr.IsNull("codigoFormaPago2") ? (int?)Convert.ToInt32(dr["codigoFormaPago2"]) : null,
-                    total1 = dr.Table.Columns.Contains("total1") && !dr.IsNull("total1") ? (decimal?)Convert.ToDecimal(dr["total1"]) : null,
-                    total2 = dr.Table.Columns.Contains("total2") && !dr.IsNull("total2") ? (decimal?)Convert.ToDecimal(dr["total2"]) : null,
-                    numeroTransaccion = dr.Table.Columns.Contains("numeroTransaccion") && !dr.IsNull("numeroTransaccion")
-                        ? dr.Field<string>("numeroTransaccion")
-                        : null,
+                    response.Add(new Factura()
+                    {
+                        facturaPOSId = dr.Field<int>("facturaPOSId"),
+                        ventaId = dr.Field<int>("ventaId"),
+                        Consecutivo = dr.Field<int>("CONSECUTIVO"),
+                        DescripcionResolucion = dr.Field<string>("descripcionRes"),
+                        Autorizacion = dr.Field<string>("autorizacion"),
+                        Placa = dr.Field<string>("Placa"),
+                        Kilometraje = dr.Field<string>("Kilometraje"),
+                        fecha = dr.Field<DateTime>("fecha"),
+                        Final = dr.Field<int>("consecutivoFinal"),
+                        Inicio = dr.Field<int>("consecutivoInicio"),
+                        FechaFinalResolucion = dr.Field<DateTime>("fechafinal"),
+                        FechaInicioResolucion = dr.Field<DateTime>("fechaInicio"),
+                        habilitada = dr.Field<bool>("habilitada"),
+                        impresa = dr.Field<int>("impresa"),
+                        Estado = dr.Field<string>("estado"),
+                        codigoFormaPago = dr.Field<int>("codigoFormaPago"),
+                        codigoFormaPago2 = dr.Table.Columns.Contains("codigoFormaPago2") && !dr.IsNull("codigoFormaPago2") ? (int?)Convert.ToInt32(dr["codigoFormaPago2"]) : null,
+                        total1 = dr.Table.Columns.Contains("total1") && !dr.IsNull("total1") ? (decimal?)Convert.ToDecimal(dr["total1"]) : null,
+                        total2 = dr.Table.Columns.Contains("total2") && !dr.IsNull("total2") ? (decimal?)Convert.ToDecimal(dr["total2"]) : null,
+                        numeroTransaccion = dr.Table.Columns.Contains("numeroTransaccion") && !dr.IsNull("numeroTransaccion")
+                            ? dr.Field<string>("numeroTransaccion")
+                            : null,
 
-                    Tercero = new Objetos.Tercero() {
-                        COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI"),
-                        Direccion = dr.Field<string>("direccion"),
-                        Nombre = dr.Field<string>("Nombre"),
-                        Apellidos = dr.Table.Columns.Contains("apellidos") ? (dr.IsNull("apellidos") ? null : dr.Field<string>("apellidos")) : null,
-                        Telefono = dr.Field<string>("Telefono"),
-                        identificacion = dr.Field<string>("identificacion"),
+                        Tercero = new Objetos.Tercero() {
+                            COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI"),
+                            Direccion = dr.Field<string>("direccion"),
+                            Nombre = dr.Field<string>("Nombre"),
+                            Apellidos = dr.Table.Columns.Contains("apellidos") ? (dr.IsNull("apellidos") ? null : dr.Field<string>("apellidos")) : null,
+                            Telefono = dr.Field<string>("Telefono"),
+                            identificacion = dr.Field<string>("identificacion"),
 
-                        Correo = dr.Field<string>("correo"),
-                        terceroId = dr.Field<int>("terceroId"),
-                        tipoIdentificacion = dr.Field<int?>("tipoIdentificacion"),
-                        tipoIdentificacionS = dr.Field<string>("descripcion"),
-                        EnviadoSiesa = dr.Table.Columns.Contains("enviadoSiesa") ? (dr.IsNull("enviadoSiesa") ? (bool?)null : dr.Field<bool?>("enviadoSiesa")) : (bool?)null,
-                    },
-                })
-            ) ;
+                            Correo = dr.Field<string>("correo"),
+                            terceroId = dr.Field<int>("terceroId"),
+                            tipoIdentificacion = dr.Field<int?>("tipoIdentificacion"),
+                            tipoIdentificacionS = dr.Field<string>("descripcion"),
+                            EnviadoSiesa = dr.Table.Columns.Contains("enviadoSiesa") ? (dr.IsNull("enviadoSiesa") ? (bool?)null : dr.Field<bool?>("enviadoSiesa")) : (bool?)null,
+                        },
+                    });
+                }
+                catch (Exception ex)
+                {
+                    var camposNulos = dt.Columns.Cast<DataColumn>()
+                        .Where(c => dr.IsNull(c))
+                        .Select(c => c.ColumnName)
+                        .ToList();
+                    var ventaIdRef = dr.Table.Columns.Contains("ventaId") && !dr.IsNull("ventaId") ? dr["ventaId"].ToString() : "desconocido";
+                    var facturaPOSIdRef = dr.Table.Columns.Contains("facturaPOSId") && !dr.IsNull("facturaPOSId") ? dr["facturaPOSId"].ToString() : "desconocido";
+
+                    Logger.Error(
+                        $"Se omite la fila {fila} de getFacturaSinEnviarSiesa (ventaId={ventaIdRef}, facturaPOSId={facturaPOSIdRef}) por error de conversión. " +
+                        $"Campos con valor DBNull en esta fila: {(camposNulos.Any() ? string.Join(", ", camposNulos) : "ninguno detectado")}. " +
+                        $"Error original: {ex.Message}");
+                    // No se relanza: se omite esta factura para no bloquear el procesamiento de las demás.
+                    continue;
+                }
+            }
             return response;
         }
 
@@ -217,7 +239,7 @@ namespace FactoradorEstacionesModelo.Convertidor
             response.AddRange(
                 dt.AsEnumerable().Select(dr => new TipoIdentificacion()
                 {
-                    CodigoDian = dr.Field<short>("CodigoDian"),
+                    CodigoDian = dr.Field<short?>("CodigoDian"),
                     Descripcion = dr.Field<string>("Descripcion"),
                     TipoIdentificacionId = dr.Field<int>("TipoIdentificacionId"),
                 })

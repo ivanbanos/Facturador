@@ -954,7 +954,7 @@ namespace FacturadorEstacionesRepositorio
 
         public Fidelizado getFidelizado(int ventaId)
         {
-DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidelizado",
+DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetFidelizado",
                             new Dictionary<string, object>{
 
                     {"@ventaId", ventaId }
@@ -1005,15 +1005,22 @@ DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidel
             var facturas = _convertidor.ConvertirFactura(dt2);
             foreach (var factura in facturas)
             {
-                DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getVentaPorId",
-                           new Dictionary<string, object>{
-                {"@CONSECUTIVO",factura.ventaId }
-                           });
+                try
+                {
+                    DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getVentaPorId",
+                               new Dictionary<string, object>{
+                    {"@CONSECUTIVO",factura.ventaId }
+                               });
 
-                var ventas = _convertidor.ConvertirVenta(dt);
-                var manguera = _convertidor.ConvertirManguera(dt).FirstOrDefault();
-                factura.Venta = ventas.FirstOrDefault();
-                factura.Manguera = manguera;
+                    var ventas = _convertidor.ConvertirVenta(dt);
+                    var manguera = _convertidor.ConvertirManguera(dt).FirstOrDefault();
+                    factura.Venta = ventas.FirstOrDefault();
+                    factura.Manguera = manguera;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"No se pudo obtener/convertir la venta para la factura ventaId={factura.ventaId}, facturaPOSId={factura.facturaPOSId}. Se omite el enriquecimiento de Venta/Manguera para esta factura. Error: {ex.Message}");
+                }
             }
             return facturas.ToList();
         }
@@ -1205,6 +1212,64 @@ ORDER BY t.FECHA DESC, t.NUM_TUR DESC";
             };
 
             DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ActualizarEnviadasSiesaCanastilla", parameters);
+        }
+
+        
+        public List<Anticipo> GetAnticiposPorTurno(int idIsla, int numTurno, DateTime fechaTurno)
+        {
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetAnticiposPorTurno",
+                new Dictionary<string, object>
+                {
+                    { "@idIsla", idIsla },
+                    { "@numTurno", numTurno },
+                    { "@fechaTurno", fechaTurno.Date },
+                });
+
+            var anticipos = new List<Anticipo>();
+            foreach (DataRow row in dt.Rows)
+            {
+                anticipos.Add(new Anticipo
+                {
+                    AnticipoId  = row.Field<int>("AnticipoId"),
+                    TurnoGuid   = row.Field<string>("turnoGuid"),
+                    IdIsla      = row.Field<int>("idIsla"),
+                    NumTurno    = row.Field<int>("numTurno"),
+                    FechaTurno  = row.Field<DateTime>("fechaTurno"),
+                    Nombre      = row.Field<string>("nombre"),
+                    Placa       = row.Field<string>("placa"),
+                    Monto       = row.Field<decimal>("monto"),
+                    FechaRegistro = row.Field<DateTime>("fechaRegistro"),
+                });
+            }
+            return anticipos;
+        }
+
+        public Anticipo GetAnticipoPorId(int anticipoId)
+        {
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetAnticipoPorId",
+                new Dictionary<string, object>
+                {
+                    { "@anticipoId", anticipoId },
+                });
+
+            if (dt.Rows.Count == 0)
+            {
+                return null;
+            }
+
+            var row = dt.Rows[0];
+            return new Anticipo
+            {
+                AnticipoId = row.Field<int>("AnticipoId"),
+                TurnoGuid = row.Field<string>("turnoGuid"),
+                IdIsla = row.Field<int>("idIsla"),
+                NumTurno = row.Field<int>("numTurno"),
+                FechaTurno = row.Field<DateTime>("fechaTurno"),
+                Nombre = row.Field<string>("nombre"),
+                Placa = row.Field<string>("placa"),
+                Monto = row.Field<decimal>("monto"),
+                FechaRegistro = row.Field<DateTime>("fechaRegistro"),
+            };
         }
     }
 }

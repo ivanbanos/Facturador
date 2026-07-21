@@ -15,6 +15,7 @@ import ModalAddTercero from "./modalAddTercero";
 import ModalAbrirTurno from "./modalAbrirTurno";
 import ModalCerrarTurno from "./modalCerrarTurno";
 import ModalAgregarBolsa from "./modalAgregarBolsa";
+import ModalAgregarAnticipo from "./modalAgregarAnticipo";
 import CerrarTurno from "../Services/getServices/CerrarTurno";
 import GetTercero from "../Services/getServices/GetTercero";
 import FidelizarVenta from "../Services/getServices/FidelizarVenta";
@@ -216,11 +217,10 @@ const Combustible = () => {
       setDisableNumeroTrans(true);
       setDisableForma(true);
     } else {
-      if (
-        factura.codigoFormaPago == 1 ||
-        factura.codigoFormaPago == 2 ||
-        factura.codigoFormaPago == 3
-      ) {
+      const formasPagoConTransaccion = Array.isArray(window.FormasPagoConNumeroTransaccion)
+        ? window.FormasPagoConNumeroTransaccion.map(Number)
+        : [1, 2, 3];
+      if (formasPagoConTransaccion.includes(Number(factura.codigoFormaPago))) {
         setDisableNumeroTrans(false);
       } else {
         setDisableNumeroTrans(true);
@@ -732,10 +732,18 @@ const Combustible = () => {
               handleSetShowAlertError={handleSetShowAlertError}
             ></ModalAgregarBolsa>
           )}
+          {turno && window.HabilitarAnticipos !== false && (
+            <ModalAgregarAnticipo
+              islaSelect={islaSelect}
+              islaSelectName={islaSelectName}
+              turno={turno}
+            />
+          )}
           {turno && (
             <ModalFidelizarVenta
               handleSetShowAlertError={handleSetShowAlertError}
               ventaId={ultimaFactura.ventaId}
+              ultimaFactura={ultimaFactura}
               getFacturaInformacion={getFacturaInformacion}
             ></ModalFidelizarVenta>
           )}

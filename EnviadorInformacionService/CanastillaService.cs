@@ -316,6 +316,18 @@ namespace EnviadorInformacionService
 
                         if (!_factura.enviada)
                         {
+                            // Enrich codigoFormaPago.Descripcion before sending so Silog2 receives
+                            // the correct payment method (e.g. "Tarjeta Crédito") instead of
+                            // defaulting to "Efectivo" when Descripcion is null.
+                            if (_factura.codigoFormaPago != null
+                                && string.IsNullOrEmpty(_factura.codigoFormaPago.Descripcion))
+                            {
+                                var formaCompleta = formasDePago?.FirstOrDefault(
+                                    x => x.Id == _factura.codigoFormaPago.Id);
+                                if (formaCompleta != null)
+                                    _factura.codigoFormaPago = formaCompleta;
+                            }
+
                             var ok = _conexionEstacionRemota.EnviarFacturasCanastilla(new List<FacturaCanastilla> { _factura }, estacionFuente, _conexionEstacionRemota.getToken());
                             if (ok)
                             {

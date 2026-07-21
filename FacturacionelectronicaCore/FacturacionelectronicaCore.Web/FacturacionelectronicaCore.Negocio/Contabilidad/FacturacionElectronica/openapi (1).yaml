@@ -1,0 +1,2455 @@
+---
+openapi: 3.0.3
+info:
+  title: API Celeste
+  version: 1.0.0
+  description: |
+    API Celeste es la plataforma de integración que permite a aplicaciones externas
+    conectarse con los servicios de Celeste para ejecutar operaciones de autenticación,
+    intercambio de información e integración con diferentes procesos empresariales.
+
+    Esta documentación describe los pasos necesarios para registrar una aplicación,
+    autenticarse y ejecutar operaciones dentro del ecosistema Celeste.
+servers:
+- url: https://api.celestefacturacion.com
+  description: API pública de producción
+tags:
+- name: Autenticación
+  description: |
+    Operaciones relacionadas con la generación de token de acceso.
+
+    ## Credenciales de acceso
+
+    Para obtener las credenciales necesarias (**client-id** y **user-token**), tanto en el ambiente de pruebas como en el ambiente de producción, debe comunicarse con el área de soporte de Celeste.
+
+    Estas credenciales son necesarias para generar el token de acceso y consumir los endpoints protegidos de la API.
+- name: Factura electrónica de venta
+  description: Operaciones para registrar y consultar facturas electrónicas de venta.
+- name: Productos
+  description: Operaciones para crear y consultar productos disponibles en Celeste.
+- name: Pedido de venta
+  description: Operaciones para registrar y consultar pedidos de venta.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Bearer Token
+  schemas:
+    ErrorDetail:
+      type: object
+      properties:
+        field:
+          type: string
+          example: nit
+        message:
+          type: string
+          example: El campo nit solo debe contener números.
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: Bad Request
+        message:
+          type: string
+          example: La solicitud contiene campos inválidos o no permitidos.
+        details:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ErrorDetail"
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        code:
+          type: integer
+          example: 40
+        status:
+          type: string
+          example: Bad Request
+        message:
+          type: string
+          example: Los campos client-id, user-token y nit son obligatorios
+        data:
+          type: string
+          example: ''
+    AuthRequest:
+      type: object
+      required:
+      - client-id
+      - nit
+      - user-token
+      properties:
+        client-id:
+          type: string
+          format: uuid
+          description: Identificador único del cliente asignado por Celeste. Debe
+            ser un UUID válido.
+          example: 8f0d1a6b-2e43-4e2f-9a7b-6c15d83f2a91
+        nit:
+          type: string
+          description: NIT de la empresa. Solo se permiten números.
+          example: '2222222222'
+        user-token:
+          type: string
+          description: Token de usuario asignado por Celeste para la autenticación
+            de la empresa.
+          example: a9f4c1e7b8d2036f5a91c0b2e4d7f863
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        code:
+          type: integer
+          example: 20
+        status:
+          type: string
+          example: OK
+        message:
+          type: string
+          example: OK
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              description: Token JWT generado para consumir los endpoints protegidos
+                de la API.
+              example: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJDZWxlc3RlQVBJIiwiZXhwIjoxNzY2ODAwMDAwfQ.sandbox_signature_example
+            empresa_id:
+              type: integer
+              example: 620
+            expiracion:
+              type: string
+              format: date-time
+              description: Fecha y hora de expiración del token. La vigencia del token
+                es de 24 horas.
+              example: '2026-04-28T08:43:03.358'
+    Anotacion:
+      type: object
+      properties:
+        note:
+          type: string
+          example: 'Placa: VSF145, Kilometraje : null, Nro Transaccion : '
+    FormaPago:
+      type: object
+      required:
+      - forma_pago_dian
+      - valor
+      properties:
+        forma_pago_dian:
+          type: string
+          description: Forma de pago DIAN. 1 = contado/efectivo, 2 = crédito.
+          example: '1'
+        medio_pago_dian_codigo:
+          type: string
+          description: 'Código DIAN del medio de pago. Ejemplos: 11 = efectivo, 47
+            = transferencia, 50 = tarjeta crédito, 49 = tarjeta débito. Es obligatorio
+            cuando forma_pago_dian = 1 y se desea especificar el medio de pago.'
+          example: '11'
+        numero_cuenta:
+          type: string
+          description: Número de cuenta. Obligatorio para pagos por transferencia;
+            debe corresponder a una cuenta registrada y activa en Celeste.
+          example: '7777777'
+        numero_transaccion:
+          type: string
+          description: Número o referencia de la transacción. Obligatorio para pagos
+            por transferencia.
+          example: dfff0123456
+        franquicia_tarjeta:
+          type: string
+          description: Franquicia de la tarjeta. Obligatorio para pagos con tarjeta
+            crédito o débito.
+          example: MASTER CARD
+        ultimos_digitos:
+          type: string
+          description: Últimos 4 dígitos de la tarjeta. Obligatorio para pagos con
+            tarjeta crédito o débito.
+          example: '1234'
+        valor:
+          type: string
+          description: Valor pagado por este medio de pago.
+          example: '20000.00'
+    TerceroReceptor:
+      type: object
+      required:
+      - nit
+      - juridico
+      - tipo_identificacion_dian
+      - email
+      - direccion
+      - codigo_pais
+      - codigo_departamento
+      - codigo_municipio
+      properties:
+        nit:
+          type: string
+          description: Identificación del receptor. Obligatorio, sin puntos ni dígito
+            de verificación. Si tipo_identificacion_dian es 42, 47 o 50, o si corresponde
+            a un extranjero, se permite un valor alfanumérico.
+          example: '900795393'
+        juridico:
+          type: string
+          description: Indica si el tercero receptor es jurídico. Obligatorio. Use
+            true para persona jurídica y false para persona natural.
+          example: 'true'
+        tipo_identificacion_dian:
+          type: string
+          description: Tipo de identificación DIAN del receptor. Obligatorio.
+          example: '31'
+        nombre:
+          type: string
+          description: Primer nombre del receptor. Obligatorio cuando juridico = false.
+          example: ''
+        nombre2:
+          type: string
+          description: Segundo nombre del receptor. Opcional.
+          example: ''
+        apellido:
+          type: string
+          description: Primer apellido del receptor. Obligatorio cuando juridico =
+            false.
+          example: ''
+        apellido2:
+          type: string
+          description: Segundo apellido del receptor. Opcional.
+          example: ''
+        razon_social:
+          type: string
+          description: Razón social del receptor. Obligatorio cuando juridico = true.
+          example: Distribuciones la pepita
+        nombre_empresa:
+          type: string
+          description: Nombre comercial de la empresa o negocio. Opcional.
+          example: tienda la pepita
+        email:
+          type: string
+          format: email
+          description: Correo electrónico del receptor. Obligatorio.
+          example: notiene@notiene.com.co
+        telefono:
+          type: string
+          description: Teléfono del receptor. Obligatorio si no se informa celular.
+          example: ''
+        celular:
+          type: string
+          description: Celular del receptor. Obligatorio si no se informa teléfono.
+          example: '3156128040'
+        direccion:
+          type: string
+          description: Dirección del receptor. Obligatorio.
+          example: CL 4 4-82
+        codigo_pais:
+          type: string
+          description: Código de país DIAN. Obligatorio.
+          example: CO
+        codigo_departamento:
+          type: string
+          description: Código DANE del departamento. Obligatorio.
+          example: '76'
+        codigo_municipio:
+          type: string
+          description: Código DANE del municipio. Obligatorio.
+          example: '001'
+    Descuento:
+      type: object
+      description: Objeto de descuento. Es obligatorio cuando producto_gratuito =
+        true. Cuando producto_gratuito = false. Si no existe un valor de descuento no se debe enviar.
+      properties:
+        porcentaje_descuento:
+          type: string
+          description: Porcentaje de descuento con hasta 6 decimales. Si se envían
+            porcentaje_descuento y valor_descuento, se da prioridad al porcentaje.
+            Debe ser 100 cuando producto_gratuito = true.
+          example: '0'
+        valor_descuento:
+          type: string
+          description: Valor del descuento en moneda, con impuestos incluidos. Si
+            se envía junto con porcentaje_descuento, se da prioridad al porcentaje.
+          example: '0'
+        valor_base_descuento:
+          type: string
+          description: Base sobre la cual se aplica el descuento. Obligatorio cuando
+            producto_gratuito = true.
+          example: ''
+    ProductoFacturaVenta:
+      type: object
+      required:
+      - producto_codigo
+      - cantidad
+      - subtotal
+      - producto_gratuito
+      properties:
+        producto_codigo:
+          type: string
+          description: Código del producto. Obligatorio. El producto debe estar registrado
+            en Celeste.
+          example: '20116'
+        unidad_medida:
+          type: string
+          description: Unidad de medida. Obligatorio si la empresa trabaja con presentaciones.
+          example: Libra
+        cantidad:
+          type: string
+          description: Cantidad vendida. Obligatorio. Puede tener hasta 6 decimales.
+          example: '1'
+        valor_unitario_final:
+          type: string
+          description: Valor unitario final con impuestos incluidos. Opcional. Si
+            se envía, se respeta y no se recalcula. Si producto_gratuito = true, debe
+            ser cero.
+          example: '10000'
+        subtotal:
+          type: string
+          description: Total por fila con impuestos incluidos y descuento aplicado.
+            Obligatorio. Corresponde al valor unitario por la cantidad, redondeado
+            a dos decimales para factura nacional. Si producto_gratuito = true, debe
+            ser cero.
+          example: '20000'
+        descripcion:
+          type: string
+          description: Descripción del producto. Opcional.
+          example: gl Corriente
+        producto_gratuito:
+          type: string
+          description: Indica si el producto es gratuito. Obligatorio. Si es true,
+            el porcentaje de descuento debe ser 100 y los valores del producto deben
+            quedar sin valor/cero según corresponda.
+          example: 'false'
+        descuento:
+          "$ref": "#/components/schemas/Descuento"
+    DatosGeneralesDocumento:
+      type: object
+      required:
+      - nit_tercero_emisor
+      - hora_generacion
+      - fecha_generacion
+      - fecha_vencimiento
+      - valor_total
+      - contingencia
+      properties:
+        nit_tercero_emisor:
+          type: string
+          description: NIT del tercero emisor. Obligatorio, sin puntos ni dígito de
+            verificación.
+          example: '7777777777'
+        tipo_moneda:
+          type: string
+          description: Código de moneda. Por defecto COP. Solo es necesario enviarlo
+            para factura de exportación.
+          default: COP
+          example: COP
+        hora_generacion:
+          type: string
+          description: Hora de generación del documento en formato HH:mm:ss.
+          example: '10:48:24'
+        fecha_generacion:
+          type: string
+          format: date
+          description: Fecha de generación del documento.
+          example: '2026-04-29'
+        fecha_vencimiento:
+          type: string
+          format: date
+          description: Fecha de vencimiento del documento.
+          example: '2026-04-21'
+        gen_uuid:
+          type: string
+          description: UUID opcional para trazabilidad de consultas. Aunque es opcional,
+            se recomienda enviarlo para poder consultar y rastrear posteriormente
+            el documento. Si no se envía, el sistema genera uno automáticamente.
+          example: 554bde42-d5dd-4594-a18c-5c1ca7035797
+        observaciones:
+          type: string
+          description: Observaciones generales del documento. Opcional.
+          example: esta es la observacion del documento para prueba
+        valor_total:
+          type: string
+          description: Valor total del documento con impuestos incluidos.
+          example: '40000'
+        contingencia:
+          type: string
+          description: Indica si la factura se genera en modo contingencia.
+          example: 'false'
+    DocumentoFacturaVenta:
+      type: object
+      required:
+      - datos_generales_documento
+      - tercero_receptor
+      - descripcion_productos
+      - formas_pago
+      properties:
+        datos_generales_documento:
+          "$ref": "#/components/schemas/DatosGeneralesDocumento"
+        tercero_receptor:
+          "$ref": "#/components/schemas/TerceroReceptor"
+        descripcion_productos:
+          type: array
+          minItems: 1
+          items:
+            "$ref": "#/components/schemas/ProductoFacturaVenta"
+        formas_pago:
+          type: array
+          minItems: 1
+          items:
+            "$ref": "#/components/schemas/FormaPago"
+    FacturaVentaRequest:
+      type: object
+      required:
+      - documento
+      properties:
+        documento:
+          "$ref": "#/components/schemas/DocumentoFacturaVenta"
+    FacturaVentaResponse:
+      type: object
+      properties:
+        statusHttp:
+          type: integer
+          example: 200
+        response:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            code:
+              type: integer
+              example: 20
+            status:
+              type: string
+              example: OK
+            message:
+              type: string
+              example: Proceso Terminado
+            data:
+              type: object
+              properties:
+                numero_factura:
+                  type: string
+                  example: SETP 994001065
+                fecha_factura:
+                  type: string
+                  format: date
+                  example: '2026-04-29'
+                gen_uuid:
+                  type: string
+                  format: uuid
+                  example: df1d4353-8381-443d-87ea-5a53bea4328a
+                contingencia:
+                  type: string
+                  example: 'false'
+    ConsultaFacturaVentaResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        status:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Factura consultada correctamente.
+        data:
+          type: object
+          properties:
+            numero_factura:
+              type: integer
+              example: 6750
+            fecha_factura:
+              type: string
+              format: date
+              example: '2026-02-07'
+            estado:
+              type: string
+              example: aprobada
+            attached_document:
+              type: string
+              description: codificado en base64
+              example: JVBERi0xLjUKJeLjz9MKMyAwIG9iago8PC9Db2xvclNwYWNlL...
+    DatosGeneralesPedidoVenta:
+      type: object
+      required:
+      - nit_tercero_emisor
+      - hora_generacion
+      - fecha_generacion
+      - fecha_vencimiento
+      - valor_total
+      properties:
+        nit_tercero_emisor:
+          type: string
+          description: NIT del tercero emisor. Obligatorio, sin puntos ni dígito de
+            verificación.
+          example: '7777777777'
+        hora_generacion:
+          type: string
+          description: Hora de generación del pedido en formato HH:mm:ss.
+          example: '10:48:24'
+        fecha_generacion:
+          type: string
+          format: date
+          description: Fecha de generación del pedido.
+          example: '2026-04-29'
+        fecha_vencimiento:
+          type: string
+          format: date
+          description: Fecha de vencimiento del pedido.
+          example: '2026-04-21'
+        gen_uuid:
+          type: string
+          description: UUID opcional para trazabilidad de consultas. Aunque es opcional,
+            se recomienda enviarlo para poder consultar y rastrear posteriormente
+            el pedido. Si no se envía, el sistema genera uno automáticamente.
+          example: 554bde42-d5dd-4594-a18c-5c1ca7035797
+        observaciones:
+          type: string
+          description: Observaciones generales del pedido. Opcional.
+          example: esta es la observacion del documento para prueba
+        valor_total:
+          type: string
+          description: Valor total del pedido con impuestos incluidos.
+          example: '40000'
+    ProductoPedidoVenta:
+      type: object
+      required:
+      - producto_codigo
+      - cantidad
+      - subtotal
+      - producto_gratuito
+      properties:
+        producto_codigo:
+          type: string
+          description: Código del producto. Obligatorio. El producto debe estar registrado
+            en Celeste.
+          example: '20213'
+        unidad_medida:
+          type: string
+          description: Unidad de medida. Obligatorio si la empresa trabaja con presentaciones.
+          example: Libra
+        cantidad:
+          type: string
+          description: Cantidad vendida. Obligatorio. Puede tener hasta 6 decimales.
+          example: '1'
+        valor_unitario_final:
+          type: string
+          description: Valor unitario final con impuestos incluidos. Opcional. Si
+            se envía, se respeta y no se recalcula. Si producto_gratuito = true, debe
+            ser cero.
+          example: '10000'
+        subtotal:
+          type: string
+          description: Total por fila con impuestos incluidos y descuento aplicado.
+            Obligatorio. Corresponde al valor unitario por la cantidad, redondeado
+            a dos decimales para pedido nacional. Si producto_gratuito = true, debe
+            ser cero.
+          example: '20000'
+        descripcion:
+          type: string
+          description: Descripción del producto. Opcional.
+          example: gl Corriente
+        producto_gratuito:
+          type: string
+          description: Indica si el producto es gratuito. Obligatorio. Si es true,
+            el porcentaje de descuento debe ser 100 y los valores del producto deben
+            quedar sin valor/cero según corresponda.
+          example: 'false'
+        descuento:
+          "$ref": "#/components/schemas/Descuento"
+    DocumentoPedidoVenta:
+      type: object
+      required:
+      - datos_generales_documento
+      - tercero_receptor
+      - descripcion_productos
+      properties:
+        datos_generales_documento:
+          "$ref": "#/components/schemas/DatosGeneralesPedidoVenta"
+        tercero_receptor:
+          "$ref": "#/components/schemas/TerceroReceptor"
+        descripcion_productos:
+          type: array
+          minItems: 1
+          items:
+            "$ref": "#/components/schemas/ProductoPedidoVenta"
+    PedidoVentaRequest:
+      type: object
+      required:
+      - documento
+      properties:
+        documento:
+          "$ref": "#/components/schemas/DocumentoPedidoVenta"
+    PedidoVentaResponse:
+      type: object
+      properties:
+        statusHttp:
+          type: integer
+          example: 200
+        response:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            code:
+              type: integer
+              example: 20
+            status:
+              type: string
+              example: OK
+            message:
+              type: string
+              example: Proceso Terminado
+            data:
+              type: object
+              properties:
+                numero_pedido:
+                  type: string
+                  example: PED 994001065
+                fecha_pedido:
+                  type: string
+                  format: date
+                  example: '2026-04-29'
+                gen_uuid:
+                  type: string
+                  format: uuid
+                  example: df1d4353-8381-443d-87ea-5a53bea4328a
+    ConsultaPedidoVentaResponse:
+      type: object
+      properties:
+        statusHttp:
+          type: integer
+          example: 200
+        response:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            code:
+              type: integer
+              example: 20
+            status:
+              type: string
+              example: OK
+            message:
+              type: string
+              example: OK
+            data:
+              type: object
+              properties:
+                numero_pedido:
+                  type: string
+                  description: Número asignado al pedido de venta.
+                  example: PED 994001067
+                estado:
+                  type: integer
+                  description: 'Estado del pedido: 0 = aprobado, 1 = pendiente, 2
+                    = rechazado.'
+                  enum:
+                  - 0
+                  - 1
+                  - 2
+                  example: 1
+                fecha_pedido:
+                  type: string
+                  format: date-time
+                  description: Fecha y hora registrada para el pedido.
+                  example: '2026-04-29T22:11:17.594010'
+paths:
+  "/webhook/api/auth":
+    post:
+      tags:
+      - Autenticación
+      summary: Generar token de acceso
+      description: |
+        Genera un token de acceso para consumir los endpoints protegidos de la API.
+
+        Para autenticarse, la empresa debe tener un servicio activo en Celeste.
+
+        El token generado tiene una vigencia de 24 horas. Una vez vencido, se debe solicitar un nuevo token.
+
+        Content-Type requerido: application/json
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/AuthRequest"
+            examples:
+              ejemplo:
+                summary: Solicitud de token
+                value:
+                  client-id: 8f0d1a6b-2e43-4e2f-9a7b-6c15d83f2a91
+                  nit: '2222222222'
+                  user-token: a9f4c1e7b8d2036f5a91c0b2e4d7f863
+      responses:
+        '200':
+          description: Autenticación exitosa y token generado
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AuthResponse"
+              examples:
+                ok:
+                  summary: Token generado correctamente
+                  value:
+                    success: true
+                    code: 20
+                    status: OK
+                    message: OK
+                    data:
+                      token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJDZWxlc3RlQVBJIiwiZXhwIjoxNzY2ODAwMDAwfQ.sandbox_signature_example
+                      empresa_id: 620
+                      expiracion: '2026-04-28T08:43:03.358'
+        '400':
+          description: Solicitud incorrecta por campos obligatorios, formato inválido
+            o credenciales inválidas
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                camposObligatorios:
+                  summary: Campos obligatorios faltantes
+                  value:
+                    success: false
+                    code: 40
+                    status: Bad Request
+                    message: Los campos client-id, user-token y nit son obligatorios
+                    data: ''
+                clientIdInvalido:
+                  summary: client-id inválido
+                  value:
+                    success: false
+                    code: 41
+                    status: Bad Request
+                    message: 'Error en client-id: Debe ser un UUID válido.'
+                    data: ''
+                nitInvalido:
+                  summary: NIT inválido
+                  value:
+                    success: false
+                    code: 42
+                    status: Bad Request
+                    message: 'Error en nit: Solo números permitidos.'
+                    data: ''
+                credencialesInvalidas:
+                  summary: Usuario o contraseña inválidos
+                  value:
+                    success: false
+                    code: 43
+                    status: Bad Request
+                    message: Usuario o contraseña inválidos
+                    data: ''
+        '409':
+          description: Conflicto durante la autenticación o empresa sin servicio activo
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                problemasInicioSesion:
+                  summary: Problemas iniciando sesión
+                  value:
+                    success: false
+                    code: 48
+                    status: Conflict
+                    message: Problemas iniciando sesión. Por favor vuelva a solicitar
+                      token.
+                    data: ''
+                empresaSinServicio:
+                  summary: Empresa sin servicio activo
+                  value:
+                    success: false
+                    code: 49
+                    status: Conflict
+                    message: La empresa no cuenta con un servicio activo en Celeste
+                    data: ''
+        '415':
+          description: Content-Type distinto de application/json
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                unsupportedMediaType:
+                  summary: Content-Type no soportado
+                  value:
+                    success: false
+                    code: 45
+                    status: Unsupported Media Type
+                    message: Esta petición solo acepta Content-Type 'application/json'.
+                    data: ''
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                problemasRed:
+                  summary: Problemas con la red
+                  value:
+                    success: false
+                    code: 50
+                    status: Internal Server Error
+                    message: Problemas con la red
+                    data: ''
+  "/webhook/api/factura_venta":
+    post:
+      tags:
+      - Factura electrónica de venta
+      summary: Registrar factura electrónica de venta
+      description: |
+        Registra una factura electrónica de venta.
+
+        Requiere un token válido enviado en el header `Authorization` con el formato: `Bearer <token>`.
+
+        También requiere los headers `X-Celeste-Nit` y `X-Celeste-Client-Id`.
+
+        Content-Type requerido: `application/json`.
+
+        El campo `gen_uuid` es opcional, pero se recomienda enviarlo para facilitar la trazabilidad de consultas posteriores.
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/FacturaVentaRequest"
+            examples:
+              ejemploCompleto:
+                summary: Ejemplo de registro de factura electrónica de venta
+                value:
+                  documento:
+                    datos_generales_documento:
+                      nit_tercero_emisor: '7777777777'
+                      tipo_moneda: COP
+                      hora_generacion: '10:48:24'
+                      fecha_generacion: '2026-04-29'
+                      fecha_vencimiento: '2026-04-21'
+                      gen_uuid: ''
+                      observaciones: esta es la observacion del documento para prueba
+                      valor_total: '40000'
+                      contingencia: 'false'
+                    tercero_receptor:
+                      nit: '900795393'
+                      juridico: 'true'
+                      tipo_identificacion_dian: '31'
+                      nombre: ''
+                      nombre2: ''
+                      apellido: ''
+                      apellido2: ''
+                      razon_social: Distribuciones la pepita
+                      nombre_empresa: tienda la pepita
+                      email: notiene@notiene.com.co
+                      telefono: ''
+                      celular: '3156128040'
+                      direccion: CL 4 4-82
+                      codigo_pais: CO
+                      codigo_departamento: '76'
+                      codigo_municipio: '001'
+                    descripcion_productos:
+                    - producto_codigo: '20116'
+                      unidad_medida: Libra
+                      cantidad: '1'
+                      valor_unitario_final: '10000'
+                      subtotal: '20000'
+                      descripcion: gl Corriente
+                      producto_gratuito: 'false'
+                      descuento:
+                        porcentaje_descuento: '0'
+                        valor_descuento: '0'
+                        valor_base_descuento: ''
+                    formas_pago:
+                    - forma_pago_dian: '1'
+                      medio_pago_dian_codigo: '11'
+                      valor: '20000.00'
+      responses:
+        '200':
+          description: Factura registrada correctamente
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/FacturaVentaResponse"
+              examples:
+                ok:
+                  summary: Factura registrada correctamente
+                  value:
+                    statusHttp: 200
+                    response:
+                      success: true
+                      code: 20
+                      status: OK
+                      message: Proceso Terminado
+                      data:
+                        numero_factura: SETP 994001065
+                        fecha_factura: '2026-04-29'
+                        gen_uuid: df1d4353-8381-443d-87ea-5a53bea4328a
+                        contingencia: 'false'
+        '400':
+          description: Solicitud incorrecta, credenciales inválidas o datos de factura
+            no válidos
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                campos_obligatorios:
+                  summary: Campos obligatorios faltantes
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 40
+                      status: Bad Request
+                      message: Los campos client-id, Authorization y nit son obligatorios
+                      data: ''
+                usuario_contrasena_invalidos:
+                  summary: Usuario o contraseña inválidos
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 44
+                      status: Bad Request
+                      message: Usuario o contraseña inválidos
+                      data: ''
+                fecha_documento_invalida:
+                  summary: Fecha del documento no válida
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 45
+                      status: Bad Request
+                      message: La fecha del documento no es válida para la emisión
+                        actual. Si necesita facturar con una fecha anterior, utilice
+                        el proceso de contingencia; de lo contrario, ajuste la fecha
+                        e intente nuevamente.
+                      data: ''
+                producto_no_registrado:
+                  summary: Producto no registrado
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 47
+                      status: Bad Request
+                      message: El producto_codigo 20086 no es un producto registrado
+                        en el sistema.
+                      data: ''
+                cantidad_mayor_cero:
+                  summary: Cantidad inválida
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 54
+                      status: Bad Request
+                      message: La cantidad del producto debe ser mayor que cero.
+                      data: ''
+        '401':
+          description: Token inválido o expirado
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                token_expirado:
+                  summary: Token expirado
+                  value:
+                    statusHttp: 401
+                    response:
+                      success: false
+                      code: 41
+                      status: Unauthorized
+                      message: Su token ha expirado
+                      data: ''
+                credenciales_invalidas:
+                  summary: Token inválido
+                  value:
+                    statusHttp: 401
+                    response:
+                      success: false
+                      code: 42
+                      status: Unauthorized
+                      message: Credenciales inválidas
+                      data: ''
+        '403':
+          description: El usuario autenticado no tiene permisos operativos suficientes
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                sin_sucursal_virtual:
+                  summary: Usuario sin sucursal virtual
+                  value:
+                    statusHttp: 403
+                    response:
+                      success: false
+                      code: 43
+                      status: Forbidden
+                      message: El usuario no tiene asignado una sucursal virtual,
+                        por favor comuníquese con el administrador del sistema para
+                        que le asigne una.
+                      data: ''
+                sin_caja:
+                  summary: Usuario sin caja asignada
+                  value:
+                    statusHttp: 403
+                    response:
+                      success: false
+                      code: 49
+                      status: Forbidden
+                      message: El usuario no tiene asignada una caja.
+                      data: ''
+        '409':
+          description: Conflicto de sesión, configuración o disponibilidad para registrar
+            la factura
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                sesion_invalida:
+                  summary: Sesión inválida
+                  value:
+                    statusHttp: 409
+                    response:
+                      success: false
+                      code: 48
+                      status: Conflict
+                      message: Problemas iniciando sesión. Por favor vuelva a solicitar
+                        token
+                      data: ''
+                resolucion_dian:
+                  summary: Resolución DIAN no disponible
+                  value:
+                    statusHttp: 409
+                    response:
+                      success: false
+                      code: 46
+                      status: Conflict
+                      message: No fue posible obtener una resolución DIAN válida.
+                      data: ''
+                cuenta_banco:
+                  summary: Cuenta de banco no registrada o inactiva
+                  value:
+                    statusHttp: 409
+                    response:
+                      success: false
+                      code: 51
+                      status: Conflict
+                      message: No se encontró una cuenta de banco registrada o activa
+                        en el sistema.
+                      data: ''
+                cantidad_disponible:
+                  summary: Cantidad disponible insuficiente
+                  value:
+                    statusHttp: 409
+                    response:
+                      success: false
+                      code: 53
+                      status: Conflict
+                      message: La venta del producto '20009' supera la cantidad disponible
+                        en 2 unidades.
+                      data: ''
+        '422':
+          description: La solicitud es válida en estructura, pero no cumple una regla
+            de negocio contable
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                sumas_debito_credito:
+                  summary: Diferencia contable
+                  value:
+                    statusHttp: 422
+                    response:
+                      success: false
+                      code: 52
+                      status: Unprocessable Entity
+                      message: No hay sumas iguales entre débito y crédito.
+                      data: ''
+        '500':
+          description: Error interno del servidor o problema no conocido
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                operation_name:
+                  summary: Error técnico de operación
+                  value:
+                    statusHttp: 500
+                    response:
+                      success: false
+                      code: 50
+                      status: Internal Server Error
+                      message: Problemas con la red
+                      data: ''
+                problema_no_conocido:
+                  summary: Problema no conocido
+                  value:
+                    statusHttp: 500
+                    response:
+                      success: false
+                      code: 50
+                      status: Internal Server Error
+                      message: Problemas con la red
+                      data: ''
+      parameters:
+      - in: header
+        name: X-Celeste-Nit
+        required: true
+        description: NIT de la empresa emisora registrada en Celeste. Debe enviarse
+          sin puntos ni dígito de verificación.
+        schema:
+          type: string
+          example: '2222222222'
+      - in: header
+        name: X-Celeste-Client-Id
+        required: true
+        description: Client ID asignado por Celeste para la integración.
+        schema:
+          type: string
+          format: uuid
+          example: 3f7b2e91-8c4a-4f6d-9b21-6e8a5c0d7f32
+    get:
+      tags:
+      - Factura electrónica de venta
+      summary: Consultar factura electrónica de venta
+      description: |-
+        Consulta una factura electrónica de venta mediante los parámetros `uuid` y `date`.
+
+        Requiere un token válido enviado en el header `Authorization` con el formato: `Bearer <token>`.
+
+        También requiere los headers `X-Celeste-Nit` y `X-Celeste-Client-Id`.
+
+        El parámetro `date` debe enviarse en formato `yyyymmdd`.
+
+        En la respuesta exitosa, el campo `estado` indica el estado de la factura: `0` = aprobada, `1` = pendiente y `2` = rechazada.
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: header
+        name: X-Celeste-Nit
+        required: true
+        description: NIT de la empresa emisora registrada en Celeste. Debe enviarse
+          sin puntos ni dígito de verificación.
+        schema:
+          type: string
+          example: '2222222222'
+      - in: header
+        name: X-Celeste-Client-Id
+        required: true
+        description: Client ID asignado por Celeste para la integración.
+        schema:
+          type: string
+          format: uuid
+          example: 3f7b2e91-8c4a-4f6d-9b21-6e8a5c0d7f32
+      - in: query
+        name: uuid
+        required: true
+        description: UUID de la factura generado o informado al registrar el documento.
+        schema:
+          type: string
+          format: uuid
+          example: 8e3c68e7-06d7-4234-a72b-f4d8f8b55f25
+      - in: query
+        name: date
+        required: true
+        description: Fecha de generación de la factura en formato yyyymmdd.
+        schema:
+          type: string
+          example: '20260423'
+      responses:
+        '200':
+          description: Factura consultada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                    example: 200
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: object
+                        properties:
+                          numero_factura:
+                            type: string
+                            description: Número asignado a la factura electrónica.
+                            example: SETP 994001067
+                          estado:
+                            type: integer
+                            description: 'Estado de la factura: 0 = aprobada, 1 =
+                              pendiente, 2 = rechazada.'
+                            enum:
+                            - 0
+                            - 1
+                            - 2
+                            example: 1
+                          fecha_factura:
+                            type: string
+                            format: date-time
+                            description: Fecha y hora registrada para la factura.
+                            example: '2026-04-29T22:11:17.594010'
+                          attached_document:
+                            type: string
+                            description: Documento adjunto devuelto por la consulta.
+                              Cuando exista, se entrega codificado en Base64.
+                            example: ''
+              examples:
+                aprobada:
+                  summary: Factura aprobada
+                  value:
+                    statusHttp: 200
+                    response:
+                      success: true
+                      code: 20
+                      status: OK
+                      message: OK
+                      data:
+                        numero_factura: SETP 994001066
+                        estado: 0
+                        fecha_factura: '2026-04-29T21:33:22.551700'
+                        attached_document: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgi...
+                pendiente:
+                  summary: Factura pendiente
+                  value:
+                    statusHttp: 200
+                    response:
+                      success: true
+                      code: 20
+                      status: OK
+                      message: OK
+                      data:
+                        numero_factura: SETP 994001067
+                        estado: 1
+                        fecha_factura: '2026-04-29T22:11:17.594010'
+                        attached_document: ''
+                rechazada:
+                  summary: Factura rechazada
+                  value:
+                    statusHttp: 200
+                    response:
+                      success: true
+                      code: 20
+                      status: OK
+                      message: OK
+                      data:
+                        numero_factura: R-SETP 994001060
+                        estado: 2
+                        fecha_factura: '2026-04-17T11:59:35.340077'
+                        attached_document: ''
+        '400':
+          description: Solicitud incorrecta o factura no encontrada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                    example: 200
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              examples:
+                campos_obligatorios:
+                  summary: Campos obligatorios no enviados
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 40
+                      status: Bad Request
+                      message: Los campos client-id, Authorization y nit son obligatorios
+                      data: ''
+                usuario_contrasena_invalidos:
+                  summary: Usuario o contraseña inválidos
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 44
+                      status: Bad Request
+                      message: Usuario o contraseña inválidos
+                      data: ''
+                factura_no_encontrada:
+                  summary: Factura no encontrada
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 51
+                      status: Bad Request
+                      message: Factura no encontrada con los datos proporcionados
+                      data: ''
+        '401':
+          description: Token inválido o expirado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                    example: 200
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              examples:
+                token_expirado:
+                  summary: Token expirado
+                  value:
+                    statusHttp: 401
+                    response:
+                      success: false
+                      code: 41
+                      status: Unauthorized
+                      message: Su token ha expirado
+                      data: ''
+                credenciales_invalidas:
+                  summary: Credenciales inválidas
+                  value:
+                    statusHttp: 401
+                    response:
+                      success: false
+                      code: 42
+                      status: Unauthorized
+                      message: Credenciales inválidas
+                      data: ''
+        '403':
+          description: Usuario sin sucursal virtual asignada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                    example: 200
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              example:
+                statusHttp: 403
+                response:
+                  success: false
+                  code: 43
+                  status: Forbidden
+                  message: El usuario no tiene asignado una sucursal virtual, por
+                    favor comuníquese con el administrador del sistema para que le
+                    asigne una.
+                  data: ''
+        '409':
+          description: Conflicto de sesión.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                    example: 200
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              example:
+                statusHttp: 409
+                response:
+                  success: false
+                  code: 48
+                  status: Conflict
+                  message: Problemas iniciando sesión. Por favor vuelva a solicitar
+                    token
+                  data: ''
+        '500':
+          description: Problemas con la red o error no conocido.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                    example: 200
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              example:
+                statusHttp: 500
+                response:
+                  success: false
+                  code: 50
+                  status: Internal Server Error
+                  message: Problemas con la red
+                  data: ''
+  "/webhook/api/productos":
+    post:
+      tags:
+      - Productos
+      summary: Crear producto
+      description: |
+        Endpoint en construcción.
+
+        La estructura de la petición y las respuestas serán documentadas posteriormente.
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: header
+        name: X-Celeste-Nit
+        required: true
+        description: NIT de la empresa registrada en Celeste. Debe enviarse sin puntos
+          ni dígito de verificación.
+        schema:
+          type: string
+          example: '2222222222'
+      - in: header
+        name: X-Celeste-Client-Id
+        required: true
+        description: Client ID asignado por Celeste para la integración.
+        schema:
+          type: string
+          format: uuid
+          example: 3f7b2e91-8c4a-4f6d-9b21-6e8a5c0d7f32
+      responses:
+        '501':
+          description: Funcionalidad en construcción
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  code:
+                    type: integer
+                    example: 50
+                  status:
+                    type: string
+                    example: Not Implemented
+                  message:
+                    type: string
+                    example: Endpoint en construcción.
+                  data:
+                    type: string
+                    example: ''
+    get:
+      tags:
+      - Productos
+      summary: Consultar productos
+      description: |
+        Consulta los productos registrados y disponibles para la empresa autenticada.
+
+        Requiere un token válido enviado en el header `Authorization` con el formato: `Bearer <token>`.
+
+        También requiere los headers `X-Celeste-Nit` y `X-Celeste-Client-Id`.
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: header
+        name: X-Celeste-Nit
+        required: true
+        description: NIT de la empresa registrada en Celeste. Debe enviarse sin puntos
+          ni dígito de verificación.
+        schema:
+          type: string
+          example: '2222222222'
+      - in: header
+        name: X-Celeste-Client-Id
+        required: true
+        description: Client ID asignado por Celeste para la integración.
+        schema:
+          type: string
+          format: uuid
+          example: 3f7b2e91-8c4a-4f6d-9b21-6e8a5c0d7f32
+      responses:
+        '200':
+          description: Productos consultados correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                    example: 200
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      code:
+                        type: integer
+                        example: 20
+                      status:
+                        type: string
+                        example: OK
+                      message:
+                        type: string
+                        example: Proceso Terminado
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            plu:
+                              type: string
+                              example: ''
+                            marca:
+                              type: string
+                              example: Sin Marca
+                            ajuste:
+                              type: number
+                              example: 0
+                            codigo:
+                              type: integer
+                              example: 4221
+                            precio:
+                              type: number
+                              example: 0
+                            fisicos:
+                              type: number
+                              example: 0
+                            relacion:
+                              type: number
+                              example: 1
+                            categoria:
+                              type: string
+                              example: COMBUSTIBLE
+                            separados:
+                              type: number
+                              example: 0
+                            disponible:
+                              type: number
+                              example: 0
+                            descripcion:
+                              type: string
+                              example: Bioacem 10%
+                            por_entregar:
+                              type: number
+                              example: 0
+                            unidad_medida:
+                              type: string
+                              example: Galon
+                            cantidad_total:
+                              type: number
+                              example: 0
+                            presentacion_id:
+                              type: integer
+                              example: 134
+                            unidad_medida_id:
+                              type: integer
+                              example: 2
+                            tarifa_iva_nombre:
+                              type: string
+                              example: Excluido
+                            cantidad_pendiente:
+                              type: number
+                              example: 0
+                            tarifa_imp_consumo_nombre:
+                              type: string
+                              example: NO A.
+              examples:
+                con_productos:
+                  summary: Productos encontrados
+                  value:
+                    statusHttp: 200
+                    response:
+                      success: true
+                      code: 20
+                      status: OK
+                      message: Proceso Terminado
+                      data:
+                      - plu: ''
+                        marca: Sin Marca
+                        ajuste: 0
+                        codigo: 4221
+                        precio: 0
+                        fisicos: 0
+                        relacion: 1
+                        categoria: COMBUSTIBLE
+                        separados: 0
+                        disponible: 0
+                        descripcion: Bioacem 10%
+                        por_entregar: 0
+                        unidad_medida: Galon
+                        cantidad_total: 0
+                        presentacion_id: 134
+                        unidad_medida_id: 2
+                        tarifa_iva_nombre: Excluido
+                        cantidad_pendiente: 0
+                        tarifa_imp_consumo_nombre: NO A.
+                      - plu: ''
+                        marca: Sin Marca
+                        ajuste: 0
+                        codigo: 4222
+                        precio: 0
+                        fisicos: 0
+                        relacion: 1
+                        categoria: COMBUSTIBLE
+                        separados: 0
+                        disponible: 0
+                        descripcion: Gasolina Corriente Oxigenada 10%
+                        por_entregar: 0
+                        unidad_medida: Galon
+                        cantidad_total: 0
+                        presentacion_id: 135
+                        unidad_medida_id: 2
+                        tarifa_iva_nombre: Excluido
+                        cantidad_pendiente: 0
+                        tarifa_imp_consumo_nombre: NO A.
+                sin_productos:
+                  summary: Sin productos en la sucursal
+                  value:
+                    statusHttp: 200
+                    response:
+                      success: true
+                      code: 20
+                      status: OK
+                      message: No hay productos creados en la sucursal
+                      data: []
+        '400':
+          description: Campos obligatorios no enviados.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                    example: 200
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              example:
+                statusHttp: 400
+                response:
+                  success: false
+                  code: 40
+                  status: Bad Request
+                  message: Los campos client-id, Authorization y nit son obligatorios
+                  data: ''
+        '401':
+          description: Token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                    example: 200
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              examples:
+                token_expirado:
+                  summary: Token expirado
+                  value:
+                    statusHttp: 401
+                    response:
+                      success: false
+                      code: 41
+                      status: Unauthorized
+                      message: Su token ha expirado
+                      data: ''
+                credenciales_invalidas:
+                  summary: Credenciales inválidas
+                  value:
+                    statusHttp: 401
+                    response:
+                      success: false
+                      code: 42
+                      status: Unauthorized
+                      message: Credenciales inválidas
+                      data: ''
+        '403':
+          description: Usuario sin sucursal virtual asignada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                    example: 200
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              example:
+                statusHttp: 403
+                response:
+                  success: false
+                  code: 43
+                  status: Forbidden
+                  message: El usuario no tiene asignado una sucursal virtual, por
+                    favor comuníquese con el administrador del sistema para que le
+                    asigne una.
+                  data: ''
+        '409':
+          description: Conflicto de sesión.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                    example: 200
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              example:
+                statusHttp: 409
+                response:
+                  success: false
+                  code: 48
+                  status: Conflict
+                  message: Problemas iniciando sesión. Por favor vuelva a solicitar
+                    token
+                  data: ''
+        '500':
+          description: Problemas con la red o error no conocido.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                    example: 200
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              example:
+                statusHttp: 500
+                response:
+                  success: false
+                  code: 50
+                  status: Internal Server Error
+                  message: Problemas con la red
+                  data: ''
+  "/webhook/api/pedido_venta":
+    post:
+      tags:
+      - Pedido de venta
+      summary: Registrar pedido de venta
+      description: |
+        Registra un pedido de venta.
+
+        Requiere un token válido enviado en el header `Authorization` con el formato: `Bearer <token>`.
+
+        También requiere los headers `X-Celeste-Nit` y `X-Celeste-Client-Id`.
+
+        Content-Type requerido: `application/json`.
+
+        El campo `gen_uuid` es opcional, pero se recomienda enviarlo para facilitar la trazabilidad de consultas posteriores.
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: header
+        name: X-Celeste-Nit
+        required: true
+        description: NIT de la empresa emisora registrada en Celeste. Debe enviarse
+          sin puntos ni dígito de verificación.
+        schema:
+          type: string
+          example: '2222222222'
+      - in: header
+        name: X-Celeste-Client-Id
+        required: true
+        description: Client ID asignado por Celeste para la integración.
+        schema:
+          type: string
+          format: uuid
+          example: 3f7b2e91-8c4a-4f6d-9b21-6e8a5c0d7f32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/PedidoVentaRequest"
+            examples:
+              ejemploCompleto:
+                summary: Ejemplo de registro de pedido de venta
+                value:
+                  documento:
+                    datos_generales_documento:
+                      nit_tercero_emisor: '7777777777'
+                      hora_generacion: '10:48:24'
+                      fecha_generacion: '2026-04-29'
+                      fecha_vencimiento: '2026-04-21'
+                      gen_uuid: ''
+                      observaciones: esta es la observacion del documento para prueba
+                      valor_total: '40000'
+                    tercero_receptor:
+                      nit: '900795393'
+                      juridico: 'true'
+                      tipo_identificacion_dian: '31'
+                      nombre: ''
+                      nombre2: ''
+                      apellido: ''
+                      apellido2: ''
+                      razon_social: Distribuciones la pepita
+                      nombre_empresa: tienda la pepita
+                      email: notiene@celeste.com.co
+                      telefono: ''
+                      celular: '3156128040'
+                      direccion: CL 4 4-82
+                      codigo_pais: CO
+                      codigo_departamento: '76'
+                      codigo_municipio: '001'
+                    descripcion_productos:
+                    - producto_codigo: '20213'
+                      unidad_medida: Libra
+                      cantidad: '1'
+                      valor_unitario_final: '10000'
+                      subtotal: '20000'
+                      descripcion: gl Corriente
+                      producto_gratuito: 'false'
+                      descuento:
+                        porcentaje_descuento: '0'
+                        valor_descuento: '0'
+                        valor_base_descuento: ''
+      responses:
+        '200':
+          description: Pedido registrado correctamente
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/PedidoVentaResponse"
+              examples:
+                ok:
+                  summary: Pedido registrado correctamente
+                  value:
+                    statusHttp: 200
+                    response:
+                      success: true
+                      code: 20
+                      status: OK
+                      message: Proceso Terminado
+                      data:
+                        numero_pedido: PED 994001065
+                        fecha_pedido: '2026-04-29'
+                        gen_uuid: df1d4353-8381-443d-87ea-5a53bea4328a
+        '400':
+          description: Solicitud incorrecta, credenciales inválidas o datos del pedido
+            no válidos
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                campos_obligatorios:
+                  summary: Campos obligatorios faltantes
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 40
+                      status: Bad Request
+                      message: Los campos client-id, Authorization y nit son obligatorios
+                      data: ''
+                usuario_contrasena_invalidos:
+                  summary: Usuario o contraseña inválidos
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 44
+                      status: Bad Request
+                      message: Usuario o contraseña inválidos
+                      data: ''
+                producto_no_registrado:
+                  summary: Producto no registrado
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 47
+                      status: Bad Request
+                      message: El producto_codigo 20213 no es un producto registrado
+                        en el sistema.
+                      data: ''
+                cantidad_mayor_cero:
+                  summary: Cantidad inválida
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 54
+                      status: Bad Request
+                      message: La cantidad del producto debe ser mayor que cero.
+                      data: ''
+        '401':
+          description: Token inválido o expirado
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                token_expirado:
+                  summary: Token expirado
+                  value:
+                    statusHttp: 401
+                    response:
+                      success: false
+                      code: 41
+                      status: Unauthorized
+                      message: Su token ha expirado
+                      data: ''
+                credenciales_invalidas:
+                  summary: Token inválido
+                  value:
+                    statusHttp: 401
+                    response:
+                      success: false
+                      code: 42
+                      status: Unauthorized
+                      message: Credenciales inválidas
+                      data: ''
+        '403':
+          description: El usuario autenticado no tiene permisos operativos suficientes
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                sin_sucursal_virtual:
+                  summary: Usuario sin sucursal virtual
+                  value:
+                    statusHttp: 403
+                    response:
+                      success: false
+                      code: 43
+                      status: Forbidden
+                      message: El usuario no tiene asignado una sucursal virtual,
+                        por favor comuníquese con el administrador del sistema para
+                        que le asigne una.
+                      data: ''
+                sin_caja:
+                  summary: Usuario sin caja asignada
+                  value:
+                    statusHttp: 403
+                    response:
+                      success: false
+                      code: 49
+                      status: Forbidden
+                      message: El usuario no tiene asignada una caja.
+                      data: ''
+        '409':
+          description: Conflicto de sesión, configuración o disponibilidad para registrar
+            el pedido
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                sesion_invalida:
+                  summary: Sesión inválida
+                  value:
+                    statusHttp: 409
+                    response:
+                      success: false
+                      code: 48
+                      status: Conflict
+                      message: Problemas iniciando sesión. Por favor vuelva a solicitar
+                        token
+                      data: ''
+                cantidad_disponible:
+                  summary: Cantidad disponible insuficiente
+                  value:
+                    statusHttp: 409
+                    response:
+                      success: false
+                      code: 53
+                      status: Conflict
+                      message: La venta del producto '20213' supera la cantidad disponible
+                        en 2 unidades.
+                      data: ''
+        '422':
+          description: La solicitud es válida en estructura, pero no cumple una regla
+            de negocio contable
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                sumas_debito_credito:
+                  summary: Diferencia contable
+                  value:
+                    statusHttp: 422
+                    response:
+                      success: false
+                      code: 52
+                      status: Unprocessable Entity
+                      message: No hay sumas iguales entre débito y crédito.
+                      data: ''
+        '500':
+          description: Error interno del servidor o problema no conocido
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ApiResponse"
+              examples:
+                operation_name:
+                  summary: Error técnico de operación
+                  value:
+                    statusHttp: 500
+                    response:
+                      success: false
+                      code: 50
+                      status: Internal Server Error
+                      message: Problemas con la red
+                      data: ''
+                problema_no_conocido:
+                  summary: Problema no conocido
+                  value:
+                    statusHttp: 500
+                    response:
+                      success: false
+                      code: 50
+                      status: Internal Server Error
+                      message: Problemas con la red
+                      data: ''
+    get:
+      tags:
+      - Pedido de venta
+      summary: Consultar pedido de venta
+      description: |
+        Consulta un pedido de venta mediante los parámetros `uuid` y `date`.
+
+        Requiere un token válido enviado en el header `Authorization` con el formato: `Bearer <token>`.
+
+        También requiere los headers `X-Celeste-Nit` y `X-Celeste-Client-Id`.
+
+        El parámetro `date` debe enviarse en formato `yyyymmdd`.
+
+        En la respuesta exitosa, el campo `estado` indica el estado del pedido: `0` = aprobado, `1` = pendiente y `2` = rechazado.
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: header
+        name: X-Celeste-Nit
+        required: true
+        description: NIT de la empresa emisora registrada en Celeste. Debe enviarse
+          sin puntos ni dígito de verificación.
+        schema:
+          type: string
+          example: '2222222222'
+      - in: header
+        name: X-Celeste-Client-Id
+        required: true
+        description: Client ID asignado por Celeste para la integración.
+        schema:
+          type: string
+          format: uuid
+          example: 3f7b2e91-8c4a-4f6d-9b21-6e8a5c0d7f32
+      - in: query
+        name: uuid
+        required: true
+        description: UUID del pedido generado o informado al registrar el documento.
+        schema:
+          type: string
+          format: uuid
+          example: 8e3c68e7-06d7-4234-a72b-f4d8f8b55f25
+      - in: query
+        name: date
+        required: true
+        description: Fecha de generación del pedido en formato yyyymmdd.
+        schema:
+          type: string
+          example: '20260429'
+      responses:
+        '200':
+          description: Pedido consultado correctamente
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ConsultaPedidoVentaResponse"
+              examples:
+                aprobado:
+                  summary: Pedido aprobado
+                  value:
+                    statusHttp: 200
+                    response:
+                      success: true
+                      code: 20
+                      status: OK
+                      message: OK
+                      data:
+                        numero_pedido: PED 994001066
+                        estado: 0
+                        fecha_pedido: '2026-04-29T21:33:22.551700'
+                pendiente:
+                  summary: Pedido pendiente
+                  value:
+                    statusHttp: 200
+                    response:
+                      success: true
+                      code: 20
+                      status: OK
+                      message: OK
+                      data:
+                        numero_pedido: PED 994001067
+                        estado: 1
+                        fecha_pedido: '2026-04-29T22:11:17.594010'
+                rechazado:
+                  summary: Pedido rechazado
+                  value:
+                    statusHttp: 200
+                    response:
+                      success: true
+                      code: 20
+                      status: OK
+                      message: OK
+                      data:
+                        numero_pedido: R-PED 994001060
+                        estado: 2
+                        fecha_pedido: '2026-04-17T11:59:35.340077'
+        '400':
+          description: Solicitud incorrecta o pedido no encontrado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              examples:
+                campos_obligatorios:
+                  summary: Campos obligatorios no enviados
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 40
+                      status: Bad Request
+                      message: Los campos client-id, Authorization y nit son obligatorios
+                      data: ''
+                usuario_contrasena_invalidos:
+                  summary: Usuario o contraseña inválidos
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 44
+                      status: Bad Request
+                      message: Usuario o contraseña inválidos
+                      data: ''
+                pedido_no_encontrado:
+                  summary: Pedido no encontrado
+                  value:
+                    statusHttp: 400
+                    response:
+                      success: false
+                      code: 51
+                      status: Bad Request
+                      message: Pedido no encontrado con los datos proporcionados
+                      data: ''
+        '401':
+          description: Token inválido o expirado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              examples:
+                token_expirado:
+                  summary: Token expirado
+                  value:
+                    statusHttp: 401
+                    response:
+                      success: false
+                      code: 41
+                      status: Unauthorized
+                      message: Su token ha expirado
+                      data: ''
+                credenciales_invalidas:
+                  summary: Credenciales inválidas
+                  value:
+                    statusHttp: 401
+                    response:
+                      success: false
+                      code: 42
+                      status: Unauthorized
+                      message: Credenciales inválidas
+                      data: ''
+        '403':
+          description: Usuario sin sucursal virtual asignada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              examples:
+                sin_sucursal_virtual:
+                  summary: Usuario sin sucursal virtual
+                  value:
+                    statusHttp: 403
+                    response:
+                      success: false
+                      code: 43
+                      status: Forbidden
+                      message: El usuario no tiene asignado una sucursal virtual,
+                        por favor comuníquese con el administrador del sistema para
+                        que le asigne una.
+                      data: ''
+        '409':
+          description: Conflicto de sesión.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              examples:
+                sesion_invalida:
+                  summary: Sesión inválida
+                  value:
+                    statusHttp: 409
+                    response:
+                      success: false
+                      code: 48
+                      status: Conflict
+                      message: Problemas iniciando sesión. Por favor vuelva a solicitar
+                        token
+                      data: ''
+        '500':
+          description: Problemas con la red o error no conocido.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusHttp:
+                    type: integer
+                  response:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      code:
+                        type: integer
+                      status:
+                        type: string
+                      message:
+                        type: string
+                      data:
+                        type: string
+                        example: ''
+              examples:
+                problema_red:
+                  summary: Problemas con la red
+                  value:
+                    statusHttp: 500
+                    response:
+                      success: false
+                      code: 50
+                      status: Internal Server Error
+                      message: Problemas con la red
+                      data: ''

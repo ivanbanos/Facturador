@@ -34,6 +34,6 @@ namespace FacturadorEstacionesRepositorio
         IEnumerable<FactoradorEstacionesModelo.Siges.TurnoSurtidor> ObtenerTurnoInfo(int id);
         void PrepararRetroactivoTurnosPendientes();
         void AgregarFacturasDesdeIdVentaPorFecha(DateTime fecha);
-
+        List<Anticipo> GetAnticiposPorTurno(int idIsla, int numTurno, DateTime fechaTurno);
     }
 }

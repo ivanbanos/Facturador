@@ -23,22 +23,31 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         private readonly ITerceroRepositorio _terceroRepositorio;
         private readonly IMapper _mapper;
         private readonly IFacturacionElectronicaFacade _alegraFacade;
+        private readonly ISyscafeService _syscafeService;
         private readonly Alegra _alegra;
         private readonly IValidadorGuidAFacturaElectronica _validadorGuidAFacturaElectronica;
         private readonly ICombustiblesEstacionRepository _combustiblesEstacionRepository;
         private readonly ITurnoRepositorio _turnoRepositorio;
 
         public OrdenDeDespachoNegocio(IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio,
-                                       IMapper mapper, IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, ITerceroRepositorio terceroRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, ICombustiblesEstacionRepository combustiblesEstacionRepository, ITurnoRepositorio turnoRepositorio)
+            ITerceroRepositorio terceroRepositorio,
+            IMapper mapper,
+            IFacturacionElectronicaFacade alegraFacade,
+            IOptions<Alegra> alegra,
+            IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica,
+            ICombustiblesEstacionRepository combustiblesEstacionRepository,
+            ITurnoRepositorio turnoRepositorio,
+            ISyscafeService syscafeService)
         {
             _ordenDeDespachoRepositorio = ordenDeDespachoRepositorio;
+            _terceroRepositorio = terceroRepositorio;
             _mapper = mapper;
             _alegraFacade = alegraFacade;
             _alegra = alegra.Value;
-            _terceroRepositorio = terceroRepositorio;
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
             _combustiblesEstacionRepository = combustiblesEstacionRepository;
             _turnoRepositorio = turnoRepositorio;
+            _syscafeService = syscafeService;
         }
 
         // Normalize incoming search DateTime using configured ServerTimeOffsetHours.
@@ -256,6 +265,13 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         {
             try
             {
+                if (_ordenDeDespachoRepositorio == null || _terceroRepositorio == null || _mapper == null)
+                {
+                    throw new InvalidOperationException("Dependencias no inicializadas en OrdenDeDespachoNegocio.");
+                }
+
+                filtroOrdenDeDespacho ??= new FiltroBusqueda();
+
                 // Normalize incoming search dates to the configured server timezone before hitting the repository.
                 var fechaInicialServer = ConvertToServerTime(filtroOrdenDeDespacho.FechaInicial);
                 var fechaFinalServer = ConvertToServerTime(filtroOrdenDeDespacho.FechaFinal);
@@ -310,8 +326,9 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 }
                 return ordenes.OrderByDescending(x => x.IdVentaLocal);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                
                 throw;
             }
         }
@@ -701,15 +718,96 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
 
         private IEnumerable<ConsolidadoFormaPago> GetConsolidadoFormaPagoOrdenes(IEnumerable<Modelo.OrdenDeDespacho> ordenes)
         {
-            return ordenes
-                .GroupBy(o => string.IsNullOrWhiteSpace(o.FormaDePago) ? "Sin forma de pago" : o.FormaDePago.Trim(), StringComparer.OrdinalIgnoreCase)
-                .Select(g => new ConsolidadoFormaPago
+            var consolidado = new Dictionary<string, ConsolidadoFormaPago>(StringComparer.OrdinalIgnoreCase);
+
+            string NormalizarForma(string forma)
+            {
+                return string.IsNullOrWhiteSpace(forma) ? "Sin forma de pago" : forma.Trim();
+            }
+
+            void Acumular(string forma, decimal total, decimal cantidadCombustible, bool cuentaFactura)
+            {
+                var key = NormalizarForma(forma);
+                if (!consolidado.TryGetValue(key, out var actual))
                 {
-                    FormaPago = g.Key,
-                    CantidadFacturas = g.Count(),
-                    CantidadCombustible = g.Sum(x => Convert.ToDecimal(x.Cantidad)),
-                    Total = g.Sum(x => Convert.ToDecimal(x.Total))
-                })
+                    actual = new ConsolidadoFormaPago
+                    {
+                        FormaPago = key,
+                        CantidadFacturas = 0,
+                        CantidadCombustible = 0,
+                        Total = 0
+                    };
+                    consolidado[key] = actual;
+                }
+
+                if (cuentaFactura)
+                {
+                    actual.CantidadFacturas += 1;
+                }
+
+                actual.Total += total;
+                actual.CantidadCombustible += cantidadCombustible;
+            }
+
+            foreach (var orden in ordenes ?? Enumerable.Empty<Modelo.OrdenDeDespacho>())
+            {
+                var totalFactura = Convert.ToDecimal(orden.Total);
+                var cantidadFactura = Convert.ToDecimal(orden.Cantidad);
+                var formaPago1 = NormalizarForma(orden.FormaDePago);
+                var formaPago2 = string.IsNullOrWhiteSpace(orden.FormaDePago2) ? null : orden.FormaDePago2.Trim();
+
+                if (string.IsNullOrWhiteSpace(formaPago2))
+                {
+                    Acumular(formaPago1, totalFactura, cantidadFactura, true);
+                    continue;
+                }
+
+                var valor1 = orden.Total1 ?? 0m;
+                var valor2 = orden.Total2 ?? 0m;
+
+                if (valor1 <= 0m && valor2 <= 0m)
+                {
+                    Acumular(formaPago1, totalFactura, cantidadFactura, true);
+                    continue;
+                }
+
+                if (valor1 <= 0m)
+                {
+                    valor1 = Math.Max(0m, totalFactura - valor2);
+                }
+
+                if (valor2 <= 0m)
+                {
+                    valor2 = Math.Max(0m, totalFactura - valor1);
+                }
+
+                if (valor1 > totalFactura)
+                {
+                    valor1 = totalFactura;
+                    valor2 = 0m;
+                }
+                else if ((valor1 + valor2) != totalFactura)
+                {
+                    valor2 = Math.Max(0m, totalFactura - valor1);
+                }
+
+                var proporcion1 = totalFactura > 0m ? Math.Max(0m, Math.Min(1m, valor1 / totalFactura)) : 0m;
+                var cantidad1 = cantidadFactura * proporcion1;
+                var cantidad2 = cantidadFactura - cantidad1;
+
+                if (valor1 > 0m)
+                {
+                    Acumular(formaPago1, valor1, cantidad1, true);
+                }
+
+                if (valor2 > 0m)
+                {
+                    Acumular(formaPago2, valor2, cantidad2, false);
+                }
+            }
+
+            return consolidado.Values
+                .OrderBy(x => x.FormaPago)
                 .ToList();
         }
 

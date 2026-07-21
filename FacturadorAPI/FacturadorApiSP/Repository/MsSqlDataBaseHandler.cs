@@ -780,5 +780,21 @@ namespace MachineUtilizationApi.Repository
                 {"@consecutivo", consecutivo }
                             });
         }
+
+        public async Task CrearAnticipo(int idIsla, int numTurno, DateTime fechaTurno, string nombre, string placa, decimal monto, string turnoGuid)
+        {
+            ConnectionString = _settings.Facturacion;
+            await LoadDataTableFromStoredProcAsync("CrearAnticipo",
+                new Dictionary<string, object>
+                {
+                    { "@turnoGuid", turnoGuid ?? string.Empty },
+                    { "@idIsla", idIsla },
+                    { "@numTurno", numTurno },
+                    { "@fechaTurno", fechaTurno.Date },
+                    { "@nombre", nombre ?? string.Empty },
+                    { "@placa", placa ?? string.Empty },
+                    { "@monto", monto },
+                });
+        }
     }
 }

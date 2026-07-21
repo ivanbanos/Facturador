@@ -16,7 +16,6 @@ import {
   CSpinner,
   CBadge,
   CAlert,
-  CCollapse,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import {
@@ -49,7 +48,6 @@ const OrdenDespachoDetalle = () => {
   const [loading, setLoading] = useState(true)
   const [facturaElectronica, setFacturaElectronica] = useState(null)
   const [loadingFacturaElectronica, setLoadingFacturaElectronica] = useState(false)
-  const [mostrarFacturaElectronica, setMostrarFacturaElectronica] = useState(false)
 
   // Cargar datos de la orden al montar el componente
   useEffect(() => {
@@ -129,6 +127,14 @@ const OrdenDespachoDetalle = () => {
       currency: 'COP',
     }).format(amount || 0)
   }
+
+  const getFormaPago1 = () => orden?.formaDePago || orden?.formaPago || orden?.FormaDePago || 'N/A'
+
+  const getFormaPago2 = () => orden?.formaDePago2 || orden?.formaPago2 || orden?.FormaDePago2 || ''
+
+  const getTotalPago1 = () => orden?.total1 ?? orden?.Total1 ?? orden?.total ?? 0
+
+  const getTotalPago2 = () => orden?.total2 ?? orden?.Total2 ?? 0
 
   // Función para obtener el color del badge según el estado
   const getEstadoBadgeColor = (estado) => {
@@ -210,7 +216,21 @@ const OrdenDespachoDetalle = () => {
                 stack: [
                   { text: [{ text: 'Cliente: ', bold: true }, orden.nombreTercero || 'N/A'] },
                   { text: [{ text: 'Documento: ', bold: true }, orden.identificacion || 'N/A'] },
-                  { text: [{ text: 'Forma de Pago: ', bold: true }, orden.formaDePago || 'N/A'] },
+                  { text: [{ text: 'Forma de Pago 1: ', bold: true }, getFormaPago1()] },
+                  {
+                    text: [{ text: 'Valor Pago 1: ', bold: true }, formatCurrency(getTotalPago1())],
+                  },
+                  ...(getFormaPago2()
+                    ? [
+                        { text: [{ text: 'Forma de Pago 2: ', bold: true }, getFormaPago2()] },
+                        {
+                          text: [
+                            { text: 'Valor Pago 2: ', bold: true },
+                            formatCurrency(getTotalPago2()),
+                          ],
+                        },
+                      ]
+                    : []),
                 ],
               },
               {
@@ -269,6 +289,24 @@ const OrdenDespachoDetalle = () => {
                 table: {
                   widths: ['*', 'auto'],
                   body: [
+                    [
+                      { text: 'Pago 1:', bold: true },
+                      {
+                        text: `${getFormaPago1()} - ${formatCurrency(getTotalPago1())}`,
+                        alignment: 'right',
+                      },
+                    ],
+                    ...(getFormaPago2()
+                      ? [
+                          [
+                            { text: 'Pago 2:', bold: true },
+                            {
+                              text: `${getFormaPago2()} - ${formatCurrency(getTotalPago2())}`,
+                              alignment: 'right',
+                            },
+                          ],
+                        ]
+                      : []),
                     [
                       { text: 'Subtotal:', bold: true },
                       {
@@ -503,7 +541,21 @@ const OrdenDespachoDetalle = () => {
                 stack: [
                   { text: [{ text: 'Cliente: ', bold: true }, orden.nombreTercero || 'N/A'] },
                   { text: [{ text: 'Documento: ', bold: true }, orden.identificacion || 'N/A'] },
-                  { text: [{ text: 'Forma de Pago: ', bold: true }, orden.formaDePago || 'N/A'] },
+                  { text: [{ text: 'Forma de Pago 1: ', bold: true }, getFormaPago1()] },
+                  {
+                    text: [{ text: 'Valor Pago 1: ', bold: true }, formatCurrency(getTotalPago1())],
+                  },
+                  ...(getFormaPago2()
+                    ? [
+                        { text: [{ text: 'Forma de Pago 2: ', bold: true }, getFormaPago2()] },
+                        {
+                          text: [
+                            { text: 'Valor Pago 2: ', bold: true },
+                            formatCurrency(getTotalPago2()),
+                          ],
+                        },
+                      ]
+                    : []),
                 ],
               },
               {
@@ -562,6 +614,24 @@ const OrdenDespachoDetalle = () => {
                 table: {
                   widths: ['*', 'auto'],
                   body: [
+                    [
+                      { text: 'Pago 1:', bold: true },
+                      {
+                        text: `${getFormaPago1()} - ${formatCurrency(getTotalPago1())}`,
+                        alignment: 'right',
+                      },
+                    ],
+                    ...(getFormaPago2()
+                      ? [
+                          [
+                            { text: 'Pago 2:', bold: true },
+                            {
+                              text: `${getFormaPago2()} - ${formatCurrency(getTotalPago2())}`,
+                              alignment: 'right',
+                            },
+                          ],
+                        ]
+                      : []),
                     [
                       { text: 'Subtotal:', bold: true },
                       {
@@ -775,16 +845,32 @@ const OrdenDespachoDetalle = () => {
                   </tr>
                   <tr>
                     <td>
-                      <strong>Forma de Pago:</strong>
+                      <strong>Forma de Pago 1:</strong>
                     </td>
-                    <td>{orden.formaDePago || 'N/A'}</td>
+                    <td>{getFormaPago1()}</td>
                   </tr>
                   <tr>
                     <td>
-                      <strong>Vendedor:</strong>
+                      <strong>Valor Pago 1:</strong>
                     </td>
-                    <td>{orden.vendedor || 'N/A'}</td>
+                    <td>{formatCurrency(getTotalPago1())}</td>
                   </tr>
+                  {getFormaPago2() && (
+                    <>
+                      <tr>
+                        <td>
+                          <strong>Forma de Pago 2:</strong>
+                        </td>
+                        <td>{getFormaPago2()}</td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <strong>Valor Pago 2:</strong>
+                        </td>
+                        <td>{formatCurrency(getTotalPago2())}</td>
+                      </tr>
+                    </>
+                  )}
                 </tbody>
               </table>
             </CCol>
@@ -824,6 +910,12 @@ const OrdenDespachoDetalle = () => {
                         {orden.estado || 'N/A'}
                       </CBadge>
                     </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>Vendedor:</strong>
+                    </td>
+                    <td>{orden.vendedor || 'N/A'}</td>
                   </tr>
                 </tbody>
               </table>
@@ -887,12 +979,6 @@ const OrdenDespachoDetalle = () => {
                   </tr>
                   <tr>
                     <td>
-                      <strong>ID Factura Electrónica:</strong>
-                    </td>
-                    <td className="text-break small">{orden.idFacturaElectronica || 'N/A'}</td>
-                  </tr>
-                  <tr>
-                    <td>
                       <strong>Fecha Reporte:</strong>
                     </td>
                     <td>{formatDate(orden.fechaReporte)}</td>
@@ -908,81 +994,69 @@ const OrdenDespachoDetalle = () => {
               <CCol>
                 <CCard className="border-primary">
                   <CCardHeader className="bg-primary text-white">
-                    <CButton
-                      color="primary"
-                      variant="ghost"
-                      className="text-white p-0 border-0 d-flex align-items-center"
-                      onClick={() => setMostrarFacturaElectronica(!mostrarFacturaElectronica)}
-                    >
-                      <span className="me-2">{mostrarFacturaElectronica ? '▲' : '▼'}</span>
-                      <CIcon icon={cilTask} className="me-2" />
-                      Información de Factura Electrónica
-                    </CButton>
+                    <CIcon icon={cilTask} className="me-2" />
+                    Información de Factura Electrónica
                   </CCardHeader>
-                  <CCollapse visible={mostrarFacturaElectronica}>
-                    <CCardBody>
-                      {loadingFacturaElectronica ? (
-                        <div className="text-center p-3">
-                          <CSpinner size="sm" className="me-2" />
-                          Cargando información de factura electrónica...
-                        </div>
-                      ) : facturaElectronica ? (
-                        <CRow>
-                          <CCol md={6}>
-                            <table className="table table-sm">
-                              <tbody>
-                                <tr>
-                                  <td>
-                                    <strong>Consecutivo:</strong>
-                                  </td>
-                                  <td>{facturaElectronica.consecutivo}</td>
-                                </tr>
-                                <tr>
-                                  <td>
-                                    <strong>Fecha:</strong>
-                                  </td>
-                                  <td>{facturaElectronica.fecha}</td>
-                                </tr>
-                                <tr>
-                                  <td>
-                                    <strong>CUFE:</strong>
-                                  </td>
-                                  <td className="text-break small">{facturaElectronica.cufe}</td>
-                                </tr>
-                                <tr>
-                                  <td>
-                                    <strong>Consultar en DIAN:</strong>
-                                  </td>
-                                  <td>
-                                    <a
-                                      href={facturaElectronica.qrUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="btn btn-sm btn-outline-primary"
-                                    >
-                                      Ver en DIAN
-                                    </a>
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </CCol>
-                          <CCol md={6}>
-                            <div className="text-center">
-                              <p className="small text-muted mb-2">
-                                Código QR para consulta en DIAN
-                              </p>
-                              <QRCodeDisplay value={facturaElectronica.qrUrl} size={150} />
-                            </div>
-                          </CCol>
-                        </CRow>
-                      ) : (
-                        <CAlert color="warning" className="mb-0">
-                          No se pudo cargar la información de la factura electrónica.
-                        </CAlert>
-                      )}
-                    </CCardBody>
-                  </CCollapse>
+                  <CCardBody>
+                    {loadingFacturaElectronica ? (
+                      <div className="text-center p-3">
+                        <CSpinner size="sm" className="me-2" />
+                        Cargando información de factura electrónica...
+                      </div>
+                    ) : facturaElectronica ? (
+                      <CRow>
+                        <CCol md={6}>
+                          <table className="table table-sm">
+                            <tbody>
+                              <tr>
+                                <td>
+                                  <strong>Consecutivo:</strong>
+                                </td>
+                                <td>{facturaElectronica.consecutivo}</td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <strong>Fecha:</strong>
+                                </td>
+                                <td>{facturaElectronica.fecha}</td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <strong>CUFE:</strong>
+                                </td>
+                                <td className="text-break small">{facturaElectronica.cufe}</td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <strong>Consultar en DIAN:</strong>
+                                </td>
+                                <td>
+                                  <a
+                                    href={facturaElectronica.qrUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn btn-sm btn-outline-primary"
+                                  >
+                                    Ver en DIAN
+                                  </a>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </CCol>
+                        <CCol md={6}>
+                          <div className="text-center">
+                            <p className="small text-muted mb-2">Código QR para consulta en DIAN</p>
+                            <QRCodeDisplay value={facturaElectronica.qrUrl} size={150} />
+                          </div>
+                        </CCol>
+                      </CRow>
+                    ) : (
+                      <CAlert color="warning" className="mb-0">
+                        No se pudo cargar la información de la factura electrónica.
+                      </CAlert>
+                    )}
+                  </CCardBody>
                 </CCard>
               </CCol>
             </CRow>
@@ -1026,6 +1100,24 @@ const OrdenDespachoDetalle = () => {
             <CCol md={4}>
               <table className="table table-sm">
                 <tbody>
+                  <tr>
+                    <td>
+                      <strong>Pago 1:</strong>
+                    </td>
+                    <td className="text-end">
+                      {getFormaPago1()} - {formatCurrency(getTotalPago1())}
+                    </td>
+                  </tr>
+                  {getFormaPago2() && (
+                    <tr>
+                      <td>
+                        <strong>Pago 2:</strong>
+                      </td>
+                      <td className="text-end">
+                        {getFormaPago2()} - {formatCurrency(getTotalPago2())}
+                      </td>
+                    </tr>
+                  )}
                   <tr>
                     <td>
                       <strong>Subtotal:</strong>

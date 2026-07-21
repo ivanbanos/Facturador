@@ -91,14 +91,28 @@ BEGIN
     ALTER TABLE dbo.FacturasCanastilla ADD turnoguid VARCHAR(50) NULL;
 END
 GO
---ALTER TABLE FacturasCanastilla
---add Vendedor varchar(50) null;
--- ALTER TABLE FacturasCanastilla
---add isla varchar(50) null;
--- ALTER TABLE FacturasCanastilla
---add fechaturno int null;
--- ALTER TABLE FacturasCanastilla
---add turno int null;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'Vendedor' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
+BEGIN
+    ALTER TABLE dbo.FacturasCanastilla ADD Vendedor VARCHAR(50) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'isla' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
+BEGIN
+    ALTER TABLE dbo.FacturasCanastilla ADD isla VARCHAR(50) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'fechaturno' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
+BEGIN
+    ALTER TABLE dbo.FacturasCanastilla ADD fechaturno INT NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'turno' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
+BEGIN
+    ALTER TABLE dbo.FacturasCanastilla ADD turno INT NULL;
+END
 
 GO
 IF EXISTS (SELECT * FROM sys.columns WHERE Name = N'canastillaId' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))

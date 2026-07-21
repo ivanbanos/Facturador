@@ -1051,7 +1051,7 @@ Console.WriteLine($"Factura creada, {respuesta.order_reference}, {respuesta.dian
                         tax_rate = 19,
                         tax_amount = Math.Round((double)articulo.iva, 2),
                         tax_description = "IVA",
-                        tax_base = Math.Round((double)articulo.subtotal, 2),
+                        tax_base = 100,
                         base_amount = Math.Round((double)articulo.subtotal, 2)
                     });
                 }

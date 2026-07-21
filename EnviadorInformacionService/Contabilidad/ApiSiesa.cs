@@ -58,8 +58,11 @@ namespace EnviadorInformacionService.Contabilidad
                 {
                     if (responseString.Contains("El documento ya existe"))
                     {
-                        Logger.Info($"Recibo ya existe en Siesa (marcado como exitoso) - {JsonConvert.SerializeObject(requestContent)}. Respuesta: {responseString}");
-                        return; // Salir sin lanzar excepción, se considera exitoso
+                        if (!EsSoloErrorYaExiste(responseString))
+                            Logger.Warn($"Recibo ya existe en Siesa pero con errores adicionales de config (revisar payload banco) - FacturaLocal={factura.ventaId}. Respuesta: {responseString}");
+                        else
+                            Logger.Info($"Recibo ya existe en Siesa (marcado como exitoso) - {JsonConvert.SerializeObject(requestContent)}. Respuesta: {responseString}");
+                        return; // Salir sin lanzar excepción, el documento ya existe en Siesa
                     }
                     else
                     {
@@ -81,8 +84,11 @@ namespace EnviadorInformacionService.Contabilidad
             {
                 if (responseString.Contains("El documento ya existe"))
                 {
-                    Logger.Info($"Recibo ya existe en Siesa (marcado como exitoso) - {JsonConvert.SerializeObject(requestContent)}. Respuesta: {responseString}");
-                    return; // Salir sin lanzar excepción, se considera exitoso
+                    if (!EsSoloErrorYaExiste(responseString))
+                        Logger.Warn($"Recibo ya existe en Siesa (excepción) pero con errores adicionales de config - FacturaLocal={factura.ventaId}. Respuesta: {responseString}");
+                    else
+                        Logger.Info($"Recibo ya existe en Siesa (marcado como exitoso) - {JsonConvert.SerializeObject(requestContent)}. Respuesta: {responseString}");
+                    return; // Salir sin lanzar excepción, el documento ya existe en Siesa
                 }
                 else
                 {
@@ -117,8 +123,8 @@ namespace EnviadorInformacionService.Contabilidad
                         F353_CONSEC_DOCTO_CRUCE= ConfigurationManager.AppSettings["documentocruce"].ToString(),
                         F353_ID_TIPO_DOCTO_CRUCE=ConfigurationManager.AppSettings["documentorecibo"].ToString(),
                         F353_NRO_CUOTA_CRUCE="11",
-                        F353_FECHA_DSCTO_PP=factura.fecha.ToString("yyyyMMdd"),
-                        F353_FECHA_VCTO=factura.fecha.ToString("yyyyMMdd"),
+                        F353_FECHA_DSCTO_PP=DateTime.Now.ToString("yyyyMMdd"),
+                        F353_FECHA_VCTO=DateTime.Now.ToString("yyyyMMdd"),
                         F354_NOTAS=$"{ConfigurationManager.AppSettings["documentofactura"].ToString()} {factura.ventaId}",
                         F354_TERCERO_VEND= ConfigurationManager.AppSettings["vendedor"].ToString(),
 
@@ -233,8 +239,11 @@ namespace EnviadorInformacionService.Contabilidad
                 {
                     if (responseString.Contains("El documento ya existe"))
                     {
-                        Logger.Info($"Factura ya existe en Siesa (marcada como exitosa) - {contentString}. Respuesta: {responseString}");
-                        return; // Salir sin lanzar excepción, se considera exitosa
+                        if (!EsSoloErrorYaExiste(responseString))
+                            Logger.Warn($"Factura ya existe en Siesa pero con errores adicionales de config (revisar payload banco) - FacturaLocal={factura.ventaId}. Respuesta: {responseString}");
+                        else
+                            Logger.Info($"Factura ya existe en Siesa (marcada como exitosa) - {contentString}. Respuesta: {responseString}");
+                        return; // Salir sin lanzar excepción, el documento ya existe en Siesa
                     }
                     else if (requestIncluyeCaja && permiteFallbackCajaABanco && EsErrorAuxiliarNoManejaCaja(responseString))
                     {
@@ -256,7 +265,10 @@ namespace EnviadorInformacionService.Contabilidad
                         {
                             if (responseStringBanco.Contains("El documento ya existe"))
                             {
-                                Logger.Info($"Factura ya existe en Siesa después de reintento como banco (marcada como exitosa) - {contentStringBanco}. Respuesta: {responseStringBanco}");
+                                if (!EsSoloErrorYaExiste(responseStringBanco))
+                                    Logger.Warn($"Factura ya existe en Siesa (reintento banco) pero con errores adicionales de config - FacturaLocal={factura.ventaId}. Respuesta: {responseStringBanco}");
+                                else
+                                    Logger.Info($"Factura ya existe en Siesa después de reintento como banco (marcada como exitosa) - {contentStringBanco}. Respuesta: {responseStringBanco}");
                                 return;
                             }
 
@@ -288,8 +300,11 @@ namespace EnviadorInformacionService.Contabilidad
             {
                 if (responseString.Contains("El documento ya existe"))
                 {
-                    Logger.Info($"Factura ya existe en Siesa (marcada como exitosa) - {contentString}. Respuesta: {responseString}");
-                    return; // Salir sin lanzar excepción, se considera exitosa
+                    if (!EsSoloErrorYaExiste(responseString))
+                        Logger.Warn($"Factura ya existe en Siesa (excepción) pero con errores adicionales de config - FacturaLocal={factura.ventaId}. Respuesta: {responseString}");
+                    else
+                        Logger.Info($"Factura ya existe en Siesa (marcada como exitosa) - {contentString}. Respuesta: {responseString}");
+                    return; // Salir sin lanzar excepción, el documento ya existe en Siesa
                 }
                 else
                 {
@@ -303,6 +318,42 @@ namespace EnviadorInformacionService.Contabilidad
         {
             return !string.IsNullOrWhiteSpace(response)
                 && response.IndexOf("debe manejar caja", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        /// <summary>
+        /// Returns true ONLY when ALL errors in the Siesa detalle array are "El documento ya existe".
+        /// If there are additional movement configuration errors alongside "ya existe", returns false
+        /// so they are not silently suppressed.
+        /// </summary>
+        private static bool EsSoloErrorYaExiste(string response)
+        {
+            if (string.IsNullOrWhiteSpace(response)) return false;
+            if (!response.Contains("El documento ya existe")) return false;
+            try
+            {
+                var parsed = JsonConvert.DeserializeObject<SiesaBadRequestResponse>(response);
+                if (parsed?.detalle == null || parsed.detalle.Count == 0) return false;
+                return parsed.detalle.All(d =>
+                    d.f_detalle != null &&
+                    d.f_detalle.IndexOf("ya existe", StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            catch
+            {
+                // Cannot parse — be conservative and do not suppress possible real errors
+                return false;
+            }
+        }
+
+        private class SiesaBadRequestResponse
+        {
+            public int codigo { get; set; }
+            public string mensaje { get; set; }
+            public List<SiesaBadRequestDetalle> detalle { get; set; }
+        }
+
+        private class SiesaBadRequestDetalle
+        {
+            public string f_detalle { get; set; }
         }
 
         // Banco: two Movimientocontable entries — revenue credit + bank debit (DOCTO_BANCO=CG).
@@ -324,7 +375,7 @@ namespace EnviadorInformacionService.Contabilidad
                 F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocontableotros"].ToString(),
                 F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocontableotros"].ToString(),
                 F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocontableotros"].ToString(),
-                F351_ID_FE = ConfigurationManager.AppSettings["idfe"].ToString(),
+                F351_ID_FE = "",
                 F351_VALOR_DB = "0",
                 F351_VALOR_CR = factura.total.ToString("0.00", CultureInfo.InvariantCulture),
                 F351_BASE_GRAVABLE = "",
@@ -339,11 +390,13 @@ namespace EnviadorInformacionService.Contabilidad
                 F350_ID_TIPO_DOCTO = docTipo,
                 F350_CONSEC_DOCTO = consecutivo,
                 F351_ID_AUXILIAR = cruce,
-                F351_ID_TERCERO = tercero,
+                F351_ID_TERCERO = "",
                 F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientootros"].ToString(),
                 F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociootros"].ToString(),
                 F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostootros"].ToString(),
-                F351_ID_FE = "",
+                F351_ID_FE = !string.IsNullOrEmpty(ConfigurationManager.AppSettings["idfebanco"])
+                    ? ConfigurationManager.AppSettings["idfebanco"]
+                    : (ConfigurationManager.AppSettings["idfeotros"] ?? ""),
                 F351_VALOR_DB = factura.total.ToString("0.00", CultureInfo.InvariantCulture),
                 F351_VALOR_CR = "0",
                 F351_BASE_GRAVABLE = "",
@@ -379,7 +432,6 @@ namespace EnviadorInformacionService.Contabilidad
             return new
             {
                 Inicial = new List<object> { new { F_CIA = "1" } },
-                Final = new List<object> { new { F_CIA = "1" } },
                 Documentocontable = new List<object> { new {
                     F_CIA = "1",
                     F_CONSEC_AUTO_REG = "0",
@@ -391,7 +443,8 @@ namespace EnviadorInformacionService.Contabilidad
                     F350_IND_ESTADO = "1",
                     F350_NOTAS = nota,
                 }},
-                Movimientocontable = movimientos
+                Movimientocontable = movimientos,
+                Final = new List<object> { new { F_CIA = "1" } }
             };
         }
 
@@ -456,7 +509,7 @@ namespace EnviadorInformacionService.Contabilidad
                     F350_ID_TIPO_DOCTO = docTipo,
                     F350_CONSEC_DOCTO = consecutivo,
                     F351_ID_AUXILIAR = cruce,
-                    F351_ID_TERCERO = tercero,
+                    F351_ID_TERCERO = ObtenerTerceroCxC(tercero),
                     F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocxc"].ToString(),
                     F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocxc"].ToString(),
                     F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocxc"].ToString(),
@@ -465,10 +518,12 @@ namespace EnviadorInformacionService.Contabilidad
                     F351_NOTAS = nota,
                     F353_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"].ToString(),
                     F353_ID_TIPO_DOCTO_CRUCE = docTipo,
-                    F353_CONSEC_DOCTO_CRUCE = ConfigurationManager.AppSettings["documentocruce"].ToString(),
+                    F353_CONSEC_DOCTO_CRUCE = ConfigurationManager.AppSettings["unidadnegociocxc"]?.Trim() == "99"
+                        ? consecutivo
+                        : ConfigurationManager.AppSettings["documentocruce"].ToString(),
                     F353_NRO_CUOTA_CRUCE = "11",
-                    F353_FECHA_VCTO = factura.fecha.ToString("yyyyMMdd"),
-                    F353_FECHA_DSCTO_PP = factura.fecha.ToString("yyyyMMdd"),
+                    F353_FECHA_VCTO = DateTime.Now.ToString("yyyyMMdd"),
+                    F353_FECHA_DSCTO_PP = DateTime.Now.ToString("yyyyMMdd"),
                     F354_TERCERO_VEND = ConfigurationManager.AppSettings["vendedor"].ToString(),
                     F354_NOTAS = $"{docTipo} {consecutivo}"
                 }
@@ -588,11 +643,13 @@ namespace EnviadorInformacionService.Contabilidad
                     F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
                     F350_CONSEC_DOCTO = consecutivo,
                     F351_ID_AUXILIAR = crucePorForma(pagoBanco.FormaPagoId),
-                    F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
+                    F351_ID_TERCERO = "",
                     F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientootros"].ToString(),
                     F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociootros"].ToString(),
                     F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostootros"].ToString(),
-                    F351_ID_FE = "",
+                    F351_ID_FE = !string.IsNullOrEmpty(ConfigurationManager.AppSettings["idfebanco"])
+                        ? ConfigurationManager.AppSettings["idfebanco"]
+                        : (ConfigurationManager.AppSettings["idfeotros"] ?? ""),
                     F351_VALOR_DB = pagoBanco.Valor.ToString("0.00", CultureInfo.InvariantCulture),
                     F351_VALOR_CR = "0",
                     F351_BASE_GRAVABLE = "",
@@ -613,7 +670,7 @@ namespace EnviadorInformacionService.Contabilidad
                 F350_ID_TIPO_DOCTO = docTipo,
                 F350_CONSEC_DOCTO = consecutivo,
                 F351_ID_AUXILIAR = crucePorForma(p.FormaPagoId),
-                F351_ID_TERCERO = tercero,
+                F351_ID_TERCERO = ObtenerTerceroCxC(tercero),
                 F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocxc"].ToString(),
                 F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocxc"].ToString(),
                 F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocxc"].ToString(),
@@ -622,10 +679,12 @@ namespace EnviadorInformacionService.Contabilidad
                 F351_NOTAS = nota,
                 F353_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"].ToString(),
                 F353_ID_TIPO_DOCTO_CRUCE = docTipo,
-                F353_CONSEC_DOCTO_CRUCE = ConfigurationManager.AppSettings["documentocruce"].ToString(),
+                F353_CONSEC_DOCTO_CRUCE = ConfigurationManager.AppSettings["unidadnegociocxc"]?.Trim() == "99"
+                    ? consecutivo
+                    : ConfigurationManager.AppSettings["documentocruce"].ToString(),
                 F353_NRO_CUOTA_CRUCE = "11",
-                F353_FECHA_VCTO = factura.fecha.ToString("yyyyMMdd"),
-                F353_FECHA_DSCTO_PP = factura.fecha.ToString("yyyyMMdd"),
+                F353_FECHA_VCTO = DateTime.Now.ToString("yyyyMMdd"),
+                F353_FECHA_DSCTO_PP = DateTime.Now.ToString("yyyyMMdd"),
                 F354_TERCERO_VEND = ConfigurationManager.AppSettings["vendedor"].ToString(),
                 F354_NOTAS = $"{docTipo} {consecutivo}"
             }).ToList();
@@ -633,9 +692,6 @@ namespace EnviadorInformacionService.Contabilidad
             return new
             {
                 Inicial = new List<Compania> { new Compania() { F_CIA = "1" } },
-                Final = new List<Compania> { new Compania() { F_CIA = "1" } },
-                Caja = caja.Any() ? caja : (List<Caja>)null,
-                MovimientoCxC = cxcMultipago.Any() ? cxcMultipago : (List<MovimientoCxC>)null,
                 Documentocontable = new List<Documentocontable> { new Documentocontable() {
                     F_CIA = "1",
                     F_CONSEC_AUTO_REG = ConfigurationManager.AppSettings["consecutivoautoregulado"].ToString(),
@@ -647,7 +703,10 @@ namespace EnviadorInformacionService.Contabilidad
                     F350_IND_ESTADO = "1",
                     F350_NOTAS = nota,
                 }},
-                Movimientocontable = movimientos
+                Movimientocontable = movimientos,
+                Caja = caja.Any() ? caja : (List<Caja>)null,
+                MovimientoCxC = cxcMultipago.Any() ? cxcMultipago : (List<MovimientoCxC>)null,
+                Final = new List<Compania> { new Compania() { F_CIA = "1" } }
             };
         }
 
@@ -774,6 +833,29 @@ namespace EnviadorInformacionService.Contabilidad
                 .Where(x => int.TryParse(x, out _))
                 .Select(int.Parse)
                 .ToHashSet();
+        }
+
+        /// <summary>
+        /// Returns the NIT to use as F351_ID_TERCERO in MovimientoCxC.
+        /// Looks up tercerocxc_{centroOperacion} in App.config; falls back to the customer NIT.
+        /// Example config: tercerocxc_102=901480596 (COMMODO), tercerocxc_101=860005223 (CHEVRON)
+        /// </summary>
+        private string ObtenerTerceroCxC(string fallbackTercero)
+        {
+            var centroOp = ConfigurationManager.AppSettings["centrooperacionescxc"]?.Trim();
+            if (!string.IsNullOrWhiteSpace(centroOp))
+            {
+                // Primero: override específico por estación+NIT (ej: tercerocxc_102_901990423)
+                var terceroEspecifico = ConfigurationManager.AppSettings[$"tercerocxc_{centroOp}_{fallbackTercero}"];
+                if (!string.IsNullOrWhiteSpace(terceroEspecifico))
+                    return terceroEspecifico.Trim();
+
+                // Luego: override genérico por estación (ej: tercerocxc_102=901480596)
+                var tercerofijoCxc = ConfigurationManager.AppSettings[$"tercerocxc_{centroOp}"];
+                if (!string.IsNullOrWhiteSpace(tercerofijoCxc))
+                    return tercerofijoCxc.Trim();
+            }
+            return fallbackTercero;
         }
 
         private string ObtenerMedioPagoSiesa(int formaPagoId)

@@ -108,6 +108,16 @@ namespace EnviadorInformacionService
                     {
                         try
                         {
+                            if (factura.Venta == null)
+                            {
+                                // Dato errado en origen (venta no encontrada o campo DBNull en la conversión).
+                                // Se marca como enviada para no reintentarla indefinidamente y no tumbar el servicio;
+                                // el detalle del campo/columna en DBNull queda en el log de EstacionesRepositorioSqlServer/Convertidor.
+                                facturasEnviadas.Add(factura.ventaId);
+                                Logger.Error($"Factura ventaId={factura.ventaId}, facturaPOSId={factura.facturaPOSId} tiene datos errados (no se encontró/convirtió la Venta asociada). Se marca como enviada para no bloquear el servicio. Revisar log previo para el detalle del campo DBNull.");
+                                continue;
+                            }
+
                             var infoTemp = "";
                             var facelec = "";
                             var consecutivo = "";
@@ -456,8 +466,8 @@ namespace EnviadorInformacionService
                 }
                 catch (Exception ex)
                 {
-
-                    Logger.Info("Ex" + ex.Message);
+                    Logger.Error($"Error en el ciclo principal de envío a Siesa: {ex.Message}{(ex.InnerException != null ? " | Inner: " + ex.InnerException.Message : "")}");
+                    Logger.Debug(ex.StackTrace);
                     Thread.Sleep(5000);
                 }
             }

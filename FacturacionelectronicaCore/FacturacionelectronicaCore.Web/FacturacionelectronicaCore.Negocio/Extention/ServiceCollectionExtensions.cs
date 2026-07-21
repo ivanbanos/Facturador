@@ -2,6 +2,7 @@
 using EstacionesServicio.Respositorio.Extention;
 using FacturacionelectronicaCore.Negocio.Canastilla;
 using FacturacionelectronicaCore.Negocio.Contabilidad;
+using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 using FacturacionelectronicaCore.Negocio.Estacion;
 using FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio;
 using FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal;
@@ -34,6 +35,8 @@ namespace EstacionesServicio.Negocio.Extention
             services.AddScoped<ITurnoNegocio, TurnoNegocio>();
             services.AddRespositoryDependencies(configuration);
             services.AddSingleton<IValidadorGuidAFacturaElectronica, ValidadorGuidAFacturaElectronica>();
+            services.Configure<SyscafeOptions>(options => configuration.GetSection("Syscafe").Bind(options));
+            services.AddScoped<ISyscafeService, SyscafeService>();
             return services;
         }
     }

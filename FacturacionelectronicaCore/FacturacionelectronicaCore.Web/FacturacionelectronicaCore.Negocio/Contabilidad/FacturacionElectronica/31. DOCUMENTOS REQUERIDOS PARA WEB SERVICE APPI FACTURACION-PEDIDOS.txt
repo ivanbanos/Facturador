@@ -1,0 +1,267 @@
+=============================================================================================
+GUIA PARA EL DESARROLLO/IMPLEMENTACIÓN WEBSERVICE IMPORTAR PEDIDOS/FACTURACIÓN SISTEMA EXTERNO
+=============================================================================================
+SYSCAFE S.A.S. 
+Nit 900.083.058-7
+SysCafe - Software Integrado de Gestión Empresarial
+Version 1.2
+
+----------------------------------------------------------------------------------------------
+1. INTRODUCCIÓN
+----------------------------------------------------------------------------------------------
+La presente guia describe los requerimientos para implementar el webservice
+para ser consumido por el módulo de importación de pedidos o facturación desde un sistema 
+externo que proveea todos los datos para la emisión de la facturación.
+
+----------------------------------------------------------------------------------------------
+2. DESCRIPCIÓN DEL SERVICIO
+----------------------------------------------------------------------------------------------
+El servicio debe desarollarse en API-REST y debera contener un método GET autenticando
+con token BEARER en la cabezera sin vencimiento.
+
+Ejemplo de la petición:  GET -> http://[URL]/GetFacturas?fecha=2020-10-01
+
+Parámetros:
+
+FECHA: fecha en la que se desean consultar los documentos (formato "YYYY- mm-dd").
+CONSEC: Numero indicativo de página (0:sin paginar devolver todos los registros) (1…N:número de página)
+OP: (parámetro reservado para futuras opciones).
+
+Cuerpo de la respuesta : Array de clase DOCUMENT 
+	
+----------------------------------------------------------------------------------------------
+3. DICCIONARIO DE DATOS
+----------------------------------------------------------------------------------------------
+
+CLASE DOCUMENT RAIZ (pk:tipo,numero)
+--------------------------------------------------------------------------------------
+CAMPO		¦ TIPO-ANCHO 	¦O¦ DESCRIPCION
+--------------------------------------------------------------------------------------
+tipo        ¦STRING(3)		¦x¦Campo definido para el tipo de comprobante (Catalogo)		 
+numero      ¦STRING(10)		¦*¦Número documento. si es vacío se asignará automaticamente, caso contrario, obligatorio si noext es vacio.
+noext       ¦STRING(15)		¦*¦Número externo del documento, obligatorio si numero es vacio		
+afecta		¦STRING(13)		¦*¦tipo y número de comprobanta afectado (obligatorio en caso de nota credito)
+fecha       ¦DATE			¦x¦Fecha de expedición del documento.
+fechaven    ¦DATE			¦ ¦Fecha de vencimiento del documento.		
+fpago       ¦STRING(3)		¦ ¦Código relacionado a la forma de pago (Catalogo) solo si es unica y no hay mas formas de pago
+nit         ¦STRING(16)		¦x¦Nit-CC del cliente	
+vendedor    ¦STRING(16)		¦ ¦Nit-CC del vendedor
+bodega      ¦STRING(3)		¦ ¦Codigo bodega salida inventarios
+detalle     ¦STRING(80)		¦ ¦Detalle o descripción de la operación
+obs         ¦STRING(255)    ¦ ¦Observación amplia relacionada a la operacion
+ccosto      ¦STRING(3)      ¦ ¦Centro de costo asociado al comprobante
+succosto    ¦STRING(6)      ¦ ¦Subcentro de costo asociado al comprobante
+cliente		¦OBJECT[cliente]¦ ¦
+items		¦ARRAY[items]	¦x¦
+fpagos		¦ARRAY[fpagos]	¦ ¦
+itvr		¦ARRAY[itvr]	¦ ¦
+itfes       ¦ARRAY[ifes]	¦ ¦
+----------------------------------------------------------------------------------------
+CLASE ITEMS
+----------------------------------------------------------------------------------------
+referencia 	¦STRING(15)		¦*¦Referencia del artículo. obligatorio si servicio es vacio	
+servicio	¦STRING(8)		¦*¦Código de servicio. obligatorio si referencia es vacio
+cant		¦NUMERIC(14,4)	¦ ¦Cantidad del item
+precio		¦NUMERIC(16,2)	¦ ¦Precio del artículo	
+vrunit		¦NUMERIC(16,2)	¦x¦Valor unitario
+vrtotal		¦NUMERIC(16,2)	¦x¦Valor total (cantidad * valor unitario)		
+piva		¦NUMERIC(5,2)	¦x¦Porcentaje de iva	
+vriva		¦NUMERIC(12,2)	¦x¦Valor del iva total
+vrico		¦NUMERIC(12,2)	¦ ¦Valor impuesto consumo 
+----------------------------------------------------------------------------------------
+CLASE CLIENTE
+----------------------------------------------------------------------------------------
+nit	        ¦STRING(20)     ¦x¦Nit o CC del cliente	
+dv          ¦CHAR(1)        ¦ ¦Dígito de verificación del nit 
+            ¦               ¦ ¦N:Nit C:CC E:CExtranj T:TI P:RegCiv A:Pasap 
+claseid		¦CHAR(1)		¦x¦Tipo de identificación	
+nom1		¦STRING(80)     ¦x¦Primer nombre o unico nombre
+nom2		¦STRING(20)	    ¦ ¦Segundo nombre	
+ape1		¦STRING(20)	    ¦ ¦Primer apellido
+ape2		¦STRING(20)	    ¦ ¦Segundo apellido
+nombrec		¦STRING(80)	    ¦ ¦nombre comercial
+dir			¦STRING(60)	    ¦ ¦dirección de ubicación del cliente	
+tel			¦STRING(30)	    ¦ ¦telefono de ubicación del cliente	
+email		¦STRING(60)	    ¦ ¦email del cliente
+ciudad		¦STRING(5)	    ¦ ¦codigo DANE de la ciudad
+----------------------------------------------------------------------------------------
+CLASE FPAGOS
+----------------------------------------------------------------------------------------
+fechaven	¦DATE			¦ ¦Fecha de vencimiento si es por cuota
+cuota		¦STRING(3)		¦ ¦Numero de cuota ej:001-002 Solo si aplica
+vrfpago		¦NUMERIC(12,2)	¦ ¦Valor forma de pago
+nit         ¦STRING(16)		¦ ¦Nit-CC del proveedor
+ctafpago    ¦STRING(15)		¦x¦Cuenta contable de la forma de pago
+----------------------------------------------------------------------------------------
+CLASE ITVR
+----------------------------------------------------------------------------------------
+it			¦STRING(1)		¦ ¦"C" Recargo o "D" Descuento
+cpto		¦STRING(3)		¦x¦Codigo del concepto a utilizar para el descuento o recargo
+detalle		¦STRING(60)		¦ ¦Detalle del descuento o recargo
+valor		¦NUMERIC(15,2)	¦x¦Valor del descuento o recargo
+----------------------------------------------------------------------------------------
+CLASE ITFES (campos adicionales de facturacion en sector salud)
+----------------------------------------------------------------------------------------
+MODALIDAD_PAGO				¦STRING(2)	    ¦ ¦
+COBERTURA_PLAN_BENEFICIOS	¦STRING(2)	    ¦ ¦
+NUMERO_CONTRATO				¦STRING(60)     ¦ ¦
+NUMERO_POLIZA               ¦STRING(60)     ¦ ¦
+COPAGO                      ¦NUMERIC(15,2)  ¦ ¦
+CUOTA_MODERADORA            ¦NUMERIC(15,2)  ¦ ¦
+PAGOS_COMPARTIDOS           ¦NUMERIC(15,2)  ¦ ¦
+ANTICIPOS                   ¦NUMERIC(15,2)  ¦ ¦
+----------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------
+4. EJEMPLO DEL CUERPO RESPUESTA JSON
+----------------------------------------------------------------------------------------------
+[
+	{
+		"tipo": "FV2",
+		"numero": "0000000001",
+		"noext": "1",
+		"fecha": "2020-10-01",
+		"fechaven": "2020-10-01",
+		"fpago": "001",
+		"nit": "93406469",
+		"vendedor" : "1110548582",
+		"ccosto": "001",
+		"succosto": "001001",
+		"detalle": "DESCRIPCION DE LA OPERACION",
+		"obs": "Observacion",
+		"items": [
+			{
+				"referencia": "00001",
+				"servicio": "",
+				"cant": 2,
+				"precio": 15000,
+				"vrunit": 15000,
+				"vrtotal": 30000,
+				"piva": 19,
+				"vriva": 5700,
+				"vrico": 0
+			},
+			{
+				"referencia": "",
+				"servicio": "1",
+				"cant": 1,
+				"precio": 25000,
+				"vrunit": 25000,
+				"vrtotal": 25000,
+				"piva": 0,
+				"vriva": 0,
+				"vrico": 0
+			}
+		],
+		"cliente": {
+			"nit": "93406469",
+			"dv": "0",
+			"claseid": "C",
+			"nom1": "HERNAN",
+			"nom2": "DARIO",
+			"ape1": "TRUJILLO",
+			"ape2": "NORMAN",
+			"nombrec": "SYSCAFE",
+			"dir": "CRA 3 NO 38A-18",
+			"tel": "82739888",
+			"email": "admon@syscafe.com.co",
+			"ciudad" : "73001"
+		},
+		"fpagos": [
+			{
+				"fpago":"001",
+				"fechaven":"2020-10-01",
+				"vrfpago":30700,
+				"tercero":"890256125",
+				"ctafpago":"110505",
+				"cuota":"001"
+			},
+			{
+				"fpago":"002",
+				"fechaven":"2020-10-01",
+				"vrfpago":30000,
+				"tercero":"890256125",
+				"ctafpago":"111005",
+				"cuota":"002"
+			}
+		],
+		"itvr":[
+			{
+				"it":"D",
+				"cpto":"1ZE",
+				"detalle":"DESCUENTO EN VENTA C",
+				"valor":10000
+			},
+			{
+				"it":"C",
+				"cpto":"SPM",
+				"detalle":"RECARGO EN VENTA",
+				"valor":10000
+			}
+		],
+		"itfes":[
+			{
+				"MODALIDAD_PAGO" : "",
+				"COBERTURA_PLAN_BENEFICIOS" : "",
+				"NUMERO_CONTRATO" : "",
+				"NUMERO_POLIZA" : "",
+				"COPAGO" : 0,
+				"CUOTA_MODERADORA" : 0,
+				"PAGOS_COMPARTIDOS" : 0,
+				"ANTICIPOS" : 0
+			}
+		]
+	},
+	{
+		"tipo": "FV1",
+		"numero": "",
+		"noext": "2",
+		"fecha": "2020-10-01",
+		"fechaven": "2020-10-01",
+		"fpago": "006",
+		"nit": "93406469",
+		"vendedor": "",
+		"ccosto": "001",
+		"succosto": "001001",
+		"detalle": "DESCRIPCION DE LA OPERACION",
+		"obs": "Observacion",
+		"items": [
+			{
+				"referencia": "001",
+				"servicio": "",
+				"cant": 10,
+				"precio": 100,
+				"vrunit": 100,
+				"vrtotal": 1000,
+				"piva": 19,
+				"vriva": 1900,
+				"vrico": 0
+			},
+			{
+				"referencia": "",
+				"servicio": "002",
+				"cant": 20,
+				"precio": 200,
+				"vrunit": 200,
+				"vrtotal": 2000,
+				"piva": 19,
+				"vriva": 2800,
+				"vrico": 0
+			}
+		],
+		"cliente": {
+			"nit": "93406469",
+			"dv": "0",
+			"claseid": "C",
+			"nom1": "HERNAN",
+			"nom2": "DARIO",
+			"ape1": "TRUJILLO",
+			"ape2": "NORMAN",
+			"nombrec": "SYSCAFE",
+			"dir": "CRA 3 NO 38A-18",
+			"tel": "82739888",
+			"email": "admon@syscafe.com.co",
+			"ciudad" : "73001"
+		}
+	}    
+]

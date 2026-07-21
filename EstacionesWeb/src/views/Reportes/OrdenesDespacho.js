@@ -203,8 +203,35 @@ const OrdenesDespacho = () => {
     }).format(amount || 0)
   }
 
-  const getFormaPago = (orden) => {
+  const getFormaPago1 = (orden) => {
     return orden.formaDePago || orden.formaPago || orden.FormaDePago || 'N/A'
+  }
+
+  const getFormaPago2 = (orden) => {
+    return orden.formaDePago2 || orden.formaPago2 || orden.FormaDePago2 || ''
+  }
+
+  const getTotalPago1 = (orden) => {
+    return orden.total1 ?? orden.Total1 ?? orden.total ?? 0
+  }
+
+  const getTotalPago2 = (orden) => {
+    return orden.total2 ?? orden.Total2 ?? 0
+  }
+
+  const getFormasPagoDisplay = (orden) => {
+    const formaPago1 = getFormaPago1(orden)
+    const formaPago2 = getFormaPago2(orden)
+    const totalPago1 = getTotalPago1(orden)
+    const totalPago2 = getTotalPago2(orden)
+
+    if (!formaPago2 || Number(totalPago2) === 0) {
+      return `${formaPago1}: ${formatCurrency(totalPago1)}`
+    }
+
+    return `${formaPago1}: ${formatCurrency(totalPago1)} / ${formaPago2}: ${formatCurrency(
+      totalPago2,
+    )}`
   }
 
   const handleFechaInicialChange = (value) => {
@@ -272,7 +299,7 @@ const OrdenesDespacho = () => {
           { text: 'ID Transacción', style: 'tableHeader' },
           { text: 'Fecha y Hora', style: 'tableHeader' },
           { text: 'Cliente', style: 'tableHeader' },
-          { text: 'Forma de Pago', style: 'tableHeader' },
+          { text: 'Formas de Pago', style: 'tableHeader' },
           { text: 'Combustible', style: 'tableHeader' },
           { text: 'Placa', style: 'tableHeader' },
           { text: 'Cantidad', style: 'tableHeader' },
@@ -290,7 +317,7 @@ const OrdenesDespacho = () => {
             orden.numeroTransaccion || orden.idVentaLocal || 'N/A',
             formatDate(orden.fecha),
             `${orden.nombreTercero || 'N/A'}\n${orden.identificacion || ''}`,
-            getFormaPago(orden),
+            getFormasPagoDisplay(orden),
             orden.combustible || 'N/A',
             orden.placa || 'N/A',
             orden.cantidad || '0',
@@ -496,7 +523,10 @@ const OrdenesDespacho = () => {
           'Fecha y Hora',
           'Cliente',
           'Identificación',
-          'Forma de Pago',
+          'Forma de Pago 1',
+          'Valor Pago 1',
+          'Forma de Pago 2',
+          'Valor Pago 2',
           'Combustible',
           'Placa',
           'Cantidad',
@@ -525,7 +555,10 @@ const OrdenesDespacho = () => {
               : 'N/A',
             orden.nombreTercero || 'N/A',
             orden.identificacion || 'N/A',
-            getFormaPago(orden),
+            getFormaPago1(orden),
+            getTotalPago1(orden),
+            getFormaPago2(orden) || 'N/A',
+            getTotalPago2(orden),
             orden.combustible || 'N/A',
             orden.placa || 'N/A',
             orden.cantidad || 0,
@@ -548,7 +581,10 @@ const OrdenesDespacho = () => {
         { width: 12 }, // Fecha
         { width: 25 }, // Cliente
         { width: 15 }, // Identificación
-        { width: 18 }, // Forma de Pago
+        { width: 16 }, // Forma de Pago 1
+        { width: 14 }, // Valor Pago 1
+        { width: 16 }, // Forma de Pago 2
+        { width: 14 }, // Valor Pago 2
         { width: 15 }, // Combustible
         { width: 12 }, // Placa
         { width: 10 }, // Cantidad
@@ -875,6 +911,7 @@ const OrdenesDespacho = () => {
                         <CTableHeaderCell>ID Transacción</CTableHeaderCell>
                         <CTableHeaderCell>Fecha</CTableHeaderCell>
                         <CTableHeaderCell>Cliente</CTableHeaderCell>
+                        <CTableHeaderCell>Formas de Pago</CTableHeaderCell>
                         <CTableHeaderCell>Combustible</CTableHeaderCell>
                         <CTableHeaderCell>Placa</CTableHeaderCell>
                         <CTableHeaderCell>Cantidad</CTableHeaderCell>
@@ -902,6 +939,9 @@ const OrdenesDespacho = () => {
                                 <div className="small text-muted">{orden.identificacion}</div>
                               )}
                             </div>
+                          </CTableDataCell>
+                          <CTableDataCell>
+                            <small>{getFormasPagoDisplay(orden)}</small>
                           </CTableDataCell>
                           <CTableDataCell>
                             <CBadge color="info">{orden.combustible || 'N/A'}</CBadge>

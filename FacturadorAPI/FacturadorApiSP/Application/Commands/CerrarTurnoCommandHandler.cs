@@ -39,9 +39,14 @@ namespace FacturadorAPI.Application.Commands
                 throw new InvalidOperationException("Error de comunicacion con el controlador de isla al cerrar turno.");
             }
 
-            if (!respuesta.Contains("CERA"))
+            if (!respuesta.Contains("CER"))
             {
                 throw new InvalidOperationException($"Respuesta inesperada cerrando turno: {respuesta}");
+            }
+
+            if (!respuesta.Contains("CERA"))
+            {
+                _logger.LogWarning("Respuesta de cierre de turno distinta a CERA (turno igualmente cerrado): {Respuesta}", respuesta);
             }
 
             if (turnoA == null || turnoA.numero <= 0)

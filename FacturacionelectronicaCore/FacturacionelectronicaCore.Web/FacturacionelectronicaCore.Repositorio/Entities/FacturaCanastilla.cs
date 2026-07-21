@@ -13,6 +13,7 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
         public string idFacturaElectronica { get; set; }
+        public bool enviadoContabilidad { get; set; }
 
         public int FacturasCanastillaId { get; set; }
 		public DateTime fecha { get; set; }

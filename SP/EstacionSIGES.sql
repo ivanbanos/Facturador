@@ -3935,13 +3935,44 @@ CREATE procedure [dbo].GetVentaFidelizarAutomaticaPorVenta
 as
 begin try
     set nocount on;
-	select TOP (1) Venta.total as ValorVenta, '' as DocumentoFidelizado, case when FacturasPOS.ventaId is null then convert(varchar,OrdenesDeDespacho.facturaPOSId) else Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo) end as Factura  from Venta
-	left join FacturasPOS on FacturasPOS.ventaId = Venta.Id
-    left join OrdenesDeDespacho on OrdenesDeDespacho.ventaId = Venta.Id
-	inner join Resoluciones on  (FacturasPOS.resolucionId is not null and FacturasPOS.resolucionId = Resoluciones.ResolucionId) or (OrdenesDeDespacho.resolucionId is not null and OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId) 
-	
-	where venta.Id = @idVenta
-	order by venta.id desc
+    declare @ValorVenta float = 0;
+
+    if OBJECT_ID(N'Ventas.dbo.VENTAS', N'U') is not null
+    begin
+        declare @sql nvarchar(max) = N'
+            select top (1) @ValorVentaOut = try_convert(float, v.TOTAL)
+            from Ventas.dbo.VENTAS v
+            where v.CONSECUTIVO = @idVentaParam';
+
+        exec sp_executesql
+            @sql,
+            N'@idVentaParam int, @ValorVentaOut float output',
+            @idVentaParam = @idVenta,
+            @ValorVentaOut = @ValorVenta output;
+    end
+
+    select top (1)
+        isnull(@ValorVenta, 0) as ValorVenta,
+        '' as DocumentoFidelizado,
+        isnull(
+            case
+                when fp.ventaId is null then convert(varchar, od.facturaPOSId)
+                else r.descripcion + '-' + convert(varchar, fp.consecutivo)
+            end,
+            ''
+        ) as Factura
+    from dbo.OrdenesDeDespacho od
+    left join dbo.FacturasPOS fp on fp.ventaId = od.ventaId
+    left join dbo.Resoluciones r on
+        (fp.resolucionId is not null and fp.resolucionId = r.ResolucionId)
+        or (od.resolucionId is not null and od.resolucionId = r.ResolucionId)
+    where od.ventaId = @idVenta
+    order by od.facturaPOSId desc
+
+    if @@ROWCOUNT = 0
+    begin
+        select isnull(@ValorVenta, 0) as ValorVenta, '' as DocumentoFidelizado, '' as Factura
+    end
 
 
 end try

@@ -50,5 +50,6 @@ namespace MachineUtilizationApi.Repository
         Task<TurnoSiges> ObtenerTurnoIslaYFecha(int isla, DateTime fecha, int num);
         Task MandarImprimirObjeto(int idIsla, DateTime fecha, int posicion, string v);
         Task ReimprimirFacturaCanastilla(int consecutivo);
+        Task CrearAnticipo(int idIsla, int numTurno, DateTime fechaTurno, string nombre, string placa, decimal monto, string turnoGuid);
     }
 }

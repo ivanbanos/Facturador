@@ -7,6 +7,8 @@ var DesabilitaFormasNoCredito=true;
 var HabilitarSegundaFormaPago = true;
 var PlacaObligatoriaCanastillaCredito = true;
 var FormasPagos = [1,4,98];
+// IDs de formas de pago que habilitan el campo Número de Transacción
+var FormasPagoConNumeroTransaccion = [1, 2, 3];
 var palabrasPermitidas = [
     "PIMPINAS",
     "CANECAS",

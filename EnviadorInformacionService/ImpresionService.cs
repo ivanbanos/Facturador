@@ -256,6 +256,26 @@ namespace EnviadorInformacionService
                                             }
                                         }
                                         break;
+                                    case "Anticipo":
+                                        {
+                                            var anticipo = _estacionesRepositorio.GetAnticipoPorId(objetoImprimir.Numero);
+                                            if (anticipo == null)
+                                            {
+                                                Logger.Warn($"No se encontro anticipo para imprimir con id {objetoImprimir.Numero}");
+                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                            }
+                                            else if (imprimiendo == 0)
+                                            {
+                                                imprimiendo++;
+                                                ImprimirAnticipo(anticipo);
+                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                            }
+                                            else
+                                            {
+                                                Logger.Warn($"No se pudo imprimir anticipo id={objetoImprimir.Numero}: impresora ocupada");
+                                            }
+                                        }
+                                        break;
                                     case "CierreCanastilla":
                                     case "ReimprimirCierreCanastilla":
                                     case "CierreCana":
@@ -360,7 +380,7 @@ namespace EnviadorInformacionService
                                 {
                                     Thread.Sleep(100);
                                 }
-                                if (factura.impresa == 0)
+                                if (factura.impresa >= 0)
                                 {
                                     break;
                                 }
@@ -617,6 +637,97 @@ namespace EnviadorInformacionService
             }
         }
 
+        private List<LineasImprimir> lineasImprimirAnticipo;
+        private void ImprimirAnticipo(Models.Anticipo anticipo)
+        {
+            try
+            {
+                getLineasImprimirAnticipo(anticipo);
+                printFont = new Font("Console", 9);
+                var pd = new PrintDocument();
+                pd.PrintPage += new PrintPageEventHandler(pd_PrintAnticipo);
+                pd.DefaultPageSettings.Margins.Bottom = 20;
+
+                var printerKey = $"ISLA {anticipo.IdIsla}";
+                if (islasImpresoras.ContainsKey(printerKey))
+                {
+                    pd.PrinterSettings.PrinterName = islasImpresoras[printerKey].Trim();
+                }
+                else
+                {
+                    Logger.Warn($"No se encontro impresora configurada para anticipo en isla {anticipo.IdIsla}. Se usara impresora por defecto.");
+                }
+
+                pd.Print();
+            }
+            catch (Exception ex)
+            {
+                imprimiendo = 0;
+                Logger.Info("Error " + ex.Message);
+                Logger.Info("Error " + ex.StackTrace);
+                Thread.Sleep(5000);
+            }
+        }
+
+        private void getLineasImprimirAnticipo(Models.Anticipo anticipo)
+        {
+            lineasImprimirAnticipo = new List<LineasImprimir>();
+            var guiones = new StringBuilder();
+            guiones.Append('-', _infoEstacion.CaracteresPorPagina > 0 ? _infoEstacion.CaracteresPorPagina : 40);
+
+            lineasImprimirAnticipo.Add(new LineasImprimir(".", true));
+            lineasImprimirAnticipo.Add(new LineasImprimir(_infoEstacion.Razon, true));
+            lineasImprimirAnticipo.Add(new LineasImprimir("NIT             " + _infoEstacion.NIT, false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(_infoEstacion.Nombre, false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(_infoEstacion.Direccion, false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(_infoEstacion.Telefono, false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(guiones.ToString(), false));
+
+            lineasImprimirAnticipo.Add(new LineasImprimir("RECIBO DE ANTICIPO", true));
+            lineasImprimirAnticipo.Add(new LineasImprimir(guiones.ToString(), false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(formatoTotales("Consecutivo :", anticipo.AnticipoId.ToString()), false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(formatoTotales("Isla :", anticipo.IdIsla.ToString()), false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(formatoTotales("Turno :", anticipo.NumTurno.ToString()), false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(formatoTotales("Fecha turno :", anticipo.FechaTurno.ToString("dd/MM/yyyy")), false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(formatoTotales("Fecha registro :", anticipo.FechaRegistro.ToString("dd/MM/yyyy HH:mm:ss")), false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(formatoTotales("Nombre :", string.IsNullOrWhiteSpace(anticipo.Nombre) ? "-" : anticipo.Nombre.Trim()), false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(formatoTotales("Placa :", string.IsNullOrWhiteSpace(anticipo.Placa) ? "-" : anticipo.Placa.Trim()), false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(guiones.ToString(), false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(formatoTotales("Valor anticipo :", "$" + string.Format("{0:N2}", anticipo.Monto)), true));
+            lineasImprimirAnticipo.Add(new LineasImprimir(guiones.ToString(), false));
+
+            lineasImprimirAnticipo.Add(new LineasImprimir("Fabricado por: SIGES SOLUCIONES SAS ", true));
+            lineasImprimirAnticipo.Add(new LineasImprimir("Nit: 901430393-2 ", true));
+            lineasImprimirAnticipo.Add(new LineasImprimir("Nombre: Facturador SIGES ", true));
+            lineasImprimirAnticipo.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? ""), false));
+            lineasImprimirAnticipo.Add(new LineasImprimir(".", true));
+        }
+
+        private void pd_PrintAnticipo(object sender, PrintPageEventArgs ev)
+        {
+            try
+            {
+                float leftMargin = ev.MarginBounds.Left;
+                float topMargin = ev.MarginBounds.Top;
+                int count = 0;
+                printFont = new Font("Console", 8);
+
+                foreach (var linea in lineasImprimirAnticipo)
+                {
+                    count = printLine(linea.linea, ev, count, leftMargin, topMargin, linea.centrada);
+                }
+
+                imprimiendo = 0;
+            }
+            catch (Exception ex)
+            {
+                imprimiendo = 0;
+                Logger.Info("Error " + ex.Message);
+                Logger.Info("Error " + ex.StackTrace);
+                Thread.Sleep(5000);
+            }
+        }
+
         private void getLineasImprimirTurnoBolsa(Bolsa bolsaimprimir)
         {
             lineasImprimirBolsa = new List<LineasImprimir>();
@@ -750,7 +861,10 @@ namespace EnviadorInformacionService
             {
                 if (reporteCierrePorTotal != null && reporteCierrePorTotal.Any())
                 {
-                    AgregarResumenPorFormaDePagoTurno(lineasImprimirTurno, reporteCierrePorTotal, totalVenta, guiones.ToString());
+                    var anticipos = ObtenerAnticiposTurno(isla, turnoimprimir.Numero, turnoimprimir.FechaApertura);
+                    var totalAnticipos = anticipos.Sum(a => a.Monto);
+
+                    AgregarResumenPorFormaDePagoTurno(lineasImprimirTurno, reporteCierrePorTotal, totalVenta, guiones.ToString(), totalAnticipos);
                     AgregarResumenFacturasPorFormaDePagoTurno(lineasImprimirTurno, reporteCierrePorTotal, guiones.ToString());
 
                     lineasImprimirTurno.Add(new LineasImprimir($"Resumen por Combustibles", true));
@@ -779,6 +893,11 @@ namespace EnviadorInformacionService
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total monedas :", turnoimprimir.Bolsas.Sum(x => x.Moneda).ToString()), false));
 
                     lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+
+                    if (anticipos.Any())
+                    {
+                        AgregarResumenAnticiposTurno(lineasImprimirTurno, anticipos, guiones.ToString());
+                    }
                 }
 
             }
@@ -790,7 +909,7 @@ namespace EnviadorInformacionService
             lineasImprimirTurno.Add(new LineasImprimir(".", true));
         }
 
-        private void AgregarResumenPorFormaDePagoTurno(List<LineasImprimir> lineas, IEnumerable<FactoradorEstacionesModelo.Objetos.Factura> facturas, decimal totalVenta, string guiones)
+        private void AgregarResumenPorFormaDePagoTurno(List<LineasImprimir> lineas, IEnumerable<FactoradorEstacionesModelo.Objetos.Factura> facturas, decimal totalVenta, string guiones, decimal totalAnticipos = 0m)
         {
             var totalesPorForma = new Dictionary<int, decimal>();
 
@@ -812,11 +931,42 @@ namespace EnviadorInformacionService
             lineas.Add(new LineasImprimir(guiones, false));
             Logger.Info("facturas turno agrupadas por forma de pago " + JsonConvert.SerializeObject(totalesPorForma));
 
+            // Codigo de efectivo configurable; si no se configura se busca por descripción.
+            int codigoEfectivo = ConfigurationManager.AppSettings["CodigoFormaPagoEfectivo"] != null
+                ? int.TryParse(ConfigurationManager.AppSettings["CodigoFormaPagoEfectivo"], out var cEfec) ? cEfec : -1
+                : -1;
+            if (codigoEfectivo < 0 && formas != null)
+            {
+                var formaEfectivo = formas.FirstOrDefault(f =>
+                    !string.IsNullOrWhiteSpace(f.Descripcion) &&
+                    f.Descripcion.Trim().IndexOf("efectivo", StringComparison.OrdinalIgnoreCase) >= 0);
+                if (formaEfectivo != null) codigoEfectivo = formaEfectivo.Id;
+            }
+
             foreach (var forma in totalesPorForma.Where(x => x.Value > 0).OrderBy(x => x.Key))
             {
-                lineas.Add(new LineasImprimir(
-                    formatoTotales($"{ObtenerDescripcionFormaPagoTurno(forma.Key)} :", $"${string.Format("{0:N2}", forma.Value)}"),
-                    false));
+                var valorMostrar = forma.Value;
+                var etiqueta = ObtenerDescripcionFormaPagoTurno(forma.Key);
+
+                if (totalAnticipos > 0m && forma.Key == codigoEfectivo)
+                {
+                    var efectivoNeto = Math.Max(0m, valorMostrar - totalAnticipos);
+                    lineas.Add(new LineasImprimir(
+                        formatoTotales($"{etiqueta} :", $"${string.Format("{0:N2}", valorMostrar)}"),
+                        false));
+                    lineas.Add(new LineasImprimir(
+                        formatoTotales("(-) Anticipos :", $"${string.Format("{0:N2}", totalAnticipos)}"),
+                        false));
+                    lineas.Add(new LineasImprimir(
+                        formatoTotales($"{etiqueta} neto :", $"${string.Format("{0:N2}", efectivoNeto)}"),
+                        false));
+                }
+                else
+                {
+                    lineas.Add(new LineasImprimir(
+                        formatoTotales($"{etiqueta} :", $"${string.Format("{0:N2}", valorMostrar)}"),
+                        false));
+                }
             }
 
             lineas.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", totalVenta)}"), false));
@@ -893,6 +1043,43 @@ namespace EnviadorInformacionService
             }
 
             totalesPorForma[formaPagoId] += valor;
+        }
+
+        private List<EnviadorInformacionService.Models.Anticipo> ObtenerAnticiposTurno(int isla, int numTurno, DateTime fechaApertura)
+        {
+            try
+            {
+                return _estacionesRepositorio.GetAnticiposPorTurno(isla, numTurno, fechaApertura.Date);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "No se pudieron obtener anticipos para isla={0}, turno={1}, fecha={2}", isla, numTurno, fechaApertura.Date);
+                return new List<EnviadorInformacionService.Models.Anticipo>();
+            }
+        }
+
+        private void AgregarResumenAnticiposTurno(List<LineasImprimir> lineas, List<EnviadorInformacionService.Models.Anticipo> anticipos, string guiones)
+        {
+            lineas.Add(new LineasImprimir("Anticipos de Efectivo", true));
+            lineas.Add(new LineasImprimir(guiones, false));
+            lineas.Add(new LineasImprimir("Nombre/Placa              Monto", false));
+            lineas.Add(new LineasImprimir(guiones, false));
+
+            foreach (var a in anticipos)
+            {
+                var identificador = !string.IsNullOrWhiteSpace(a.Nombre) && !string.IsNullOrWhiteSpace(a.Placa)
+                    ? $"{a.Nombre} / {a.Placa}"
+                    : (!string.IsNullOrWhiteSpace(a.Nombre) ? a.Nombre : a.Placa ?? "-");
+                lineas.Add(new LineasImprimir(
+                    string.Format("{0,-20}  {1,12:N2}", identificador.Length > 20 ? identificador.Substring(0, 20) : identificador, a.Monto),
+                    false));
+            }
+
+            lineas.Add(new LineasImprimir(guiones, false));
+            lineas.Add(new LineasImprimir(
+                formatoTotales("Total anticipos :", $"${string.Format("{0:N2}", anticipos.Sum(a => a.Monto))}"),
+                false));
+            lineas.Add(new LineasImprimir(guiones, false));
         }
 
         private decimal ObtenerTotalFacturaTurno(FactoradorEstacionesModelo.Objetos.Factura factura)
@@ -1011,20 +1198,26 @@ namespace EnviadorInformacionService
 
         private IEnumerable<LineasImprimir> getPuntos(int ventaId)
         {
-            var fidelizado = _estacionesRepositorio.getFidelizado(ventaId);
-            if (fidelizado != null)
+            try
             {
-                fidelizado = _fidelizacion.GetFidelizados(fidelizado.Documento).Result != null ? _fidelizacion.GetFidelizados(fidelizado.Documento).Result.FirstOrDefault() : fidelizado;
+                var fidelizado = _estacionesRepositorio.getFidelizado(ventaId);
                 if (fidelizado != null)
                 {
-                    return new List<LineasImprimir>() {
-                    new LineasImprimir(formatoTotales("Fidelizado:", fidelizado.Nombre??fidelizado.Documento), false)
-                , new LineasImprimir(formatoTotales("Puntos:", fidelizado.Puntos.ToString()), false)};
+                    fidelizado = _fidelizacion.GetFidelizados(fidelizado.Documento).Result != null ? _fidelizacion.GetFidelizados(fidelizado.Documento).Result.FirstOrDefault() : fidelizado;
+                    if (fidelizado != null)
+                    {
+                        return new List<LineasImprimir>() {
+                        new LineasImprimir(formatoTotales("Fidelizado:", fidelizado.Nombre??fidelizado.Documento), false)
+                    , new LineasImprimir(formatoTotales("Puntos:", fidelizado.Puntos.ToString()), false)};
+                    }
                 }
+                return new List<LineasImprimir>() { new LineasImprimir("Usuario no fidelizado", false) };
             }
-            return new List<LineasImprimir>() { new LineasImprimir("Usuario no fidelizado", false) };
-
-
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "getPuntos: no se pudo obtener informacion de fidelizacion para ventaId={0}", ventaId);
+                return new List<LineasImprimir>();
+            }
         }
         private void Imprimir(FactoradorEstacionesModelo.Objetos.Factura factura)
         {
@@ -1151,6 +1344,7 @@ namespace EnviadorInformacionService
 
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", nombreTercero), false));
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Nit/C.C. : ", _tercero.identificacion.Trim()), false));
+                lineasImprimir.AddRange(getPuntos(_factura.ventaId));
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Placa : ", placa), false));
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Kilometraje : ", (!string.IsNullOrEmpty(_factura.Kilometraje) ? _factura.Kilometraje : _venta.KILOMETRAJE + "").Trim()), false));
                 var codigoInterno = string.IsNullOrEmpty(_factura.Venta.COD_INT) ? _estacionesRepositorio.ObtenerCodigoInterno(placa, _tercero.identificacion.Trim()) : _factura.Venta.COD_INT;
@@ -1168,6 +1362,7 @@ namespace EnviadorInformacionService
                 else
                 {
                     lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", nombreTercero) + "", false));
+                    
                 }
                 if (string.IsNullOrEmpty(_tercero.identificacion))
                 {
@@ -1177,6 +1372,7 @@ namespace EnviadorInformacionService
                 {
                     lineasImprimir.Add(new LineasImprimir(formatoTotales("Nit/C.C. : ", _tercero.identificacion.Trim()), false));
                 }
+                lineasImprimir.AddRange(getPuntos(_factura.ventaId));
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Placa : ", (!string.IsNullOrEmpty(_factura.Placa) ? _factura.Placa : _venta.PLACA + "").Trim()), false));
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Kilometraje : ", (!string.IsNullOrEmpty(_factura.Kilometraje) ? _factura.Kilometraje : _venta.KILOMETRAJE + "").Trim()), false));
                 var codigoInterno = _factura.Venta.COD_INT != null ? _factura.Venta.COD_INT : _estacionesRepositorio.ObtenerCodigoInterno(placa, _tercero.identificacion.Trim());

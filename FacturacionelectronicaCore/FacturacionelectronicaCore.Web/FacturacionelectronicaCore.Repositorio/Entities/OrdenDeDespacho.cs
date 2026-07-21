@@ -44,6 +44,7 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         
         public string Vendedor { get; set; }
         public string idFacturaElectronica { get; set; }
+        public bool enviadoContabilidad { get; set; }
         public string NumeroTransaccion { get; set; }
         
         [BsonDateTimeOptions(Kind = DateTimeKind.Local)]

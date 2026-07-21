@@ -780,7 +780,7 @@ BEGIN TRY
         SELECT v.CONSECUTIVO
         FROM VENTAS v
         LEFT JOIN Facturacion_Electronica.dbo.OrdenesDeDespacho AS od ON od.ventaId = v.CONSECUTIVO
-        WHERE dbo.Finteger(v.FECHA_REAL) = dbo.Finteger(CAST(@fecha AS VARCHAR))
+        WHERE dbo.Finteger(v.FECHA_REAL) = dbo.Finteger(CONVERT(VARCHAR, @fecha, 112))
           AND od.ventaId IS NULL;
 
     OPEN cur;
@@ -812,7 +812,7 @@ BEGIN CATCH
               16, 1, @errorProcedure, @errorMessage, @errorLine);
 END CATCH;
 GO
-EXEC AgregarFacturasDesdeIdVentaPorFecha @fecha = '2026-03-18';
+--EXEC AgregarFacturasDesdeIdVentaPorFecha @fecha = '2026-03-18';
 GO
 USE [Ventas]
 GO
@@ -895,12 +895,53 @@ order by BOLS_TUR.NUM_TUR desc
 
 end try
 begin catch
-    declare 
+    declare
         @errorMessage varchar(2000),
         @errorProcedure varchar(255),
         @errorLine int;
 
-    select  
+    select
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+USE [Ventas]
+GO
+/****** Objeto: StoredProcedure [dbo].[getBolsa] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getBolsa')
+	DROP PROCEDURE [dbo].[getBolsa]
+GO
+CREATE procedure [dbo].[getBolsa]
+(@IdIsla int, @fecha datetime)
+as
+begin try
+    set nocount on;
+
+select dbo.Finteger(FECHA) as Fecha, CAST(Consecutivo as int) as Consecutivo, CAST(NUM_TUR as int) as NumeroTurno,ISLAS.DESCRIPCION as Isla,
+EMPLEADO.Nombre as Empleado, VR_MONEDA as Moneda, VR_BILLETE as Billete
+from BOLS_TUR
+
+inner join EMPLEADO On EMPLEADO.COD_EMP = BOLS_TUR.COD_EMP
+inner join ISLAS On ISLAS.COD_ISL = BOLS_TUR.COD_ISL
+where dbo.Finteger(BOLS_TUR.FECHA) = @fecha and
+BOLS_TUR.COD_ISL = @IdISla
+order by BOLS_TUR.NUM_TUR desc
+end try
+begin catch
+    declare
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select
         @errorMessage = error_message(),
         @errorProcedure = error_procedure(),
         @errorLine = error_line();

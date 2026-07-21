@@ -70,15 +70,18 @@ namespace FacturacionelectronicaCore.Worker
                     var facturaCanastillaNegocio = scope.ServiceProvider.GetRequiredService<IFacturaCanastillaNegocio>();
                     var esSilog2 = string.Equals(_alegraOptions?.Proveedor, "SILOG2", StringComparison.OrdinalIgnoreCase);
                     
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Fetching estaciones...");
                     var estaciones = await estacionNegocio.GetEstaciones();
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Estaciones found: {estaciones?.Count() ?? 0}");
                     foreach (var estacion in estaciones)
                     {
                         // Check for cancellation before processing each station
                         if (stoppingToken.IsCancellationRequested)
                             break;
 
-                        var startDate = _alegraOptions.WorkerStartDate ?? DateTime.Now.AddMonths(-2);
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Processing estacion: {estacion.Nombre} ({estacion.guid})");
                         var currentDate = DateTime.Now;
+                        var startDate = currentDate.AddMonths(-2);
                         var totalOrdenesReenviadas = 0;
                         var totalOrdenesEncontradas = 0;
                         var totalCanastillasReenviadas = 0;

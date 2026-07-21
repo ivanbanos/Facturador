@@ -107,18 +107,18 @@ namespace EnviadorInformacion
 
                     Logger.Info($"Tercero {tercero.identificacion} agregado");
                 }
-                var facturasIdImprimir = _conexionEstacionRemota.RecibirFacturasImprimir(estacionFuente, token);
-                var ordenesIdImprimir = _conexionEstacionRemota.RecibirOrdenesImprimir(estacionFuente, token);
+                // var facturasIdImprimir = _conexionEstacionRemota.RecibirFacturasImprimir(estacionFuente, token);
+                // var ordenesIdImprimir = _conexionEstacionRemota.RecibirOrdenesImprimir(estacionFuente, token);
 
 
-                foreach (var orden in ordenesIdImprimir)
-                {
-                    _estacionesRepositorio.MandarImprimir(orden.IdVentaLocal);
-                }
-                foreach (var factura in facturasIdImprimir)
-                {
-                    _estacionesRepositorio.MandarImprimir(factura.IdVentaLocal);
-                }
+                // foreach (var orden in ordenesIdImprimir)
+                // {
+                //     _estacionesRepositorio.MandarImprimir(orden.IdVentaLocal);
+                // }
+                // foreach (var factura in facturasIdImprimir)
+                // {
+                //     _estacionesRepositorio.MandarImprimir(factura.IdVentaLocal);
+                // }
             }catch(Exception ex)
             {
                 Logger.Warn($"No fue posible sincronizar terceros/facturas/ordenes para impresion: {ex.Message}");

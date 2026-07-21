@@ -30,6 +30,12 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         private static DateTime _tokenExpiry = DateTime.MinValue;
         private static readonly object _tokenLock = new object();
 
+        // Rate limiting: 1 req/sec, max 30 req/min (API limit is 50; stay under to avoid rejections).
+        private static DateTime _lastApiCall = DateTime.MinValue;
+        private static readonly Queue<DateTime> _callWindow = new Queue<DateTime>();
+        private const int MaxPerMinute = 30;
+        private const int MinMsBetweenCalls = 1100;
+
         public FacturacionCeleste(IOptions<Alegra> options, IResolucionRepositorio resolucionRepositorio)
         {
             _options = options.Value;
@@ -157,6 +163,44 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             return _cachedToken;
         }
 
+        // ─── Rate limiting ────────────────────────────────────────────────────
+
+        private static async Task WaitForRateLimit()
+        {
+            while (true)
+            {
+                int delayMs;
+                lock (_tokenLock)
+                {
+                    var now = DateTime.UtcNow;
+
+                    // Remove entries outside the 60-second window.
+                    while (_callWindow.Count > 0 && (now - _callWindow.Peek()).TotalMilliseconds >= 60_000)
+                        _callWindow.Dequeue();
+
+                    // Per-minute limit.
+                    if (_callWindow.Count >= MaxPerMinute)
+                    {
+                        var waitUntil = _callWindow.Peek().AddMilliseconds(60_000);
+                        delayMs = Math.Max(100, (int)(waitUntil - now).TotalMilliseconds);
+                    }
+                    // Per-second limit.
+                    else if ((now - _lastApiCall).TotalMilliseconds < MinMsBetweenCalls)
+                    {
+                        delayMs = (int)(MinMsBetweenCalls - (now - _lastApiCall).TotalMilliseconds);
+                    }
+                    else
+                    {
+                        _lastApiCall = now;
+                        _callWindow.Enqueue(now);
+                        return;
+                    }
+                }
+
+                await Task.Delay(delayMs);
+            }
+        }
+
         // ─── HTTP call ────────────────────────────────────────────────────────
 
         private async Task<string> EnviarFacturaCeleste(object payload, string estacionGuid)
@@ -164,46 +208,158 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             var baseUrl = _options.Url.TrimEnd('/');
             var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid);
             var prefijo = resolucion?.prefijo ?? "";
-            var token = await ObtenerToken();
             var contentString = JsonConvert.SerializeObject(payload, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            client.DefaultRequestHeaders.Add("X-Celeste-Nit", _options.Nit);
-            client.DefaultRequestHeaders.Add("X-Celeste-Client-Id", _options.Usuario);
-
-            var content = new StringContent(contentString, null, "application/json");
-            var response = await client.PostAsync($"{baseUrl}/webhook/api/factura_venta", content);
-            var responseBody = await response.Content.ReadAsStringAsync();
-
-            Console.WriteLine($"[Celeste] OUT {contentString}");
-            Console.WriteLine($"[Celeste] IN  {responseBody}");
-
-            if (response.IsSuccessStatusCode)
+            // Retry once if Celeste returns a session/token error (code 48).
+            for (int attempt = 0; attempt < 2; attempt++)
             {
-                var respuesta = JsonConvert.DeserializeObject<RespuestaCelesteFactura>(responseBody);
+                var token = await ObtenerToken();
 
-                // On any 200 OK, update the resolution counter if we can parse the invoice number.
-                if (respuesta?.data != null &&
-                    int.TryParse(respuesta.data.numero_factura, out var numFactura))
+                await WaitForRateLimit();
+
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                client.DefaultRequestHeaders.Add("X-Celeste-Nit", _options.Nit);
+                client.DefaultRequestHeaders.Add("X-Celeste-Client-Id", _options.Usuario);
+
+                var content = new StringContent(contentString, null, "application/json");
+                var response = await client.PostAsync($"{baseUrl}/webhook/api/factura_venta", content);
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine($"[Celeste] OUT {contentString}");
+                Console.WriteLine($"[Celeste] IN  {responseBody}");
+
+                // Detect Celeste session error (code 48) regardless of HTTP status.
+                if (IsCelesteSessionError(responseBody) || response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(
-                        estacionGuid,
-                        numFactura + 1);
+                    lock (_tokenLock) { _cachedToken = null; }
+                    if (attempt == 0)
+                    {
+                        Console.WriteLine("[Celeste] Session/token error detected, invalidating cache and retrying...");
+                        await Task.Delay(1000);
+                        continue;
+                    }
+                    return "error:" + responseBody + contentString;
                 }
 
-                var numero = respuesta?.data?.numero_factura ?? "";
-                var uuid = respuesta?.data?.gen_uuid ?? "";
-                return "OK:" + prefijo + numero + ":" + uuid;
+                if (response.IsSuccessStatusCode)
+                {
+                    var respuesta = JsonConvert.DeserializeObject<RespuestaCelesteFactura>(responseBody);
+
+                    var numeroPost = respuesta?.data?.numero_factura ?? "";
+                    var uuid = respuesta?.data?.gen_uuid ?? "";
+                    var fechaFactura = respuesta?.data?.fecha_factura ?? DateTime.UtcNow.ToString("yyyy-MM-dd");
+
+                    // Update resolution counter from POST response (best-effort).
+                    if (int.TryParse(numeroPost, out var numFactura))
+                    {
+                        await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(
+                            estacionGuid,
+                            numFactura + 1);
+                    }
+
+                    // Celeste processes invoices asynchronously — poll the consultation endpoint
+                    // until the invoice is approved (estado = "aprobada" or "0") or we exhaust retries.
+                    var (consecutivo, cufe, consultaBody) = await ConsultarFacturaCeleste(uuid, fechaFactura, token);
+
+                    // Prefer consultation's numero_factura when available (it's the authoritative DIAN consecutive).
+                    var numero = !string.IsNullOrEmpty(consecutivo) ? consecutivo : numeroPost;
+
+                    return "OK:" + prefijo + numero + ":" + cufe + ":" + uuid + ":" + consultaBody;
+                }
+
+                return "error:" + responseBody + contentString;
             }
 
-            // If 401 the token may have just expired — invalidate cache so next call re-authenticates.
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            return "error:Max retries exceeded";
+        }
+
+        /// <summary>
+        /// Polls the Celeste consultation endpoint after a successful POST until the invoice is
+        /// approved or retries are exhausted. Returns (numero_factura, cufe, rawResponseBody).
+        /// </summary>
+        private async Task<(string numero, string cufe, string rawBody)> ConsultarFacturaCeleste(string uuid, string fechaFactura, string token)
+        {
+            if (string.IsNullOrWhiteSpace(uuid))
+                return ("", "", "");
+
+            var baseUrl = _options.Url.TrimEnd('/');
+            // fecha must be yyyymmdd
+            if (!DateTime.TryParse(fechaFactura, out var dt))
+                dt = DateTime.UtcNow.AddHours(_options.ServerTimeOffsetHoursSearch ?? 0);
+            var fecha = dt.ToString("yyyyMMdd");
+
+            const int maxRetries = 6;
+            const int delayMs = 5000; // 5 s between polls
+
+            for (int i = 0; i < maxRetries; i++)
             {
-                lock (_tokenLock) { _cachedToken = null; }
+                if (i > 0)
+                    await Task.Delay(delayMs);
+
+                try
+                {
+                    await WaitForRateLimit();
+
+                    using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    client.DefaultRequestHeaders.Add("X-Celeste-Nit", _options.Nit);
+                    client.DefaultRequestHeaders.Add("X-Celeste-Client-Id", _options.Usuario);
+
+                    var url = $"{baseUrl}/webhook/api/factura_venta?uuid={uuid}&date={fecha}";
+                    var response = await client.GetAsync(url);
+                    var body = await response.Content.ReadAsStringAsync();
+
+                    Console.WriteLine($"[Celeste Consulta] intento {i + 1} uuid={uuid} → {response.StatusCode} {body}");
+
+                    if (!response.IsSuccessStatusCode)
+                        continue;
+
+                    var consulta = JsonConvert.DeserializeObject<RespuestaCelesteConsulta>(body);
+                    var estado = consulta?.data?.estado ?? "";
+
+                    // estado "0" or "aprobada" = approved
+                    var aprobada = estado == "0"
+                        || estado.Equals("aprobada", StringComparison.OrdinalIgnoreCase);
+
+                    // estado "2" or "rechazada" = rejected — stop polling immediately
+                    var rechazada = estado == "2"
+                        || estado.Equals("rechazada", StringComparison.OrdinalIgnoreCase);
+
+                    if (aprobada || rechazada)
+                    {
+                        var numero = consulta?.data?.numero_factura?.ToString() ?? "";
+                        var cufe = consulta?.data?.cufe ?? "";
+                        Console.WriteLine($"[Celeste Consulta] uuid={uuid} estado={estado} numero={numero} cufe={cufe}");
+                        return (numero, cufe, body);
+                    }
+
+                    // estado "1" / "pendiente" → keep polling
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Celeste Consulta] Error intento {i + 1} uuid={uuid}: {ex.Message}");
+                }
             }
 
-            return "error:" + responseBody + contentString;
+            Console.WriteLine($"[Celeste Consulta] uuid={uuid} no aprobada tras {maxRetries} intentos, se continúa con datos del POST.");
+            return ("", "", "");
+        }
+
+        private static bool IsCelesteSessionError(string responseBody)
+        {
+            if (string.IsNullOrEmpty(responseBody)) return false;
+            try
+            {
+                var obj = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JObject>(responseBody);
+                var code = obj?["code"]?.ToObject<int?>();
+                return code == 48;
+            }
+            catch
+            {
+                return responseBody.Contains("Problemas iniciando sesión", StringComparison.OrdinalIgnoreCase)
+                    || responseBody.Contains("vuelva a solicitar token", StringComparison.OrdinalIgnoreCase);
+            }
         }
 
         // ─── Payload builders ─────────────────────────────────────────────────
@@ -211,10 +367,11 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         private object BuildPayload(Modelo.Factura factura, Modelo.Tercero tercero)
         {
             var cantidadRedondeada = Math.Round((double)factura.Cantidad, 2);
+            var descuento = Math.Round(factura.Descuento, 2);
             var precioUnitario = cantidadRedondeada > 0
-                ? Math.Round(((double)factura.Total + (double)factura.Descuento) / cantidadRedondeada, 2)
+                ? Math.Round(((double)factura.Total + (double)descuento) / cantidadRedondeada, 2)
                 : 0.0;
-            var subtotal = Math.Round(cantidadRedondeada * precioUnitario - (double)factura.Descuento, 2);
+            var subtotal = Math.Round(cantidadRedondeada * precioUnitario - (double)descuento, 2);
 
             var (medioCodigo, medioNombre) = GetMedioPago(factura.FormaDePago);
             var (nombre, apellido) = SplitNombre(tercero);
@@ -245,8 +402,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                             cantidadRedondeada,
                             precioUnitario,
                             subtotal,
-                            factura.Descuento,
-                            factura.Total + factura.Descuento)
+                            descuento,
+                            descuento > 0 ? factura.Total + descuento : 0m)
                     },
                     formas_pago = new[]
                     {
@@ -264,10 +421,11 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         private object BuildPayload(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero)
         {
             var cantidadRedondeada = Math.Round((double)orden.Cantidad, 2);
+            var descuento = Math.Round(orden.Descuento, 2);
             var precioUnitario = cantidadRedondeada > 0
-                ? Math.Round(((double)orden.Total + (double)orden.Descuento) / cantidadRedondeada, 2)
+                ? Math.Round(((double)orden.Total + (double)descuento) / cantidadRedondeada, 2)
                 : 0.0;
-            var subtotal = Math.Round(cantidadRedondeada * precioUnitario - (double)orden.Descuento, 2);
+            var subtotal = Math.Round(cantidadRedondeada * precioUnitario - (double)descuento, 2);
 
             var (nombre, apellido) = SplitNombre(tercero);
             var tipoId = GetTipoIdentificacionDian(tercero.DescripcionTipoIdentificacion);
@@ -298,8 +456,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                             cantidadRedondeada,
                             precioUnitario,
                             subtotal,
-                            orden.Descuento,
-                            (decimal)orden.Total + orden.Descuento)
+                            descuento,
+                            descuento > 0 ? (decimal)orden.Total + descuento : 0m)
                     },
                     formas_pago = formasPago
                 }
@@ -337,9 +495,12 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         {
             var codigo = GetCodigoCombustible(combustible);
 
-            if (descuento > 0 && totalConDescuento > 0)
+            // Only include the descuento block when the rounded discount is meaningful (>= 0.01).
+            // Sending a descuento block with valor_descuento = "0" causes a Celeste validation error.
+            var descuentoRedondeado = Math.Round(descuento, 2);
+            if (descuentoRedondeado > 0 && totalConDescuento > 0)
             {
-                var porcentajeDescuento = Math.Round((double)(descuento / totalConDescuento * 100), 2).ToString("0.##", CultureInfo.InvariantCulture);
+                var porcentajeDescuento = Math.Round((double)(descuentoRedondeado / totalConDescuento * 100), 2).ToString("0.##", CultureInfo.InvariantCulture);
                 return new
                 {
                     producto_codigo = codigo,
@@ -352,7 +513,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     descuento = new
                     {
                         porcentaje_descuento = porcentajeDescuento,
-                        valor_descuento = ((double)descuento).ToString("0.##", CultureInfo.InvariantCulture),
+                        valor_descuento = ((double)descuentoRedondeado).ToString("0.##", CultureInfo.InvariantCulture),
                         valor_base_descuento = ((double)totalConDescuento).ToString("0.##", CultureInfo.InvariantCulture)
                     }
                 };
@@ -390,10 +551,105 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 celular = string.IsNullOrEmpty(tercero.Celular) ? "0" : tercero.Celular,
                 direccion = string.IsNullOrEmpty(tercero.Direccion) ? "No informado" : tercero.Direccion,
                 codigo_pais = "CO",
-                codigo_departamento = _options.Department ?? "11",
-                codigo_municipio = _options.City ?? "001"
+                codigo_departamento = ResolveCodigo(_options.Department, _departamentoCodes, "11"),
+                codigo_municipio = ResolveCodigo(_options.City, _municipioCodes, "11001")
             };
         }
+
+        /// <summary>
+        /// Returns the value if already numeric; otherwise looks it up in the provided map;
+        /// falls back to <paramref name="defaultCode"/> if not found.
+        /// </summary>
+        private static string ResolveCodigo(string value, Dictionary<string, string> map, string defaultCode)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return defaultCode;
+
+            // Already numeric → use as-is
+            if (value.Trim().All(char.IsDigit))
+                return value.Trim();
+
+            var key = value.Trim().ToUpperInvariant()
+                .Replace("Á", "A").Replace("É", "E").Replace("Í", "I")
+                .Replace("Ó", "O").Replace("Ú", "U").Replace("Ü", "U");
+
+            return map.TryGetValue(key, out var code) ? code : defaultCode;
+        }
+
+        // DIAN DIVIPOLA: department name (uppercase, no accents) → 2-digit code
+        private static readonly Dictionary<string, string> _departamentoCodes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["BOGOTA"] = "11", ["BOGOTÁ"] = "11", ["BOGOTA DC"] = "11", ["BOGOTÁ D.C."] = "11",
+            ["ANTIOQUIA"] = "05",
+            ["ATLANTICO"] = "08", ["ATLÁNTICO"] = "08",
+            ["BOLIVAR"] = "13", ["BOLÍVAR"] = "13",
+            ["BOYACA"] = "15", ["BOYACÁ"] = "15",
+            ["CALDAS"] = "17",
+            ["CAQUETA"] = "18", ["CAQUETÁ"] = "18",
+            ["CAUCA"] = "19",
+            ["CESAR"] = "20",
+            ["CHOCO"] = "27", ["CHOCÓ"] = "27",
+            ["CORDOBA"] = "23", ["CÓRDOBA"] = "23",
+            ["CUNDINAMARCA"] = "25",
+            ["GUAJIRA"] = "44", ["LA GUAJIRA"] = "44",
+            ["HUILA"] = "41",
+            ["MAGDALENA"] = "47",
+            ["META"] = "50",
+            ["NARINO"] = "52", ["NARIÑO"] = "52",
+            ["NORTE DE SANTANDER"] = "54",
+            ["PUTUMAYO"] = "86",
+            ["QUINDIO"] = "63", ["QUINDÍO"] = "63",
+            ["RISARALDA"] = "66",
+            ["SAN ANDRES"] = "88", ["SAN ANDRÉS"] = "88",
+            ["SANTANDER"] = "68",
+            ["SUCRE"] = "70",
+            ["TOLIMA"] = "73",
+            ["VALLE DEL CAUCA"] = "76", ["VALLE"] = "76",
+            ["VAUPES"] = "97", ["VAUPÉS"] = "97",
+            ["VICHADA"] = "99",
+            ["ARAUCA"] = "81",
+            ["CASANARE"] = "85",
+            ["AMAZONAS"] = "91",
+            ["GUAINIA"] = "94", ["GUAINÍA"] = "94",
+            ["GUAVIARE"] = "95",
+        };
+
+        // DIAN DIVIPOLA: municipality name (uppercase, no accents) → 5-digit code
+        private static readonly Dictionary<string, string> _municipioCodes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["BOGOTA"] = "11001", ["BOGOTÁ"] = "11001", ["BOGOTA DC"] = "11001", ["BOGOTÁ D.C."] = "11001",
+            ["MEDELLIN"] = "05001", ["MEDELLÍN"] = "05001",
+            ["CALI"] = "76001",
+            ["BARRANQUILLA"] = "08001",
+            ["CARTAGENA"] = "13001",
+            ["CUCUTA"] = "54001", ["CÚCUTA"] = "54001",
+            ["BUCARAMANGA"] = "68001",
+            ["PEREIRA"] = "66001",
+            ["MANIZALES"] = "17001",
+            ["IBAGUE"] = "73001", ["IBAGUÉ"] = "73001",
+            ["SANTA MARTA"] = "47001",
+            ["VILLAVICENCIO"] = "50001",
+            ["ARMENIA"] = "63001",
+            ["NEIVA"] = "41001",
+            ["PASTO"] = "52001",
+            ["MONTERIA"] = "23001", ["MONTERÍA"] = "23001",
+            ["SINCELEJO"] = "70001",
+            ["VALLEDUPAR"] = "20001",
+            ["POPAYAN"] = "19001", ["POPAYÁN"] = "19001",
+            ["TUNJA"] = "15001",
+            ["FLORENCIA"] = "18001",
+            ["QUIBDO"] = "27001", ["QUIBDÓ"] = "27001",
+            ["RIOHACHA"] = "44001",
+            ["SAN ANDRES"] = "88001", ["SAN ANDRÉS"] = "88001",
+            ["YOPAL"] = "85001",
+            ["MOCOA"] = "86001",
+            ["LETICIA"] = "91001",
+            ["INIRIDA"] = "94001", ["INÍRIDA"] = "94001",
+            ["SAN JOSE DEL GUAVIARE"] = "95001",
+            ["MITU"] = "97001", ["MITÚ"] = "97001",
+            ["PUERTO CARRENO"] = "99001", ["PUERTO CARREÑO"] = "99001",
+            ["ARAUCA"] = "81001",
+        };
 
         private static (string nombre, string apellido) SplitNombre(Modelo.Tercero tercero)
         {
@@ -423,7 +679,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         /// </summary>
         private static (string codigo, string nombre) GetMedioPago(string formaDePago)
         {
-            if (string.IsNullOrWhiteSpace(formaDePago)) return ("10", "Efectivo");
+            if (string.IsNullOrWhiteSpace(formaDePago)) return ("11", "Efectivo");
             var lower = formaDePago.ToLower().Trim();
 
             if (lower.Contains("tarjeta") && lower.Contains("dé")) return ("49", "Tarjeta Debito");
@@ -432,7 +688,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 return ("47", "Transferencia");
             if (lower.Contains("cheque")) return ("20", "Cheque");
             if (lower.Contains("convenio") || lower.Contains("credito")) return ("ZZZ", "Otro");
-            return ("10", "Efectivo");
+            return ("11", "Efectivo");
         }
 
         private static int GetTipoIdentificacionDian(string descripcionTipoIdentificacion)

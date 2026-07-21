@@ -62,7 +62,7 @@ namespace FacturacionelectronicaCore.Web
             })
             .AddJwtBearer(x =>
             {
-                x.RequireHttpsMetadata = false;
+                x.RequireHttpsMetadata = true;
                 x.SaveToken = true;
                 x.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -109,21 +109,50 @@ namespace FacturacionelectronicaCore.Web
             }
             else
             {
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                // HSTS: tells browsers to only use HTTPS for 1 year, including subdomains.
                 app.UseHsts();
             }
 
+            // A01 fix: redirect all HTTP traffic to HTTPS before any auth or routing logic.
+            app.UseHttpsRedirection();
+
             app.UseCors(p => p.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 
+            // A02 fix: add security headers on every response.
             app.Use(async (context, next) =>
             {
-                context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+                var headers = context.Response.Headers;
+
+                // Prevent MIME-type sniffing
+                headers["X-Content-Type-Options"] = "nosniff";
+
+                // Prevent clickjacking by disallowing iframes
+                headers["X-Frame-Options"] = "DENY";
+
+                // Legacy XSS filter for older browsers
+                headers["X-XSS-Protection"] = "1; mode=block";
+
+                // Control referrer information sent in requests
+                headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+
+                // Content Security Policy: restricts resource origins
+                headers["Content-Security-Policy"] =
+                    "default-src 'self'; " +
+                    "script-src 'self' 'unsafe-inline'; " +
+                    "style-src 'self' 'unsafe-inline'; " +
+                    "img-src 'self' data:; " +
+                    "font-src 'self'; " +
+                    "connect-src 'self'; " +
+                    "frame-ancestors 'none';";
+
+                // Remove Server header to avoid technology version disclosure
+                headers.Remove("Server");
+
                 await next();
             });
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
-            // app.UseHttpsRedirection
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

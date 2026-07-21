@@ -1,6 +1,7 @@
 ﻿using FacturadorAPI.Models;
 using FacturadorAPI.Repository.Repo;
 using FacturadorApiSP.Application.Commands;
+using FacturadorApiSP.Models;
 using MachineUtilizationApi.Repository;
 using MediatR;
 using Microsoft.Extensions.Options;
@@ -51,8 +52,27 @@ namespace FacturadorAPI.Application.Commands
             Thread.Sleep(1000);
 
             await _databaseHandler.MandarImprimirObjeto(request.Isla, DateTime.Now.Date, int.Parse(request.Numero), "Bolsa");
-            var bolsa = await _databaseHandler.getBolsa(request.Isla, DateTime.Now.Date);
-            if(bolsa.Moneda == double.Parse(request.Moneda) && bolsa.Billete == double.Parse(request.Cantidad))
+
+            var monedaEsperada = double.Parse(request.Moneda);
+            var billeteEsperado = double.Parse(request.Cantidad);
+
+            Bolsa? bolsa = null;
+            const int maxIntentos = 5;
+            for (var intento = 1; intento <= maxIntentos; intento++)
+            {
+                bolsa = await _databaseHandler.getBolsa(request.Isla, DateTime.Now.Date);
+                if (bolsa != null && bolsa.Moneda == monedaEsperada && bolsa.Billete == billeteEsperado)
+                {
+                    break;
+                }
+
+                if (intento < maxIntentos)
+                {
+                    Thread.Sleep(1000);
+                }
+            }
+
+            if (bolsa != null && bolsa.Moneda == monedaEsperada && bolsa.Billete == billeteEsperado)
             {
                 var sb = new StringBuilder( "BOLSA DE TURNO\n\r");
                 sb.Append($"Fecha: {bolsa.Fecha}\n\r");
@@ -63,11 +83,9 @@ namespace FacturadorAPI.Application.Commands
                 sb.Append($"Billete: {bolsa.Billete}\n\r");
                 return sb.ToString();
             }
-            else
-            {
-                throw new Exception("¡Error abriendo turno!");
-            }
 
+            _logger.LogWarning("Bolsa registrada pero aun no reflejada en BOLS_TUR tras {Intentos} intentos. Isla={Isla}, Moneda esperada={Moneda}, Billete esperado={Billete}", maxIntentos, request.Isla, monedaEsperada, billeteEsperado);
+            return "Bolsa registrada. La confirmacion de los valores esta demorada, verifique el turno en unos segundos.";
         }
         public string send_cmd(string szData)
         {
