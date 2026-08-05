@@ -697,12 +697,20 @@ namespace EnviadorInformacionService
             float yPos = topMargin + (count * printFont.GetHeight(ev.Graphics));
             if (isQr)
             {
-                GenerateQRCode(text, 160);
-                Image newImage = Image.FromFile($"{AppContext.BaseDirectory}/file.bmp");
-
-                RectangleF srcRect = new RectangleF(0, 0, 160F, 160F);
-                GraphicsUnit units = GraphicsUnit.Pixel;
-                ev.Graphics.DrawImage(newImage, leftMargin, yPos, srcRect, units);
+                try
+                {
+                    GenerateQRCode(text, 160);
+                    using (Image newImage = Image.FromFile($"{AppContext.BaseDirectory}/fileCanastilla.bmp"))
+                    {
+                        RectangleF srcRect = new RectangleF(0, 0, 160F, 160F);
+                        GraphicsUnit units = GraphicsUnit.Pixel;
+                        ev.Graphics.DrawImage(newImage, leftMargin, yPos, srcRect, units);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error generando código QR, continuando sin QR");
+                }
             }
             else
             {
@@ -728,7 +736,7 @@ namespace EnviadorInformacionService
 
             var image = new Bitmap(imageTemp, new System.Drawing.Size(new System.Drawing.Point(size, size)));
 
-            image.Save($"{AppContext.BaseDirectory}/file.bmp", ImageFormat.Bmp);
+            image.Save($"{AppContext.BaseDirectory}/fileCanastilla.bmp", ImageFormat.Bmp);
 
         }
     }

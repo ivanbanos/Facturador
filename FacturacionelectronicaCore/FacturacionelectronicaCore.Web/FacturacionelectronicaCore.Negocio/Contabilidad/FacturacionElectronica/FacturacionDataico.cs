@@ -534,13 +534,14 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             var invoice = new FacturaDataico();
             var respuestaFactura = string.Empty;
             var wasParsed = false;
+            Repositorio.Entities.ResolucionFacturaElectronica resolucion = null;
             try
             {
                 var ordenDeDespachoEntity = (await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorIdVentaLocal(orden.IdVentaLocal, estacionGuid)).FirstOrDefault();
-                
+
 
                 Console.WriteLine(estacionGuid.ToString());
-                var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
+                resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
 
                 // If the order has an error and idFacturaElectronica contains a previously built invoice JSON
                 // try to extract a FacturaDataico object from it and reuse it instead of rebuilding.
@@ -648,28 +649,33 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
                         // Console.WriteLine(JsonConvert.SerializeObject(respuesta));
 
-                        // Validate that the provider's order_reference matches our local order IdVentaLocal.
+                        // Validate that the provider's response actually belongs to THIS order and to the
+                        // consecutivo we sent. The consecutivo/resolucion is shared between combustible and
+                        // canastilla invoices (same resolucion row per estacion), so accepting a stale or
+                        // mismatched response here would desync the shared counter for both invoice types.
+                        string orderRef = null;
                         try
                         {
                             var j = JObject.Parse(responseBody);
-                            var orderRef = j["order_reference"]?.ToString() ?? j["invoice"]?["order_reference"]?.ToString();
-                            if (!string.IsNullOrEmpty(orderRef) && orderRef != orden.IdVentaLocal.ToString())
-                            {
-                                if (resolucion.numeroActual <= int.Parse(invoice.invoice.number))
-                                {
-                                    await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), int.Parse(invoice.invoice.number) + 1);
-
-                                }
-                                Console.WriteLine($"Order reference mismatch: expected {orden.IdVentaLocal}, got {orderRef}");
-                                // Do not persist the resolution number if the response refers to a different order.
-                                return "error:order_reference_mismatch:" + responseBody + ":" + JsonConvert.SerializeObject(invoice);
-                            }
-
+                            orderRef = j["order_reference"]?.ToString() ?? j["invoice"]?["order_reference"]?.ToString();
                         }
                         catch (Exception)
                         {
-                            // If parsing fails, continue with the normal flow (we still have the typed respuesta object).
+                            // If parsing fails, fall back to trusting the typed response below.
                         }
+
+                        if (!string.IsNullOrEmpty(orderRef) && orderRef != orden.IdVentaLocal.ToString())
+                        {
+                            if (resolucion.numeroActual <= int.Parse(invoice.invoice.number))
+                            {
+                                await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), int.Parse(invoice.invoice.number) + 1);
+
+                            }
+                            Console.WriteLine($"Order reference mismatch: expected {orden.IdVentaLocal}, got {orderRef}");
+                            // Do not persist the resolution number if the response refers to a different order.
+                            return "error:order_reference_mismatch:" + responseBody + ":" + JsonConvert.SerializeObject(invoice);
+                        }
+
                         if (!wasParsed)
                         {
                             if (resolucion.numeroActual <= int.Parse(invoice.invoice.number))
@@ -680,7 +686,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                         }
 Console.WriteLine($"Factura creada, {respuesta.order_reference}, {respuesta.dian_status}, {respuesta.number}");
-                        
+
                         return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe + ":" + respuestaFactura + ":" + JsonConvert.SerializeObject(invoice);
 
                     }
@@ -693,6 +699,36 @@ Console.WriteLine($"Factura creada, {respuesta.order_reference}, {respuesta.dian
             {
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
+
+                // Dataico may have already accepted the invoice (DIAN_ACEPTADO + cufe) even though something
+                // failed locally afterwards (e.g. mapping the response back into our objects). In that case we
+                // must NOT let the caller retry, since retrying would generate and send a brand new invoice for
+                // an order that is already legally invoiced. Recover the cufe/number from the raw response instead.
+                try
+                {
+                    if (!string.IsNullOrEmpty(respuestaFactura) && respuestaFactura.Contains("cufe"))
+                    {
+                        var respuestaJson = JObject.Parse(respuestaFactura);
+                        var cufeRecuperado = respuestaJson["cufe"]?.ToString();
+                        var dianStatusRecuperado = respuestaJson["dian_status"]?.ToString();
+                        var numberRecuperado = respuestaJson["number"]?.ToString();
+                        if (!string.IsNullOrEmpty(cufeRecuperado) && !string.IsNullOrEmpty(dianStatusRecuperado))
+                        {
+                            Console.WriteLine($"Factura ya habia sido aceptada por DIAN pese al error local. Recuperando cufe {cufeRecuperado} en lugar de generar una nueva factura.");
+                            if (resolucion != null && !string.IsNullOrEmpty(numberRecuperado) && int.TryParse(numberRecuperado, out var numeroRecuperadoInt)
+                                && resolucion.numeroActual <= numeroRecuperadoInt)
+                            {
+                                await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), numeroRecuperadoInt + 1);
+                            }
+                            return dianStatusRecuperado + ":" + numberRecuperado + ":" + cufeRecuperado + ":" + respuestaFactura + ":" + JsonConvert.SerializeObject(invoice);
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    // Fall through to the generic error response below if recovery parsing fails.
+                }
+
                 return "error:" + ex.StackTrace + ":" + ex.Message + ":" + JsonConvert.SerializeObject(invoice) + ":" + respuestaFactura;
             }
             finally
@@ -872,7 +908,8 @@ Console.WriteLine($"Factura creada, {respuesta.order_reference}, {respuesta.dian
                 }
                 //Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 var triedAgain = 0;
-                while (triedAgain++ < 1)
+                var maxIntentos = 3;
+                while (triedAgain++ < maxIntentos)
                 {
 
                     using (var client = new HttpClient())

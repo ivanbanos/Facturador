@@ -107,6 +107,25 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                     var ordenDeDespachoEntity = (await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorIdVentaLocal(x.IdVentaLocal, estacion)).FirstOrDefault();
                     var esMismaVentaExistente = EsMismaVenta(ordenDeDespachoEntity, x);
 
+                    // A previous attempt may have been accepted by Dataico/DIAN (real cufe + dian_status) but
+                    // still got stored as "error:..." because something failed locally afterwards (e.g. the
+                    // response parsing bug fixed in TaxDataico). Repair that record in place instead of
+                    // resending, since resending would create a brand new invoice for an order that is
+                    // already legally invoiced.
+                    if (ordenDeDespachoEntity != null && esMismaVentaExistente
+                        && !string.IsNullOrEmpty(ordenDeDespachoEntity.idFacturaElectronica)
+                        && ordenDeDespachoEntity.idFacturaElectronica.StartsWith("error", StringComparison.OrdinalIgnoreCase)
+                        && ordenDeDespachoEntity.idFacturaElectronica.IndexOf("cufe", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        var facturaRecuperada = TryRecuperarFacturaAceptada(ordenDeDespachoEntity.idFacturaElectronica);
+                        if (facturaRecuperada != null)
+                        {
+                            Console.WriteLine($"Orden {x.IdVentaLocal} ya habia sido aceptada por DIAN pese al error local; reparando registro sin generar una factura nueva.");
+                            x.idFacturaElectronica = facturaRecuperada;
+                            ordenDeDespachoEntity.idFacturaElectronica = facturaRecuperada;
+                        }
+                    }
+
                     bool envioFactura = (
                         ordenDeDespachoEntity == null
                         || !esMismaVentaExistente
@@ -248,6 +267,65 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                     _ordenesEnviadasCache.TryRemove(cacheKey, out removed);
                 }
             }
+        }
+
+        // Scans a stored "error:..." idFacturaElectronica string for an embedded, balanced JSON object that
+        // contains both "cufe" and "dian_status" — i.e. a real Dataico/DIAN acceptance response that got
+        // wrapped in an error because something failed locally after the invoice was already accepted.
+        // Returns a "dian_status:number:cufe:rawJson" string (matching the normal success format) or null
+        // if no such embedded acceptance can be found.
+        private static string TryRecuperarFacturaAceptada(string idFacturaElectronicaConError)
+        {
+            if (string.IsNullOrEmpty(idFacturaElectronicaConError) || !idFacturaElectronicaConError.Contains("cufe"))
+            {
+                return null;
+            }
+
+            try
+            {
+                var text = idFacturaElectronicaConError;
+                var depth = 0;
+                var start = -1;
+                for (var i = 0; i < text.Length; i++)
+                {
+                    if (text[i] == '{')
+                    {
+                        if (depth == 0) start = i;
+                        depth++;
+                    }
+                    else if (text[i] == '}')
+                    {
+                        depth--;
+                        if (depth == 0 && start >= 0)
+                        {
+                            var candidate = text.Substring(start, i - start + 1);
+                            start = -1;
+                            try
+                            {
+                                var obj = Newtonsoft.Json.Linq.JObject.Parse(candidate);
+                                var cufe = obj.SelectToken("cufe")?.ToString();
+                                var dianStatus = obj.SelectToken("dian_status")?.ToString();
+                                var number = obj.SelectToken("number")?.ToString();
+                                if (!string.IsNullOrEmpty(cufe) && !string.IsNullOrEmpty(dianStatus))
+                                {
+                                    return $"{dianStatus}:{number}:{cufe}:{candidate}";
+                                }
+                            }
+                            catch
+                            {
+                                // Not a standalone JSON object (e.g. it was the serialized request invoice
+                                // embedded alongside the response) — keep scanning for other candidates.
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Best-effort recovery; if anything goes wrong, return null so the caller falls back to resending.
+            }
+
+            return null;
         }
 
         private static bool EsMismaVenta(Repositorio.Entities.OrdenDeDespacho existente, Modelo.OrdenDeDespacho actual)

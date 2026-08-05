@@ -909,7 +909,7 @@ begin catch
 end catch;
 GO
 
-USE [Ventas]
+USE [Ventas] 
 GO
 /****** Objeto: StoredProcedure [dbo].[getBolsa] ******/
 SET ANSI_NULLS ON

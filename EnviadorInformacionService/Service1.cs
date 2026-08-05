@@ -32,9 +32,9 @@ namespace EnviadorInformacionService
             InitializeComponent();
             //  enviadorDeInformacion = new EnviadorDeInformacion();
             //  impresionService = new ImpresionService();
-            protocoloSiesa = new ProtocoloSiesa();
+            //protocoloSiesa = new ProtocoloSiesa();
             //protocoloSiesaCanastilla = new ProtocoloSiesaCanastilla();
-            //canastillaService = new CanastillaService();
+            canastillaService = new CanastillaService();
         }
 
         protected override void OnStart(string[] args)
@@ -61,20 +61,12 @@ namespace EnviadorInformacionService
                     canastillaWebServiceThread = new Thread(new ThreadStart(canastillaService.WebCanastilla));
                     canastillaWebServiceThread.Start();
                 }
-                else
-                {
-                    Logger.Warn("canastillaService no esta inicializado. No se iniciaran hilos de canastilla.");
-                }
 
                 if (protocoloSiesa != null)
                 {
 
                     siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
                     siesaThread.Start();
-                }
-                else
-                {
-                    Logger.Warn("Siesa no esta inicializado. No se iniciaran hilos de canastilla.");
                 }
                 //  siesaCanastillaThread = new Thread(new ThreadStart(protocoloSiesaCanastilla.Ejecutar));
                 //  siesaCanastillaThread.Start();

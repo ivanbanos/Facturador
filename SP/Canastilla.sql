@@ -89,7 +89,7 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'turnoguid' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
 BEGIN
     ALTER TABLE dbo.FacturasCanastilla ADD turnoguid VARCHAR(50) NULL;
-END
+END 
 GO
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'Vendedor' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
 BEGIN
