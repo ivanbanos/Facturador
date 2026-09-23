@@ -1,9 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
+    // Acepta el valor de Dataico venga como int, double o string (ej: 19, 19.0, "19.0")
+    public class FlexibleIntConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType) => objectType == typeof(int) || objectType == typeof(int?);
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            if (reader.TokenType == JsonToken.Null) return objectType == typeof(int?) ? (object)null : 0;
+
+            if (reader.TokenType == JsonToken.String)
+            {
+                var text = (string)reader.Value;
+                return double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed)
+                    ? (int)Math.Round(parsed)
+                    : 0;
+            }
+
+            var value = Convert.ToDouble(reader.Value, CultureInfo.InvariantCulture);
+            return (int)Math.Round(value);
+        }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            writer.WriteValue(value);
+        }
+    }
+
     // Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
     public class FacturaDataico
     {
@@ -124,10 +153,12 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
     public class TaxDataico
     {
         public string tax_category { get; set; }
-        public double tax_rate { get; set; }
+        [JsonConverter(typeof(FlexibleIntConverter))]
+        public int tax_rate { get; set; }
         public double tax_amount { get; set; }
         public string tax_description { get; set; }
-        public double tax_base { get; set; }
+        [JsonConverter(typeof(FlexibleIntConverter))]
+        public int tax_base { get; set; }
         public double base_amount { get; set; }
     }
 

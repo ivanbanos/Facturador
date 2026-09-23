@@ -332,6 +332,7 @@ namespace EnviadorInformacionService
                             if (ok)
                             {
                                 _estacionesRepositorio.ActuralizarFacturasEnviadosCanastilla(new List<int> { _factura.FacturasCanastillaId });
+                                _factura.enviada = true;
                             }
                         }
 

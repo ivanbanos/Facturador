@@ -51,8 +51,8 @@ namespace FactoradorEstacionesModelo.Convertidor
             response.AddRange(
                 dt.AsEnumerable().Select(dr => new Manguera()
                 {
-                    COD_MAN = dr.Field<short>("COD_MAN"),
-                    COD_TANQ = dr.Field<short>("COD_TANQ"),
+                    COD_MAN = dr.Field<short?>("COD_MAN"),
+                    COD_TANQ = dr.Field<short?>("COD_TANQ"),
                     DESCRIPCION = dr.Field<string>("DESCRIPCION"),
                     DS_ROM = dr.Field<string>("DS_ROM")
                 })

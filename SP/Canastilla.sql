@@ -115,6 +115,39 @@ BEGIN
 END
 
 GO
+
+-- Reserva de envio: evita que dos hilos (ProcesoCanastilla/WebCanastilla) envien la misma
+-- factura concurrentemente mientras enviada sigue en 0. La reserva expira sola (ver
+-- getFacturaEnviarCanastilla) para no bloquear reintentos si el hilo que la tomo murio.
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'enviando' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
+BEGIN
+    ALTER TABLE dbo.FacturasCanastilla ADD enviando BIT NOT NULL DEFAULT 0;
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'fechaReservaEnvio' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
+BEGIN
+    ALTER TABLE dbo.FacturasCanastilla ADD fechaReservaEnvio DATETIME NULL;
+END
+GO
+
+-- Clave de idempotencia: si el cliente reenvia la misma venta (timeout, doble clic, retry de
+-- red) porque nunca vio la respuesta del POST original, CrearFacturaCanastilla debe devolver
+-- la factura ya creada en vez de insertar una fila nueva. El indice unico filtrado garantiza
+-- esto incluso si dos reintentos llegan casi al mismo tiempo (condicion de carrera real).
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'ordenGuid' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
+BEGIN
+    ALTER TABLE dbo.FacturasCanastilla ADD ordenGuid UNIQUEIDENTIFIER NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'UX_FacturasCanastilla_OrdenGuid' AND object_id = Object_ID(N'dbo.FacturasCanastilla'))
+BEGIN
+    CREATE UNIQUE INDEX UX_FacturasCanastilla_OrdenGuid
+        ON dbo.FacturasCanastilla (ordenGuid)
+        WHERE ordenGuid IS NOT NULL;
+END
+GO
 IF EXISTS (SELECT * FROM sys.columns WHERE Name = N'canastillaId' AND Object_ID = Object_ID(N'dbo.FacturasCanastilla'))
 BEGIN
     ALTER TABLE dbo.FacturasCanastilla DROP COLUMN canastillaId;
@@ -310,19 +343,37 @@ CREATE PROCEDURE dbo.getFacturaEnviarCanastilla
 AS
 BEGIN TRY
     SET NOCOUNT ON;
-    SELECT TOP(10)
-        r.descripcion AS descripcionRes, r.autorizacion, r.consecutivoActual,
+
+    DECLARE @reservadas TABLE (FacturasCanastillaId INT PRIMARY KEY);
+
+    BEGIN TRANSACTION;
+
+    -- Reserva bajo bloqueo las facturas no enviadas y sin reserva vigente (o cuya reserva
+    -- expiro, por si el hilo que la tomo se cayo antes de confirmar el envio) para que
+    -- ProcesoCanastilla y WebCanastilla nunca envien la misma factura al tiempo.
+    UPDATE TOP(10) f
+    SET f.enviando = 1,
+        f.fechaReservaEnvio = GETDATE()
+    OUTPUT inserted.FacturasCanastillaId INTO @reservadas
+    FROM dbo.FacturasCanastilla f WITH (UPDLOCK, HOLDLOCK, ROWLOCK)
+    WHERE f.enviada = 0
+      AND (f.enviando = 0 OR f.fechaReservaEnvio < DATEADD(MINUTE, -2, GETDATE()));
+
+    COMMIT TRANSACTION;
+
+    SELECT r.descripcion AS descripcionRes, r.autorizacion, r.consecutivoActual,
         r.consecutivoFinal, r.consecutivoInicio, r.esPOS, r.estado,
         r.fechafinal, r.fechaInicio, r.ResolucionId, r.habilitada,
         f.FacturasCanastillaId, f.*, t.*, ti.*
     FROM dbo.FacturasCanastilla f
+    INNER JOIN @reservadas res ON res.FacturasCanastillaId = f.FacturasCanastillaId
     LEFT JOIN dbo.Resoluciones r ON f.resolucionId = r.ResolucionId
     LEFT JOIN dbo.terceros t ON f.terceroId = t.terceroId
     LEFT JOIN dbo.TipoIdentificaciones ti ON t.tipoIdentificacion = ti.TipoIdentificacionId
-    WHERE f.enviada = 0
     ORDER BY f.FacturasCanastillaId DESC;
 END TRY
 BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
     DECLARE @errorMessage NVARCHAR(2000), @errorProcedure NVARCHAR(255), @errorLine INT;
     SELECT @errorMessage = ERROR_MESSAGE(), @errorProcedure = ERROR_PROCEDURE(), @errorLine = ERROR_LINE();
     RAISERROR (N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
@@ -337,7 +388,9 @@ CREATE PROCEDURE dbo.SetFacturaCanastillaEnviada
 AS
 BEGIN TRY
     UPDATE f
-    SET f.enviada = 1
+    SET f.enviada = 1,
+        f.enviando = 0,
+        f.fechaReservaEnvio = NULL
     FROM dbo.FacturasCanastilla f
     INNER JOIN @facturas v ON v.ventaId = f.FacturasCanastillaId;
 END TRY
@@ -450,7 +503,8 @@ CREATE PROCEDURE dbo.CrearFacturaCanastilla
     @numeroTransaccion VARCHAR(50) = NULL,
     @COD_FOR_PAG_2 SMALLINT = NULL,
     @total1 FLOAT = NULL,
-    @total2 FLOAT = NULL
+    @total2 FLOAT = NULL,
+    @ordenGuid UNIQUEIDENTIFIER = NULL
 )
 AS
 BEGIN TRY
@@ -465,6 +519,22 @@ BEGIN TRY
     DECLARE @codigoFormaPagoPrincipal SMALLINT;
     DECLARE @montoPago1 FLOAT;
     DECLARE @montoPago2 FLOAT;
+    DECLARE @consecutivoExistente INT;
+
+    -- Si el cliente reenvia la misma orden (mismo ordenGuid) porque no vio la respuesta
+    -- del intento anterior, devolvemos la factura ya creada en vez de duplicarla.
+    IF @ordenGuid IS NOT NULL
+    BEGIN
+        SELECT @consecutivoExistente = consecutivo
+        FROM dbo.FacturasCanastilla
+        WHERE ordenGuid = @ordenGuid;
+
+        IF @consecutivoExistente IS NOT NULL
+        BEGIN
+            SELECT @consecutivoExistente AS facturaCanastillaId;
+            RETURN;
+        END
+    END
 
     SET @terceroIdFinal = NULL;
 
@@ -617,14 +687,14 @@ BEGIN TRY
 
     -- Crear factura
     INSERT INTO FacturasCanastilla (
-        fecha, resolucionId, consecutivo, estado, terceroId, enviada, 
+        fecha, resolucionId, consecutivo, estado, terceroId, enviada,
         codigoFormaPago, numeroTransaccion, codigoFormaPago2, total1, total2, subtotal, descuento, iva, total, impresa,
-        vendedor, isla, fechaturno, turno, turnoguid, placa
+        vendedor, isla, fechaturno, turno, turnoguid, placa, ordenGuid
     )
     VALUES (
-        GETDATE(), @ResolucionId, @consecutivoActual, 'CR', @terceroIdFinal, 0, 
+        GETDATE(), @ResolucionId, @consecutivoActual, 'CR', @terceroIdFinal, 0,
         @codigoFormaPagoPrincipal, @numeroTransaccion, @COD_FOR_PAG_2, @montoPago1, @montoPago2, @subtotal, @descuento, @totalIva, @total, -1,
-        @vendedor, @isla, @fecha, @turno, @turnoGuid, @placa
+        @vendedor, @isla, @fecha, @turno, @turnoGuid, @placa, @ordenGuid
     );
 
     SET @facturaCanastillaId = SCOPE_IDENTITY();
@@ -663,12 +733,25 @@ BEGIN TRY
 
     COMMIT TRANSACTION;
 
-    SELECT consecutivo AS facturaCanastillaId 
-    FROM FacturasCanastilla 
+    SELECT consecutivo AS facturaCanastillaId
+    FROM FacturasCanastilla
     WHERE FacturasCanastillaId = @facturaCanastillaId;
 END TRY
 BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+    -- Dos reintentos con el mismo ordenGuid llegaron casi al mismo tiempo: el segundo choca
+    -- contra UX_FacturasCanastilla_OrdenGuid. En vez de fallar, devolvemos la factura que ya
+    -- gano la carrera (comportamiento idempotente en vez de error de duplicado).
+    IF @ordenGuid IS NOT NULL AND ERROR_NUMBER() IN (2601, 2627)
+       AND ERROR_MESSAGE() LIKE '%UX_FacturasCanastilla_OrdenGuid%'
+    BEGIN
+        SELECT consecutivo AS facturaCanastillaId
+        FROM dbo.FacturasCanastilla
+        WHERE ordenGuid = @ordenGuid;
+        RETURN;
+    END
+
     DECLARE @errorMessage NVARCHAR(2000), @errorProcedure NVARCHAR(255), @errorLine INT;
     SELECT @errorMessage = ERROR_MESSAGE(), @errorProcedure = ERROR_PROCEDURE(), @errorLine = ERROR_LINE();
     RAISERROR (N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);

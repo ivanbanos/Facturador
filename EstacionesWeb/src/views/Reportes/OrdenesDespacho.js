@@ -314,7 +314,7 @@ const OrdenesDespacho = () => {
           const idFactura = typeof facturaInfo === 'object' ? facturaInfo.completo : facturaInfo
 
           return [
-            orden.numeroTransaccion || orden.idVentaLocal || 'N/A',
+            orden.idVentaLocal,
             formatDate(orden.fecha),
             `${orden.nombreTercero || 'N/A'}\n${orden.identificacion || ''}`,
             getFormasPagoDisplay(orden),

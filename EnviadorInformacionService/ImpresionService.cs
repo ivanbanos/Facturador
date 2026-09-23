@@ -1298,8 +1298,8 @@ namespace EnviadorInformacionService
                 do
                 {
                     infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
-                    Thread.Sleep(100);
-                } while (infoTemp == null || intentos++ < 3);
+                    Thread.Sleep(1000);
+                } while (infoTemp == null || intentos++ < 5);
 
                 Console.WriteLine("info fac elec " + infoTemp);
                 Logger.Info("info fac elec " + infoTemp);
