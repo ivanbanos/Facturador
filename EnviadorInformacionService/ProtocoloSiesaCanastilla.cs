@@ -1,4 +1,4 @@
-using EnviadorInformacionService.Contabilidad;
+﻿using EnviadorInformacionService.Contabilidad;
 using EnviadorInformacionService.Models;
 using FactoradorEstacionesModelo.Objetos;
 using FacturadorEstacionesRepositorio;
@@ -25,6 +25,14 @@ namespace EnviadorInformacionService
         private static readonly int MAX_FACTURAS_POR_MINUTO = 25;
         private static readonly Queue<DateTime> facturasTimestamps = new Queue<DateTime>();
         private static readonly object rateLimitLock = new object();
+
+        // Valores por defecto tomados del formato de envío canastilla (FEY) acordado con Siesa.
+        // Se pueden sobrescribir desde App.config con las claves indicadas en cada uso.
+        private const string AuxiliarLubricantesPorDefecto = "42109003";
+        private const string AuxiliarUreaPorDefecto = "42109004";
+        private const string AuxiliarIvaPorDefecto = "23450101";
+        private const string UnidadNegocioMovimientoPorDefecto = "03";
+        private const string IdFeMovimientoPorDefecto = "1";
 
         public void Ejecutar()
         {
@@ -250,7 +258,8 @@ namespace EnviadorInformacionService
         }
 
         /// <summary>
-        /// Envía una factura canastilla a Siesa
+        /// Envía una factura canastilla a Siesa con la estructura del conector Documento_Contablev2
+        /// (Inicial, Documentocontable, Movimientocontable, Caja, Final).
         /// </summary>
         /// <param name="facturaCanastilla">Objeto con la información de la factura</param>
         /// <param name="apiContabilidad">API de contabilidad Siesa</param>
@@ -260,100 +269,55 @@ namespace EnviadorInformacionService
             try
             {
                 Logger.Info($"Enviando factura canastilla {facturaCanastilla.FacturasCanastillaId} a Siesa con configuración {(facturaCanastilla.TieneIva ? "CON IVA" : "SIN IVA")}");
-                
-                var consecutivo = facturaCanastilla.consecutivo.ToString();
-                var config = facturaCanastilla.Configuracion;
 
-                var formaPagoPrincipalId = ObtenerIdFormaPago(facturaCanastilla.codigoFormaPago);
-                var formaPagoSecundariaId = ConvertirEnteroNullable(facturaCanastilla.codigoFormaPago2);
-                List<PagoCanastillaSiesa> pagos = ConstruirPagosFactura(
-                    formaPagoPrincipalId,
-                    formaPagoSecundariaId,
-                    ConvertirDecimal(facturaCanastilla.Total),
-                    ConvertirDecimalNullable(facturaCanastilla.total1),
-                    ConvertirDecimalNullable(facturaCanastilla.total2));
-                
-                // Construir el objeto de movimiento contable
+                string consecutivo = facturaCanastilla.consecutivo.ToString();
+                var config = facturaCanastilla.Configuracion;
+                string tercero = facturaCanastilla.Tercero.identificacion.ToString();
+
                 var movimientosContables = new List<object>();
-                
-                // Agregar movimientos por cada item de la canastilla
+                decimal totalMovimientos = 0m;
+                bool tieneUrea = false;
+
+                // Movimientos por cada item de la canastilla (ingreso + IVA si aplica)
                 foreach (dynamic item in facturaCanastilla.Detalle)
                 {
-                    if (item.Canastilla != null)
+                    if (item.Canastilla == null)
                     {
-                        decimal valorItem = (decimal)(item.cantidad * item.Canastilla.precio);
-                        
-                        // Obtener auxiliar según el tipo de producto (urea vs lubricantes)
-                        string descripcionProducto = item.Canastilla.descripcion?.ToString() ?? "";
-                        string auxiliarItem = ObtenerAuxiliarProductoCanastilla(descripcionProducto);
-                        Logger.Info($"Factura canastilla {facturaCanastilla.FacturasCanastillaId} - Producto '{descripcionProducto}' → auxiliar '{auxiliarItem}'");
+                        continue;
+                    }
 
-                        // Movimiento del producto/servicio
-                        movimientosContables.Add(new
-                        {
-                            F_CIA = "1",
-                            F350_ID_CO = config.CentroOperacionesDocumento,
-                            F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
-                            F350_CONSEC_DOCTO = consecutivo,
-                            F351_ID_AUXILIAR = auxiliarItem,
-                            F351_ID_TERCERO = facturaCanastilla.Tercero.identificacion.ToString(),
-                            F351_ID_CO_MOV = config.CentroOperacionesDocumento,
-                            F351_ID_UN = ConfigurationManager.AppSettings["unidadnegocio"],
-                            F351_ID_CCOSTO = "",
-                            F351_ID_FE = "",
-                            F351_VALOR_DB = "0",
-                            F351_VALOR_CR = valorItem.ToString("0.00", CultureInfo.InvariantCulture),
-                            F351_BASE_GRAVABLE = "",
-                            F351_DOCTO_BANCO = "",
-                            F351_NRO_DOCTO_BANCO = "",
-                            F351_NOTAS = $"Canastilla {item.Canastilla.descripcion} - Cant: {item.cantidad}"
-                        });
+                    decimal valorItem = Decimal.Round((decimal)(item.cantidad * item.Canastilla.precio), 2);
+                    string descripcionProducto = item.Canastilla.descripcion?.ToString() ?? "";
+                    string auxiliarItem = ObtenerAuxiliarProductoCanastilla(descripcionProducto);
+                    tieneUrea = tieneUrea || EsUrea(descripcionProducto);
+                    Logger.Info($"Factura canastilla {facturaCanastilla.FacturasCanastillaId} - Producto '{descripcionProducto}' → auxiliar '{auxiliarItem}'");
 
-                        // Si tiene IVA, agregar movimiento de IVA con auxiliar configurable
-                        if (item.Canastilla.iva > 0)
-                        {
-                            decimal ivaItem = valorItem * (item.Canastilla.iva / 100m);
-                            string auxiliarIva = ConfigurationManager.AppSettings["auxiliarcanastillaiva"] ?? "240801";
-                            movimientosContables.Add(new
-                            {
-                                F_CIA = "1",
-                                F350_ID_CO = config.CentroOperacionesDocumento,
-                                F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
-                                F350_CONSEC_DOCTO = consecutivo,
-                                F351_ID_AUXILIAR = auxiliarIva,
-                                F351_ID_TERCERO = facturaCanastilla.Tercero.identificacion.ToString(),
-                                F351_ID_CO_MOV = config.CentroOperacionesDocumento,
-                                F351_ID_UN = ConfigurationManager.AppSettings["unidadnegocio"],
-                                F351_ID_CCOSTO = "",
-                                F351_ID_FE = "",
-                                F351_VALOR_DB = "0",
-                                F351_VALOR_CR = ivaItem.ToString("0.00", CultureInfo.InvariantCulture),
-                                F351_BASE_GRAVABLE = valorItem.ToString("0.00", CultureInfo.InvariantCulture),
-                                F351_DOCTO_BANCO = "",
-                                F351_NRO_DOCTO_BANCO = "",
-                                F351_NOTAS = $"IVA {item.Canastilla.iva}% - {item.Canastilla.descripcion}"
-                            });
-                        }
+                    movimientosContables.Add(ConstruirMovimientoContable(
+                        config, consecutivo, tercero, auxiliarItem, valorItem,
+                        $"FACTURA {consecutivo} {descripcionProducto} - Cant: {item.cantidad}"));
+                    totalMovimientos += valorItem;
+
+                    if (item.Canastilla.iva > 0)
+                    {
+                        decimal ivaItem = Decimal.Round(valorItem * (item.Canastilla.iva / 100m), 2);
+                        movimientosContables.Add(ConstruirMovimientoContable(
+                            config, consecutivo, tercero,
+                            ObtenerConfig("auxiliarcanastillaiva", AuxiliarIvaPorDefecto), ivaItem,
+                            $"FAC {consecutivo} IVA {item.Canastilla.iva}% {descripcionProducto}"));
+                        totalMovimientos += ivaItem;
                     }
                 }
-                
-                // Si tiene segunda forma de pago con valor, se envía usando ambas formas en Caja.
-                if (pagos.Count > 1)
-                {
-                    var resumenPagos = string.Join(", ", pagos.Select(x => $"{x.FormaPagoId}:{x.Valor.ToString("0.00", CultureInfo.InvariantCulture)}").ToArray());
-                    Logger.Info($"Factura canastilla {facturaCanastilla.FacturasCanastillaId} con multipago detectado. Formas: {resumenPagos}");
-                    return EnviarFacturaCanastillaMultipago(facturaCanastilla, consecutivo, config, movimientosContables, pagos);
-                }
 
-                // Movimiento de caja/CXC (según forma de pago principal)
-                if (EsFormaPagoEfectivo(formaPagoPrincipalId))
-                {
-                    return EnviarFacturaCanastillaEfectivo(facturaCanastilla, consecutivo, config, movimientosContables);
-                }
-                else
-                {
-                    return EnviarFacturaCanastillaCredito(facturaCanastilla, consecutivo, config, movimientosContables);
-                }
+                // El débito (caja / CxC / banco) usa el mismo mecanismo de formas de pago de combustible
+                // y debe cuadrar exactamente con la suma de créditos redondeados.
+                int formaPagoPrincipalId = ObtenerIdFormaPago(facturaCanastilla.codigoFormaPago);
+                int? formaPagoSecundariaId = ConvertirEnteroNullable(facturaCanastilla.codigoFormaPago2);
+                string tipoProducto = tieneUrea ? "urea" : "lubricantes";
+                object documentoContable = ConstruirDocumentoContable(facturaCanastilla, config, consecutivo, tercero);
+
+                return EnviarConFormasPagoCombustible(
+                    facturaCanastilla, apiContabilidad, documentoContable, movimientosContables,
+                    totalMovimientos, formaPagoPrincipalId, formaPagoSecundariaId, consecutivo, tercero, tipoProducto);
             }
             catch (Exception ex)
             {
@@ -362,187 +326,56 @@ namespace EnviadorInformacionService
             }
         }
 
-        private bool EnviarFacturaCanastillaMultipago(dynamic facturaCanastilla, string consecutivo, dynamic config, List<object> movimientosContables, List<PagoCanastillaSiesa> pagos)
+        private static object ConstruirDocumentoContable(dynamic facturaCanastilla, dynamic config, string consecutivo, string tercero)
         {
-            try
+            string consecutivoAutoRegulado = config.ConsecutivoAutoregulado;
+            return new
             {
-                var caja = pagos.Select(pago => new
-                {
-                    F_CIA = "1",
-                    F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescaja"],
-                    F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
-                    F350_CONSEC_DOCTO = consecutivo,
-                    F351_NOTAS = $"Venta canastilla forma {pago.FormaPagoId}",
-                    F351_ID_AUXILIAR = ConfigurationManager.AppSettings["cajaotros"] ?? "110501",
-                    F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocaja"] ?? "",
-                    F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocaja"] ?? "",
-                    F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocaja"],
-                    F351_VALOR_CR = "0",
-                    F351_VALOR_DB = pago.Valor.ToString("0.00", CultureInfo.InvariantCulture),
-                    F351_ID_FE = config.Idfe,
-                    F358_COD_SEGURIDAD = "",
-                    F358_FECHA_VCTO = facturaCanastilla.fecha.ToString("yyyyMMdd"),
-                    F358_ID_CAJA = ConfigurationManager.AppSettings["caja"] ?? "003",
-                    F358_ID_MEDIOS_PAGO = pago.MedioSiesa,
-                    F358_NOTAS = $"Factura canastilla {consecutivo} forma {pago.FormaPagoId}",
-                    F358_NRO_AUTORIZACION = "",
-                    F358_NRO_CUENTA = "",
-                    F358_REFERENCIA_OTROS = ""
-                }).Cast<object>().ToList();
-
-                var requestContent = new
-                {
-                    Inicial = new List<object> { new { F_CIA = "1" } },
-                    Final = new List<object> { new { F_CIA = "1" } },
-                    Caja = caja,
-                    Documentocontable = new List<object>
-                    {
-                        new
-                        {
-                            F_CIA = "1",
-                            F_CONSEC_AUTO_REG = config.ConsecutivoAutoregulado,
-                            F350_ID_CO = config.CentroOperacionesDocumento,
-                            F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
-                            F350_CONSEC_DOCTO = consecutivo,
-                            F350_FECHA = facturaCanastilla.fecha.ToString("yyyyMMdd"),
-                            F350_ID_TERCERO = facturaCanastilla.Tercero.identificacion.ToString(),
-                            F350_IND_ESTADO = "1",
-                            F350_NOTAS = $"Factura canastilla {consecutivo}"
-                        }
-                    },
-                    Movimientocontable = movimientosContables
-                };
-
-                return EnviarASiesaAPI(requestContent, consecutivo, "Canastilla-Multipago");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, $"Error enviando factura canastilla multipago {consecutivo}");
-                return false;
-            }
+                F_CIA = "1",
+                F_CONSEC_AUTO_REG = string.IsNullOrWhiteSpace(consecutivoAutoRegulado) ? "0" : consecutivoAutoRegulado.Trim(),
+                F350_ID_CO = (string)config.CentroOperacionesDocumento,
+                F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
+                F350_CONSEC_DOCTO = consecutivo,
+                F350_FECHA = (string)facturaCanastilla.fecha.ToString("yyyyMMdd"),
+                F350_ID_TERCERO = tercero,
+                F350_ID_CLASE_DOCTO = "",
+                F350_IND_ESTADO = "1",
+                F350_IND_IMPRESION = "",
+                F350_NOTAS = $"FACTURA {consecutivo}",
+                f350_id_mandato = ""
+            };
         }
 
-        /// <summary>
-        /// Envía factura canastilla con forma de pago efectivo (usando módulo Caja)
-        /// </summary>
-        private bool EnviarFacturaCanastillaEfectivo(dynamic facturaCanastilla, string consecutivo, dynamic config, List<object> movimientosContables)
+        private static object ConstruirMovimientoContable(dynamic config, string consecutivo, string tercero, string auxiliar, decimal valorCredito, string notas)
         {
-            try
+            return new
             {
-                var requestContent = new
-                {
-                    Inicial = new List<object> { new { F_CIA = "1" } },
-                    Final = new List<object> { new { F_CIA = "1" } },
-                    Caja = new List<object>
-                    {
-                        new
-                        {
-                            F_CIA = "1",
-                            F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescaja"],
-                            F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
-                            F350_CONSEC_DOCTO = consecutivo,
-                            F351_NOTAS = "Venta canastilla",
-                            F351_ID_AUXILIAR = ConfigurationManager.AppSettings["cajaotros"] ?? "110501",
-                            F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocaja"] ?? "",
-                            F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocaja"] ?? "",
-                            F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocaja"],
-                            F351_VALOR_CR = "0",
-                            F351_VALOR_DB = facturaCanastilla.Total.ToString("0.00", CultureInfo.InvariantCulture),
-                            F351_ID_FE = config.Idfe,
-                            F358_COD_SEGURIDAD = "",
-                            F358_FECHA_VCTO = facturaCanastilla.fecha.ToString("yyyyMMdd"),
-                            F358_ID_CAJA = ConfigurationManager.AppSettings["caja"] ?? "003",
-                            F358_ID_MEDIOS_PAGO = "EFE",
-                            F358_NOTAS = $"Factura canastilla {consecutivo}",
-                            F358_NRO_AUTORIZACION = "",
-                            F358_NRO_CUENTA = "",
-                            F358_REFERENCIA_OTROS = ""
-                        }
-                    },
-                    Documentocontable = new List<object>
-                    {
-                        new
-                        {
-                            F_CIA = "1",
-                            F_CONSEC_AUTO_REG = config.ConsecutivoAutoregulado,
-                            F350_ID_CO = config.CentroOperacionesDocumento,
-                            F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
-                            F350_CONSEC_DOCTO = consecutivo,
-                            F350_FECHA = facturaCanastilla.fecha.ToString("yyyyMMdd"),
-                            F350_ID_TERCERO = facturaCanastilla.Tercero.identificacion.ToString(),
-                            F350_IND_ESTADO = "1",
-                            F350_NOTAS = $"Factura canastilla {consecutivo}"
-                        }
-                    },
-                    Movimientocontable = movimientosContables
-                };
-
-                return EnviarASiesaAPI(requestContent, consecutivo, "Canastilla-Efectivo");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, $"Error enviando factura canastilla efectivo {consecutivo}");
-                return false;
-            }
+                F_CIA = "1",
+                F350_ID_CO = (string)config.CentroOperacionesDocumento,
+                F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
+                F350_CONSEC_DOCTO = consecutivo,
+                F351_ID_AUXILIAR = auxiliar,
+                F351_ID_TERCERO = tercero,
+                F351_ID_CO_MOV = (string)config.CentroOperacionesDocumento,
+                F351_ID_UN = ObtenerConfig("unidadnegociocanastilla", UnidadNegocioMovimientoPorDefecto),
+                F351_ID_CCOSTO = "",
+                F351_ID_FE = ObtenerConfig("idfemovimientocanastilla", IdFeMovimientoPorDefecto),
+                F351_VALOR_DB = "0",
+                F351_VALOR_CR = valorCredito.ToString("0.00", CultureInfo.InvariantCulture),
+                F351_VALOR_DB_ALT = "",
+                F351_VALOR_CR_ALT = "",
+                F351_BASE_GRAVABLE = "1",
+                F351_DOCTO_BANCO = "",
+                F351_NRO_DOCTO_BANCO = "",
+                F351_NOTAS = notas,
+                F351_ID_SUCURSAL = string.IsNullOrWhiteSpace((string)config.Sucursal) ? "001" : ((string)config.Sucursal).Trim()
+            };
         }
 
-        /// <summary>
-        /// Envía factura canastilla con otras formas de pago (usando CXC)
-        /// </summary>
-        private bool EnviarFacturaCanastillaCredito(dynamic facturaCanastilla, string consecutivo, dynamic config, List<object> movimientosContables)
+        private static string ObtenerConfig(string key, string porDefecto)
         {
-            try
-            {
-                // Agregar movimiento de CXC
-                movimientosContables.Add(new
-                {
-                    F_CIA = "1",
-                    F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionesotros"],
-                    F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
-                    F350_CONSEC_DOCTO = consecutivo,
-                    F351_ID_AUXILIAR = ConfigurationManager.AppSettings["cajaotros"] ?? "110501",
-                    F351_ID_TERCERO = "",
-                    F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientootros"],
-                    F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociootros"],
-                    F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostootros"] ?? "",
-                    F351_ID_FE = ConfigurationManager.AppSettings["idfeotros"],
-                    F351_VALOR_DB = facturaCanastilla.Total.ToString("0.00", CultureInfo.InvariantCulture),
-                    F351_VALOR_CR = "0",
-                    F351_BASE_GRAVABLE = "",
-                    F351_DOCTO_BANCO = "CG",
-                    F351_NRO_DOCTO_BANCO = facturaCanastilla.fecha.ToString("yyyyMMdd"),
-                    F351_NOTAS = $"Factura canastilla {consecutivo}"
-                });
-
-                var requestContent = new
-                {
-                    Inicial = new List<object> { new { F_CIA = "1" } },
-                    Final = new List<object> { new { F_CIA = "1" } },
-                    Documentocontable = new List<object>
-                    {
-                        new
-                        {
-                            F_CIA = "1",
-                            F_CONSEC_AUTO_REG = config.ConsecutivoAutoregulado,
-                            F350_ID_CO = config.CentroOperacionesDocumento,
-                            F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
-                            F350_CONSEC_DOCTO = consecutivo,
-                            F350_FECHA = facturaCanastilla.fecha.ToString("yyyyMMdd"),
-                            F350_ID_TERCERO = facturaCanastilla.Tercero.identificacion.ToString(),
-                            F350_IND_ESTADO = "1",
-                            F350_NOTAS = $"Factura canastilla {consecutivo}"
-                        }
-                    },
-                    Movimientocontable = movimientosContables
-                };
-
-                return EnviarASiesaAPI(requestContent, consecutivo, "Canastilla-Credito");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, $"Error enviando factura canastilla crédito {consecutivo}");
-                return false;
-            }
+            var valor = ConfigurationManager.AppSettings[key];
+            return string.IsNullOrWhiteSpace(valor) ? porDefecto : valor.Trim();
         }
 
         /// <summary>
@@ -614,66 +447,6 @@ namespace EnviadorInformacionService
             }
         }
 
-        private List<PagoCanastillaSiesa> ConstruirPagosFactura(int formaPagoPrincipalId, int? formaPagoSecundariaId, decimal totalFactura, decimal? total1, decimal? total2)
-        {
-            var valorPago2 = (formaPagoSecundariaId.HasValue && total2.HasValue && total2.Value > 0)
-                ? Decimal.Round(total2.Value, 2)
-                : 0m;
-
-            var valorPago1 = total1.HasValue && total1.Value > 0
-                ? Decimal.Round(total1.Value, 2)
-                : Decimal.Round(Math.Max(0m, totalFactura - valorPago2), 2);
-
-            // Ajuste defensivo para que la suma de pagos no supere el total de la factura.
-            if (valorPago1 + valorPago2 > totalFactura && totalFactura > 0)
-            {
-                valorPago1 = Decimal.Round(Math.Max(0m, totalFactura - valorPago2), 2);
-            }
-
-            var pagos = new List<PagoCanastillaSiesa>();
-
-            if (formaPagoPrincipalId > 0 && valorPago1 > 0)
-            {
-                pagos.Add(new PagoCanastillaSiesa
-                {
-                    FormaPagoId = formaPagoPrincipalId,
-                    Valor = valorPago1,
-                    MedioSiesa = ObtenerMedioPagoSiesa(formaPagoPrincipalId)
-                });
-            }
-
-            if (formaPagoSecundariaId.HasValue && formaPagoSecundariaId.Value > 0 && valorPago2 > 0)
-            {
-                pagos.Add(new PagoCanastillaSiesa
-                {
-                    FormaPagoId = formaPagoSecundariaId.Value,
-                    Valor = valorPago2,
-                    MedioSiesa = ObtenerMedioPagoSiesa(formaPagoSecundariaId.Value)
-                });
-            }
-
-            if (!pagos.Any())
-            {
-                pagos.Add(new PagoCanastillaSiesa
-                {
-                    FormaPagoId = formaPagoPrincipalId,
-                    Valor = Decimal.Round(totalFactura, 2),
-                    MedioSiesa = ObtenerMedioPagoSiesa(formaPagoPrincipalId)
-                });
-            }
-
-            return pagos
-                .GroupBy(x => x.FormaPagoId)
-                .Select(g => new PagoCanastillaSiesa
-                {
-                    FormaPagoId = g.Key,
-                    Valor = Decimal.Round(g.Sum(x => x.Valor), 2),
-                    MedioSiesa = g.First().MedioSiesa
-                })
-                .Where(x => x.Valor > 0)
-                .ToList();
-        }
-
         private static int ObtenerIdFormaPago(dynamic formaPago)
         {
             if (formaPago == null)
@@ -715,18 +488,6 @@ namespace EnviadorInformacionService
             }
         }
 
-        private static decimal ConvertirDecimal(dynamic valor)
-        {
-            try
-            {
-                return Convert.ToDecimal(valor, CultureInfo.InvariantCulture);
-            }
-            catch
-            {
-                return 0m;
-            }
-        }
-
         private static decimal? ConvertirDecimalNullable(dynamic valor)
         {
             if (valor == null)
@@ -744,12 +505,6 @@ namespace EnviadorInformacionService
             }
         }
 
-        private static bool EsFormaPagoEfectivo(int formaPagoId)
-        {
-            // Regla de negocio: solo la forma de pago 4 se envía por caja.
-            return formaPagoId == 4;
-        }
-
         /// <summary>
         /// Determina el auxiliar contable para un producto de canastilla.
         /// Si la descripción contiene "urea" usa <c>auxiliarurea</c>;
@@ -757,37 +512,86 @@ namespace EnviadorInformacionService
         /// </summary>
         private static string ObtenerAuxiliarProductoCanastilla(string descripcion)
         {
-            if (!string.IsNullOrWhiteSpace(descripcion) &&
-                descripcion.IndexOf("urea", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                return ConfigurationManager.AppSettings["auxiliarurea"];
-            }
-
-            return ConfigurationManager.AppSettings["auxiliarlubricantes"];
+            return EsUrea(descripcion)
+                ? ObtenerConfig("auxiliarurea", AuxiliarUreaPorDefecto)
+                : ObtenerConfig("auxiliarlubricantes", AuxiliarLubricantesPorDefecto);
         }
 
-        private string ObtenerMedioPagoSiesa(int formaPagoId)
+        private static bool EsUrea(string descripcion)
         {
-            var key = $"mediopagosiesa_{formaPagoId}";
-            var medioDesdeConfig = ConfigurationManager.AppSettings[key];
-            if (!string.IsNullOrWhiteSpace(medioDesdeConfig))
-            {
-                return medioDesdeConfig.Trim().ToUpperInvariant();
-            }
-
-            if (EsFormaPagoEfectivo(formaPagoId))
-            {
-                return "EFE";
-            }
-
-            return (ConfigurationManager.AppSettings["mediopagosiesa_default"] ?? "OTR").Trim().ToUpperInvariant();
+            return !string.IsNullOrWhiteSpace(descripcion) &&
+                descripcion.IndexOf("urea", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        private class PagoCanastillaSiesa
+        /// <summary>
+        /// Envía la factura tratando las formas de pago igual que combustible:
+        /// caja / CxC / banco según App.config y auxiliar cruce por forma de pago desde App.config
+        /// (ver <see cref="ObtenerAuxiliarCruceCanastilla"/>). Los créditos (producto e IVA) se conservan tal como se arman para canastilla.
+        /// </summary>
+        private bool EnviarConFormasPagoCombustible(
+            dynamic facturaCanastilla, ApiSiesa apiContabilidad,
+            object documentoContable, List<object> movimientosContables, decimal total,
+            int formaPagoPrincipalId, int? formaPagoSecundariaId, string consecutivo, string tercero, string tipoProducto)
         {
-            public int FormaPagoId { get; set; }
-            public decimal Valor { get; set; }
-            public string MedioSiesa { get; set; }
+            decimal? total1 = ConvertirDecimalNullable(facturaCanastilla.total1);
+            decimal? total2 = ConvertirDecimalNullable(facturaCanastilla.total2);
+
+            var formasUsadas = new List<int> { formaPagoPrincipalId };
+            if (formaPagoSecundariaId.HasValue && formaPagoSecundariaId.Value > 0 && total2.HasValue && total2.Value > 0)
+            {
+                formasUsadas.Add(formaPagoSecundariaId.Value);
+            }
+
+            var crucesPorForma = new Dictionary<int, string>();
+            foreach (var forma in formasUsadas.Distinct())
+            {
+                var cruce = ObtenerAuxiliarCruceCanastilla(tipoProducto, forma);
+                if (string.IsNullOrWhiteSpace(cruce))
+                {
+                    Logger.Warn($"Factura canastilla {facturaCanastilla.FacturasCanastillaId} no se envió: falta en App.config la clave " +
+                        $"'auxiliarcrucecanastilla_{tipoProducto}_{forma}' o 'auxiliarcrucecanastilla_{forma}' con el auxiliar cruce de la forma de pago {forma}");
+                    return false;
+                }
+                crucesPorForma[forma] = cruce;
+            }
+
+            var pagos = apiContabilidad.ConstruirPagosComoCombustible(
+                formaPagoPrincipalId, formaPagoSecundariaId, total, total1, total2, crucesPorForma,
+                consecutivo, (DateTime)facturaCanastilla.fecha, tercero, $"Factura canastilla {consecutivo}");
+
+            var request = new Dictionary<string, object>
+            {
+                ["Inicial"] = new List<object> { new { F_CIA = "1" } },
+                ["Documentocontable"] = new List<object> { documentoContable },
+                ["Movimientocontable"] = movimientosContables.Concat(pagos.MovimientosBanco).ToList()
+            };
+            if (pagos.Caja.Any())
+            {
+                request["Caja"] = pagos.Caja;
+            }
+            if (pagos.CxC.Any())
+            {
+                request["MovimientoCxC"] = pagos.CxC;
+            }
+            request["Final"] = new List<object> { new { F_CIA = "1" } };
+
+            return EnviarASiesaAPI(request, consecutivo, $"Canastilla-{tipoProducto}");
+        }
+
+        /// <summary>
+        /// Auxiliar cruce (caja / banco / CxC) de una forma de pago, tomado del App.config.
+        /// Primero busca la clave específica del tipo de producto (auxiliarcrucecanastilla_urea_5)
+        /// y luego la general de la forma de pago (auxiliarcrucecanastilla_5).
+        /// </summary>
+        private static string ObtenerAuxiliarCruceCanastilla(string tipoProducto, int formaPagoId)
+        {
+            var especifico = ConfigurationManager.AppSettings[$"auxiliarcrucecanastilla_{tipoProducto}_{formaPagoId}"];
+            if (!string.IsNullOrWhiteSpace(especifico))
+            {
+                return especifico.Trim();
+            }
+
+            return ConfigurationManager.AppSettings[$"auxiliarcrucecanastilla_{formaPagoId}"]?.Trim();
         }
 
         /// <summary>

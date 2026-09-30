@@ -710,6 +710,103 @@ namespace EnviadorInformacionService.Contabilidad
             };
         }
 
+        /// <summary>
+        /// Lado débito de una factura con las mismas reglas de formas de pago de combustible:
+        /// caja (formaspagocaja), CxC (formaspagocxc) o banco (por defecto), usando el auxiliar
+        /// cruce de cada forma. Se usa para productos de canastilla que se contabilizan como combustible (urea).
+        /// </summary>
+        internal PagosSiesaCombustible ConstruirPagosComoCombustible(
+            int formaPagoPrincipalId, int? formaPagoSecundariaId, decimal total, decimal? total1, decimal? total2,
+            Dictionary<int, string> crucesPorForma, string consecutivo, DateTime fecha, string tercero, string nota)
+        {
+            var pagos = ConstruirPagosFactura(formaPagoPrincipalId, formaPagoSecundariaId, total, total1, total2);
+            var diferencia = decimal.Round(total, 2) - pagos.Sum(x => x.Valor);
+            if (diferencia != 0m && pagos.Any())
+            {
+                Logger.Warn($"Pagos como combustible - Ajuste de {diferencia.ToString("0.00", CultureInfo.InvariantCulture)} en el primer pago para cuadrar con el total {total.ToString("0.00", CultureInfo.InvariantCulture)} (consecutivo {consecutivo})");
+                pagos[0].Valor += diferencia;
+            }
+
+            var docTipo = ConfigurationManager.AppSettings["documentofactura"] ?? "";
+            var fechaTexto = fecha.ToString("yyyyMMdd");
+            Func<int, string> crucePorForma = formaPagoId => crucesPorForma[formaPagoId];
+
+            var caja = pagos.Where(p => EsFormaPagoEfectivo(p.FormaPagoId)).Select(p => new Caja
+            {
+                F_CIA = "1",
+                F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescaja"] ?? "",
+                F350_ID_TIPO_DOCTO = docTipo,
+                F350_CONSEC_DOCTO = consecutivo,
+                F351_NOTAS = $"{nota} forma {p.FormaPagoId}",
+                F351_ID_AUXILIAR = crucePorForma(p.FormaPagoId),
+                F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocaja"] ?? "",
+                F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocaja"] ?? "",
+                F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocaja"] ?? "",
+                F351_VALOR_CR = "0",
+                F351_VALOR_DB = p.Valor.ToString("0.00", CultureInfo.InvariantCulture),
+                F351_ID_FE = ConfigurationManager.AppSettings["idfe"] ?? "",
+                F358_COD_SEGURIDAD = "",
+                F358_FECHA_VCTO = fechaTexto,
+                F358_ID_CAJA = ConfigurationManager.AppSettings["caja"] ?? "",
+                F358_ID_MEDIOS_PAGO = p.MedioSiesa,
+                F358_NOTAS = $"{nota} forma {p.FormaPagoId}",
+                F358_NRO_AUTORIZACION = "",
+                F358_NRO_CUENTA = crucePorForma(p.FormaPagoId),
+                F358_REFERENCIA_OTROS = ""
+            }).ToList();
+
+            var banco = pagos.Where(p => !EsFormaPagoEfectivo(p.FormaPagoId) && !EsFormaPagoCxC(p.FormaPagoId)).Select(p => new Movimientocontable
+            {
+                F_CIA = "1",
+                F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionesotros"] ?? "",
+                F350_ID_TIPO_DOCTO = docTipo,
+                F350_CONSEC_DOCTO = consecutivo,
+                F351_ID_AUXILIAR = crucePorForma(p.FormaPagoId),
+                F351_ID_TERCERO = "",
+                F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientootros"] ?? "",
+                F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociootros"] ?? "",
+                F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostootros"] ?? "",
+                F351_ID_FE = !string.IsNullOrEmpty(ConfigurationManager.AppSettings["idfebanco"])
+                    ? ConfigurationManager.AppSettings["idfebanco"]
+                    : (ConfigurationManager.AppSettings["idfeotros"] ?? ""),
+                F351_VALOR_DB = p.Valor.ToString("0.00", CultureInfo.InvariantCulture),
+                F351_VALOR_CR = "0",
+                F351_BASE_GRAVABLE = "",
+                F351_DOCTO_BANCO = "CG",
+                F351_NRO_DOCTO_BANCO = fechaTexto,
+                F351_NOTAS = $"{nota} forma {p.FormaPagoId}"
+            }).ToList();
+
+            var cxc = pagos.Where(p => !EsFormaPagoEfectivo(p.FormaPagoId) && EsFormaPagoCxC(p.FormaPagoId)).Select(p => new MovimientoCxC
+            {
+                F_CIA = "1",
+                F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescxc"] ?? "",
+                F350_ID_TIPO_DOCTO = docTipo,
+                F350_CONSEC_DOCTO = consecutivo,
+                F351_ID_AUXILIAR = crucePorForma(p.FormaPagoId),
+                F351_ID_TERCERO = ObtenerTerceroCxC(tercero),
+                F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocxc"] ?? "",
+                F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocxc"] ?? "",
+                F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocxc"] ?? "",
+                F351_VALOR_DB = p.Valor.ToString("0.00", CultureInfo.InvariantCulture),
+                F351_VALOR_CR = "0",
+                F351_NOTAS = nota,
+                F353_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"] ?? "",
+                F353_ID_TIPO_DOCTO_CRUCE = docTipo,
+                F353_CONSEC_DOCTO_CRUCE = ConfigurationManager.AppSettings["unidadnegociocxc"]?.Trim() == "99"
+                    ? consecutivo
+                    : (ConfigurationManager.AppSettings["documentocruce"] ?? ""),
+                F353_NRO_CUOTA_CRUCE = "11",
+                F353_FECHA_VCTO = DateTime.Now.ToString("yyyyMMdd"),
+                F353_FECHA_DSCTO_PP = DateTime.Now.ToString("yyyyMMdd"),
+                F354_TERCERO_VEND = ConfigurationManager.AppSettings["vendedor"] ?? "",
+                F354_NOTAS = $"{docTipo} {consecutivo}"
+            }).ToList();
+
+            Logger.Info($"Pagos como combustible - consecutivo {consecutivo}: {string.Join(", ", pagos.Select(x => $"forma {x.FormaPagoId}={x.Valor.ToString("0.00", CultureInfo.InvariantCulture)} ({(EsFormaPagoEfectivo(x.FormaPagoId) ? "caja" : EsFormaPagoCxC(x.FormaPagoId) ? "cxc" : "banco")})"))}");
+            return new PagosSiesaCombustible(banco, caja, cxc);
+        }
+
         private List<PagoFacturaSiesa> ConstruirPagosFactura(int formaPagoPrincipalId, int? formaPagoSecundariaId, decimal totalFactura, decimal? total1, decimal? total2)
         {
             var valorPago2 = (formaPagoSecundariaId.HasValue && total2.HasValue && total2.Value > 0)
@@ -880,6 +977,20 @@ namespace EnviadorInformacionService.Contabilidad
             public int FormaPagoId { get; set; }
             public decimal Valor { get; set; }
             public string MedioSiesa { get; set; }
+        }
+
+        internal sealed class PagosSiesaCombustible
+        {
+            public PagosSiesaCombustible(List<Movimientocontable> movimientosBanco, List<Caja> caja, List<MovimientoCxC> cxc)
+            {
+                MovimientosBanco = movimientosBanco;
+                Caja = caja;
+                CxC = cxc;
+            }
+
+            public List<Movimientocontable> MovimientosBanco { get; }
+            public List<Caja> Caja { get; }
+            public List<MovimientoCxC> CxC { get; }
         }
 
         private MovimientosCaja ConvertirAMovimientoSiesaCaja(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce, string auxiliarDescuento)

@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using Factura = FactoradorEstacionesModelo.Objetos.Factura;
 using Resolucion = FactoradorEstacionesModelo.Objetos.Resolucion;
@@ -77,38 +78,37 @@ namespace FactoradorEstacionesModelo.Convertidor
         {
             var venta = new Venta();
 
-            venta.CONSECUTIVO = dr.IsNull("CONSECUTIVO") ? 0 : dr.Field<int>("CONSECUTIVO");
-            venta.COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI");
-            venta.PLACA = dr.IsNull("PLACA") ? "" : dr.Field<string>("PLACA");
-            venta.KILOMETRAJE = dr.IsNull("KIL_ACT") ? 0 : dr.Field<decimal?>("KIL_ACT");
-            venta.CANTIDAD = dr.IsNull("CANTIDAD") ? 0 : dr.Field<decimal>("CANTIDAD");
-            venta.PRECIO_UNI = dr.IsNull("PRECIO_UNI") ? 0 : dr.Field<decimal>("PRECIO_UNI");
-            venta.IVA = dr.IsNull("IVA") ? 0 : dr.Field<int>("IVA");
-            venta.SUBTOTAL = dr.IsNull("SUBTOTAL") ? 0 : dr.Field<decimal>("SUBTOTAL");
-            venta.TOTAL = dr.IsNull("TOTAL") ? 0 : dr.Field<decimal>("TOTAL");
-            venta.VALORNETO = dr.IsNull("VALORNETO") ? 0 : dr.Field<decimal>("VALORNETO");
-            venta.NOMBRE = dr.IsNull("NOMBRE") ? "" : dr.Field<string>("NOMBRE");
-            venta.TIPO_NIT = dr.IsNull("TIPO_NIT") ? "" : dr.Field<string>("TIPO_NIT");
-            venta.NIT = dr.IsNull("NIT") ? "" : dr.Field<string>("NIT");
-            venta.DIR_OFICINA = dr.IsNull("DIR_OFICINA") ? "" : dr.Field<string>("DIR_OFICINA");
-            venta.TEL_OFICINA = dr.IsNull("TEL_OFICINA") ? "" : dr.Field<string>("TEL_OFICINA");
-            venta.IMP_NOM = dr.IsNull("IMP_NOM") ? "" : dr.Field<string>("IMP_NOM");
-            venta.COD_EMP = dr.IsNull("COD_EMP") ? "" : dr.Field<string>("COD_EMP");
+            venta.CONSECUTIVO = Columna<int>(dr, "CONSECUTIVO");
+            venta.COD_CLI = Columna(dr, "COD_CLI", string.Empty);
+            venta.PLACA = Columna(dr, "PLACA", string.Empty);
+            venta.KILOMETRAJE = Columna<decimal?>(dr, "KIL_ACT", 0);
+            venta.CANTIDAD = Columna<decimal>(dr, "CANTIDAD");
+            venta.PRECIO_UNI = Columna<decimal>(dr, "PRECIO_UNI");
+            venta.IVA = Columna<int>(dr, "IVA");
+            venta.SUBTOTAL = Columna<decimal>(dr, "SUBTOTAL");
+            venta.TOTAL = Columna<decimal>(dr, "TOTAL");
+            venta.VALORNETO = Columna<decimal>(dr, "VALORNETO");
+            venta.NOMBRE = Columna(dr, "NOMBRE", string.Empty);
+            venta.TIPO_NIT = Columna(dr, "TIPO_NIT", string.Empty);
+            venta.NIT = Columna(dr, "NIT", string.Empty);
+            venta.DIR_OFICINA = Columna(dr, "DIR_OFICINA", string.Empty);
+            venta.TEL_OFICINA = Columna(dr, "TEL_OFICINA", string.Empty);
+            venta.IMP_NOM = Columna(dr, "IMP_NOM", string.Empty);
+            venta.COD_EMP = Columna(dr, "COD_EMP", string.Empty);
 
-            var type = dr["COD_CAR"].GetType().Name;
-            var typesur = dr["COD_SUR"].GetType().Name;
-            venta.COD_CAR = dr.Table.Columns.Contains("COD_CAR") ? (dr.IsNull("COD_CAR") ? (short)0 : Convert.ToInt16(dr["COD_CAR"])) : (short)0;
-            venta.COD_SUR = dr.Table.Columns.Contains("COD_SUR") ? (dr.IsNull("COD_SUR") ? (short)0 : Convert.ToInt16(dr["COD_SUR"])) : (short)0;
-            venta.COD_INT = dr.Table.Columns.Contains("COD_INT") ? (dr.IsNull("COD_INT") ? "" : dr.Field<string>("COD_INT")) : "";
-            venta.COD_FOR_PAG = dr.IsNull("KIL_ACT") ? 0 : dr.Field<int>("COD_FOR_PAG");
-            venta.FECH_ULT_ACTU = dr.IsNull("FECH_ULT_ACTU") ? null : dr.Field<DateTime?>("FECH_ULT_ACTU");
-            venta.FECH_PRMA = dr.IsNull("MANTENIMIENTO") ? null : dr.Field<DateTime?>("MANTENIMIENTO");
-            
-            venta.Combustible = dr.IsNull("DESCRIPCION") ? "" : dr.Field<string>("DESCRIPCION");
-            venta.Descuento = dr.IsNull("DESCUENTO") ? 0 : dr.Field<decimal>("DESCUENTO");
-            venta.EMPLEADO = dr.IsNull("VENDEDOR") ? "" : dr.Field<string>("VENDEDOR");
-            venta.CEDULA = dr.IsNull("CEDULA") ? "" : dr.Field<string>("CEDULA");
-            venta.FECHA_REAL = dr.IsNull("FechaReporte") ? null : dr.Field<DateTime?>("FechaReporte");
+            venta.COD_CAR = Columna<short>(dr, "COD_CAR");
+            venta.COD_SUR = Columna<short>(dr, "COD_SUR");
+            venta.COD_INT = Columna(dr, "COD_INT", string.Empty);
+            // Se conserva la regla previa: sin KIL_ACT la forma de pago queda en 0.
+            venta.COD_FOR_PAG = Columna<decimal?>(dr, "KIL_ACT") == null ? 0 : Columna<int>(dr, "COD_FOR_PAG");
+            venta.FECH_ULT_ACTU = Columna<DateTime?>(dr, "FECH_ULT_ACTU");
+            venta.FECH_PRMA = Columna<DateTime?>(dr, "MANTENIMIENTO");
+
+            venta.Combustible = Columna(dr, "DESCRIPCION", string.Empty);
+            venta.Descuento = Columna<decimal>(dr, "DESCUENTO");
+            venta.EMPLEADO = Columna(dr, "VENDEDOR", string.Empty);
+            venta.CEDULA = Columna(dr, "CEDULA", string.Empty);
+            venta.FECHA_REAL = Columna<DateTime?>(dr, "FechaReporte");
 
             var suma = Convert.ToInt64(venta.PRECIO_UNI * venta.CANTIDAD);
             var sumaTotal = Convert.ToInt64((venta.PRECIO_UNI * venta.CANTIDAD) - venta.Descuento);
@@ -326,18 +326,69 @@ namespace FactoradorEstacionesModelo.Convertidor
             List<Resolucion> response = new List<Resolucion>();
 
             response.AddRange(
-                dt.AsEnumerable().Select(dr => new Resolucion()
-                {
-                    ConsecutivoInicial = dr.Field<int>("consecutivoInicio"),
-                    ConsecutivoFinal = dr.Field<int>("consecutivoFinal"),
-                    ConsecutivoActual = dr.Field<int>("consecutivoActual"),
-                    DescripcionResolucion = dr.Field<string>("descripcionRes"),
-                    FechaFinalResolucion = dr.Field<DateTime>("fechafinal"),
-                    FechaInicioResolucion = dr.Field<DateTime>("fechaInicio"),
-                    Autorizacion = dr.Field<string>("Autorizacion"),
-                })
+                dt.AsEnumerable().Select(ConvertirResolucion)
             );
             return response;
+        }
+
+        private static Resolucion ConvertirResolucion(DataRow dr)
+        {
+            return new Resolucion()
+            {
+                ConsecutivoInicial = Columna<int>(dr, "consecutivoInicio"),
+                ConsecutivoFinal = Columna<int>(dr, "consecutivoFinal"),
+                ConsecutivoActual = Columna<int>(dr, "consecutivoActual"),
+                DescripcionResolucion = Columna<string>(dr, "descripcionRes"),
+                FechaFinalResolucion = Columna<DateTime>(dr, "fechafinal"),
+                FechaInicioResolucion = Columna<DateTime>(dr, "fechaInicio"),
+                Autorizacion = Columna<string>(dr, "Autorizacion"),
+            };
+        }
+
+        /// <summary>
+        /// Lee una columna de forma tolerante: si el SP no la retorna, viene en NULL
+        /// o con un tipo numérico distinto (ej. decimal vs float), devuelve el valor convertido
+        /// o <paramref name="valorPorDefecto"/> en lugar de lanzar excepción.
+        /// </summary>
+        private static T Columna<T>(DataRow dr, string columna, T valorPorDefecto = default)
+        {
+            if (!dr.Table.Columns.Contains(columna) || dr.IsNull(columna))
+            {
+                return valorPorDefecto;
+            }
+
+            var valor = dr[columna];
+            if (valor is T tipado)
+            {
+                return tipado;
+            }
+
+            try
+            {
+                var destino = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+                if (destino == typeof(Guid))
+                {
+                    return (T)(object)Guid.Parse(valor.ToString());
+                }
+                return (T)Convert.ChangeType(valor, destino, CultureInfo.InvariantCulture);
+            }
+            catch (Exception ex) when (ex is InvalidCastException || ex is FormatException || ex is OverflowException)
+            {
+                Logger.Warn($"No se pudo convertir la columna '{columna}' ({valor.GetType().Name}) a {typeof(T).Name}; se usa valor por defecto. {ex.Message}");
+                return valorPorDefecto;
+            }
+        }
+
+        /// <summary>
+        /// Registra en el log las columnas esperadas que el SP no retornó, para detectar SP desactualizados.
+        /// </summary>
+        private static void AdvertirColumnasFaltantes(DataTable dt, string origen, params string[] columnasEsperadas)
+        {
+            var faltantes = columnasEsperadas.Where(c => !dt.Columns.Contains(c)).ToList();
+            if (faltantes.Any())
+            {
+                Logger.Warn($"{origen}: el resultado del SP no contiene las columnas [{string.Join(", ", faltantes)}]; se usarán valores por defecto. Revise si el SP está desactualizado.");
+            }
         }
 
         internal List<FacturaFechaReporte> ConvertirFacturaFechaReporte(DataTable dt2)
@@ -357,81 +408,89 @@ namespace FactoradorEstacionesModelo.Convertidor
         internal List<FacturaCanastilla> ConvertirFacturaCanastilla(DataTable dt)
         {
             List<FacturaCanastilla> response = new List<FacturaCanastilla>();
+            if (dt == null || dt.Rows.Count == 0)
+            {
+                return response;
+            }
 
-            response.AddRange(
-                dt.AsEnumerable().Select(dr => {
-                    var fc = new FacturaCanastilla();
+            // FacturasCanastillaId identifica la factura (se usa para marcarla como enviada): sin ella no se puede procesar.
+            if (!dt.Columns.Contains("FacturasCanastillaId"))
+            {
+                throw new InvalidOperationException("ConvertirFacturaCanastilla: el SP no retornó la columna obligatoria 'FacturasCanastillaId'.");
+            }
 
-                    fc.FacturasCanastillaId = dr.Field<int>("FacturasCanastillaId");
-                    fc.consecutivo = dr.Field<int>("consecutivo");
-                    fc.fecha = dr.Field<DateTime>("fecha");
-                    fc.impresa = dr.Field<int>("impresa");
-                    fc.estado = dr.Field<string>("estado");
-                    fc.codigoFormaPago = new FormasPagos() { Id = dr.Field<int>("codigoFormaPago") };
-                    fc.codigoFormaPago2 = dr.Table.Columns.Contains("codigoFormaPago2") && !dr.IsNull("codigoFormaPago2")
-                        ? (int?)Convert.ToInt32(dr["codigoFormaPago2"])
-                        : null;
-                    fc.numeroTransaccion = dr.Table.Columns.Contains("numeroTransaccion") && !dr.IsNull("numeroTransaccion")
-                        ? dr.Field<string>("numeroTransaccion")
-                        : null;
-                    fc.total1 = dr.Table.Columns.Contains("total1") && !dr.IsNull("total1")
-                        ? (decimal?)Convert.ToDecimal(dr["total1"])
-                        : null;
-                    fc.total2 = dr.Table.Columns.Contains("total2") && !dr.IsNull("total2")
-                        ? (decimal?)Convert.ToDecimal(dr["total2"])
-                        : null;
-                    fc.descuento = Convert.ToSingle(dr.Field<double>("descuento"));
-                    fc.subtotal = Convert.ToSingle(dr.Field<double>("subtotal"));
-                    fc.total = Convert.ToSingle(dr.Field<double>("total"));
-                    fc.iva = Convert.ToSingle(dr.Field<double>("iva"));
-                    fc.resolucion = ConvertirResolucion(dt).FirstOrDefault();
-                    fc.enviada = dr.Field<bool>("enviada");
-                    fc.terceroId = new Objetos.Tercero();
+            AdvertirColumnasFaltantes(dt, nameof(ConvertirFacturaCanastilla),
+                "consecutivo", "fecha", "impresa", "estado", "codigoFormaPago", "descuento", "subtotal", "total", "iva",
+                "enviada", "COD_CLI", "direccion", "Nombre", "Telefono", "identificacion", "correo", "terceroId",
+                "tipoIdentificacion", "descripcion", "Vendedor", "isla");
 
-                    fc.terceroId.COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI");
-                    fc.terceroId.Direccion = dr.Field<string>("direccion");
-                    fc.terceroId.Nombre = dr.Field<string>("Nombre");
-                    fc.terceroId.Apellidos = dr.Table.Columns.Contains("apellidos") ? (dr.IsNull("apellidos") ? null : dr.Field<string>("apellidos")) : null;
-                    fc.terceroId.Telefono = dr.Field<string>("Telefono");
-                    fc.terceroId.identificacion = dr.Field<string>("identificacion");
+            // Todas las filas comparten la resolución de la primera fila (mismo comportamiento que antes).
+            var filaResolucion = dt.Rows[0];
 
-                    fc.terceroId.Correo = dr.Field<string>("correo");
-                    fc.terceroId.terceroId = dr.Field<int>("terceroId");
-                    fc.terceroId.tipoIdentificacion = dr.Field<int?>("tipoIdentificacion");
-                    fc.terceroId.tipoIdentificacionS = dr.Field<string>("descripcion");
-                    fc.Empleado = dr.Field<string>("Vendedor");
-                    fc.Isla = dr.Field<string>("isla");
-                    fc.TurnoGuid = dr.Table.Columns.Contains("turnoguid") && !dr.IsNull("turnoguid")
-                        ? dr.Field<string>("turnoguid")
-                        : null;
-                    fc.Placa = dr.Table.Columns.Contains("placa") && !dr.IsNull("placa")
-                        ? dr.Field<string>("placa")
-                        : (dr.Table.Columns.Contains("Placa") && !dr.IsNull("Placa") ? dr.Field<string>("Placa") : string.Empty);
-
-
-                    return fc;
-                })
-            );
+            response.AddRange(dt.AsEnumerable().Select(dr => new FacturaCanastilla()
+            {
+                FacturasCanastillaId = Columna<int>(dr, "FacturasCanastillaId"),
+                consecutivo = Columna<int>(dr, "consecutivo"),
+                fecha = Columna<DateTime>(dr, "fecha"),
+                impresa = Columna<int>(dr, "impresa"),
+                estado = Columna<string>(dr, "estado"),
+                codigoFormaPago = new FormasPagos() { Id = Columna<int>(dr, "codigoFormaPago") },
+                codigoFormaPago2 = Columna<int?>(dr, "codigoFormaPago2"),
+                numeroTransaccion = Columna<string>(dr, "numeroTransaccion"),
+                total1 = Columna<decimal?>(dr, "total1"),
+                total2 = Columna<decimal?>(dr, "total2"),
+                descuento = Columna<float>(dr, "descuento"),
+                subtotal = Columna<float>(dr, "subtotal"),
+                total = Columna<float>(dr, "total"),
+                iva = Columna<float>(dr, "iva"),
+                resolucion = ConvertirResolucion(filaResolucion),
+                enviada = Columna<bool>(dr, "enviada"),
+                terceroId = new Objetos.Tercero()
+                {
+                    COD_CLI = Columna(dr, "COD_CLI", string.Empty),
+                    Direccion = Columna<string>(dr, "direccion"),
+                    Nombre = Columna<string>(dr, "Nombre"),
+                    Apellidos = Columna<string>(dr, "apellidos"),
+                    Telefono = Columna<string>(dr, "Telefono"),
+                    identificacion = Columna<string>(dr, "identificacion"),
+                    Correo = Columna<string>(dr, "correo"),
+                    terceroId = Columna<int>(dr, "terceroId"),
+                    tipoIdentificacion = Columna<int?>(dr, "tipoIdentificacion"),
+                    tipoIdentificacionS = Columna<string>(dr, "descripcion"),
+                },
+                Empleado = Columna<string>(dr, "Vendedor"),
+                Isla = Columna<string>(dr, "isla"),
+                TurnoGuid = Columna<string>(dr, "turnoguid"),
+                // Columns.Contains no distingue mayúsculas, así que cubre "placa" y "Placa".
+                Placa = Columna(dr, "placa", string.Empty),
+            }));
             return response;
         }
 
         internal List<CanastillaFactura> ConvertirFacturaCanastillaDEtalle(DataTable dt)
         {
             List<CanastillaFactura> response = new List<CanastillaFactura>();
+            if (dt == null || dt.Rows.Count == 0)
+            {
+                return response;
+            }
+
+            AdvertirColumnasFaltantes(dt, nameof(ConvertirFacturaCanastillaDEtalle),
+                "cantidad", "iva", "precio", "subtotal", "total", "guid", "CanastillaId", "descripcion");
 
             response.AddRange(
                 dt.AsEnumerable().Select(dr => new CanastillaFactura()
                 {
-                    cantidad  = Convert.ToSingle(dr.Field<double>("cantidad")),
-                    iva  = Convert.ToSingle(dr.Field<double>("iva")),
-                    precio = Convert.ToSingle(dr.Field<double>("precio")),
-                    subtotal = Convert.ToSingle(dr.Field<double>("subtotal")),
-                    total = Convert.ToSingle(dr.Field<double>("total")),
+                    cantidad = Columna<float>(dr, "cantidad"),
+                    iva = Columna<float>(dr, "iva"),
+                    precio = Columna<float>(dr, "precio"),
+                    subtotal = Columna<float>(dr, "subtotal"),
+                    total = Columna<float>(dr, "total"),
                     Canastilla = new Canastilla()
                     {
-                        guid = dr.Field<Guid>("guid"),
-                        CanastillaId = dr.Field<int>("CanastillaId"),
-                        descripcion = dr.Field<string>("descripcion"),
+                        guid = Columna<Guid>(dr, "guid"),
+                        CanastillaId = Columna<int>(dr, "CanastillaId"),
+                        descripcion = Columna<string>(dr, "descripcion"),
                     }
                 })
             );

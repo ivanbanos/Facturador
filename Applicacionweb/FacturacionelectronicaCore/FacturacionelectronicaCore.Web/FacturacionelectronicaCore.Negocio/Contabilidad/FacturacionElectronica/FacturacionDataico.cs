@@ -619,6 +619,15 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                                     }
                                     else if (error.error.Contains("modificar"))
                                     {
+                                        // El número ya está emitido: si es esta misma venta (intento previo con timeout),
+                                        // se recupera en lugar de emitir otra factura con el número siguiente.
+                                        var existente = await BuscarFacturaDataicoPorNumero(resolucion, invoice.invoice.number);
+                                        if (EsFacturaDeOrden(existente, orden.IdVentaLocal.ToString()))
+                                        {
+                                            Console.WriteLine($"Venta {orden.IdVentaLocal}: ya existía en Dataico con número {invoice.invoice.number}. Se recupera sin reenviar.");
+                                            await ActualizarConsecutivoSiEsMayor(estacionGuid, resolucion, int.Parse(invoice.invoice.number) + 1);
+                                            return FormatearRespuestaDataico(existente) + ":" + existente.ToString(Formatting.None) + ":" + JsonConvert.SerializeObject(invoice);
+                                        }
 
                                         resolucion.numeroActual++;
                                         invoice.invoice.number = resolucion.numeroActual.ToString();
@@ -727,6 +736,19 @@ Console.WriteLine($"Factura creada, {respuesta.order_reference}, {respuesta.dian
                 catch (Exception)
                 {
                     // Fall through to the generic error response below if recovery parsing fails.
+                }
+
+                // Sin respuesta (timeout/caída): Dataico pudo haber emitido la factura igual. Se verifica
+                // el número enviado antes de devolver error, para que el reintento no genere un duplicado.
+                if (string.IsNullOrEmpty(respuestaFactura) && resolucion != null && invoice?.invoice?.number != null)
+                {
+                    var existente = await BuscarFacturaDataicoPorNumero(resolucion, invoice.invoice.number);
+                    if (EsFacturaDeOrden(existente, orden.IdVentaLocal.ToString()))
+                    {
+                        Console.WriteLine($"Venta {orden.IdVentaLocal}: emitida en Dataico con número {invoice.invoice.number} pese al error local. Se recupera.");
+                        await ActualizarConsecutivoSiEsMayor(estacionGuid, resolucion, int.Parse(invoice.invoice.number) + 1);
+                        return FormatearRespuestaDataico(existente) + ":" + existente.ToString(Formatting.None) + ":" + JsonConvert.SerializeObject(invoice);
+                    }
                 }
 
                 return "error:" + ex.StackTrace + ":" + ex.Message + ":" + JsonConvert.SerializeObject(invoice) + ":" + respuestaFactura;
@@ -897,151 +919,242 @@ Console.WriteLine($"Factura creada, {respuesta.order_reference}, {respuesta.dian
         public async Task<string> GenerarFacturaElectronica(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
         {
             await _globalSemaphore.WaitAsync();
+            FacturaDataico invoice = null;
+            ResolucionFacturaElectronica resolucion = null;
+            var orderReference = factura.FacturasCanastillaId.ToString();
+            // Números con los que se hizo POST en esta llamada; si algo falla después del POST,
+            // se consultan en Dataico antes de reintentar para no emitir la misma venta dos veces.
+            var numerosEnviados = new List<string>();
             try
             {
                 Console.WriteLine(estacionGuid.ToString());
-                var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
-                var invoice = await GetFacturaDataico(factura, tercero, estacionGuid.ToString(), resolucion);
+                resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
+
+                // Si un intento anterior quedó en error (timeout, caída, error al guardar) Dataico pudo haber
+                // creado la factura de todas formas. Se recupera en vez de generar una nueva con otro número.
+                var recuperadaPrevia = await RecuperarFacturaCanastillaDeIntentoPrevio(factura.idFacturaElectronica, orderReference, resolucion, estacionGuid);
+                if (recuperadaPrevia != null)
+                {
+                    return recuperadaPrevia;
+                }
+
+                invoice = await GetFacturaDataico(factura, tercero, estacionGuid.ToString(), resolucion);
                 if (invoice == null)
                 {
                     return "error:Factura canastilla sin articulos (items vacíos)";
                 }
-                //Console.WriteLine(JsonConvert.SerializeObject(invoice));
-                var triedAgain = 0;
+
                 var maxIntentos = 3;
-                while (triedAgain++ < maxIntentos)
+                for (var intento = 1; intento <= maxIntentos; intento++)
                 {
+                    numerosEnviados.Add(invoice.invoice.number);
+                    var (exitoso, responseBody) = await EnviarInvoiceDataico(invoice, resolucion.token);
 
-                    using (var client = new HttpClient())
+                    if (exitoso && responseBody.Contains("cufe"))
                     {
-                        client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
-                        client.DefaultRequestHeaders.Add("auth-token", resolucion.token);
-                        var path = $"{alegraOptions.Url}invoices";
-                        var content = new StringContent(JsonConvert.SerializeObject(invoice, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
-                        content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-                        var response = client.PostAsync(path, content).Result;
-                        string responseBody = await response.Content.ReadAsStringAsync();
-                        try
+                        var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
+                        if (!string.IsNullOrEmpty(respuesta.order_reference) && respuesta.order_reference.Trim() != orderReference)
                         {
-                            response.EnsureSuccessStatusCode();
+                            // Dataico devolvió la factura que ya existía con ese número (de otra venta o de combustible).
+                            // No es nuestra: se avanza el consecutivo y se reintenta con el siguiente.
+                            Console.WriteLine($"Canastilla {orderReference}: el número {invoice.invoice.number} pertenece a order_reference {respuesta.order_reference}. Se usa el siguiente.");
+                            await ActualizarConsecutivoSiEsMayor(estacionGuid, resolucion, int.Parse(invoice.invoice.number) + 1);
+                            invoice.invoice.number = resolucion.numeroActual.ToString();
+                            continue;
                         }
-                        catch (Exception)
-                        {
-                            try
-                            {
-                                var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
-                                if (respuestaError.errors.Any(x => x.path.Any(y => y.Contains("invoice"))))
-                                {
-                                    var error = respuestaError.errors.First(x => x.path.Any(y => y.Contains("invoice")));
-                                    if (error.error.Contains("Tiene que ser el siguiente"))
-                                    {
-                                        var numberpos = error.error.IndexOf('\'');
-                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                        var fin = error.error.IndexOf('\'', numberpos + 1);
-                                        var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
-                                        resolucion.numeroActual = Int32.Parse(number);
-                                        invoice.invoice.number = resolucion.numeroActual.ToString();
 
-                                    }
-                                    else if (error.error.Contains("modificar"))
-                                    {
-
-                                        resolucion.numeroActual++;
-                                        invoice.invoice.number = resolucion.numeroActual.ToString();
-
-                                    }
-                                    else if (error.error.ToLower().Contains("ciudad"))
-                                    {
-                                        var numberpos = error.error.IndexOf('\'');
-                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                        var fin = error.error.IndexOf('\'', numberpos + 1);
-                                        var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
-                                        resolucion.numeroActual = Int32.Parse(number);
-                                        invoice.invoice.number = resolucion.numeroActual.ToString();
-
-                                    }
-                                    else
-                                    {
-                                        throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
-                                    }
-                                }
-                                else
-                                {
-                                    throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
-
-                                }
-                            }
-                            catch (Exception)
-                            {
-                                return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
-                            }
-                        }
-                        if (!responseBody.Contains("cufe"))
-                        {
-
-                            try
-                            {
-                                var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
-                                if (respuestaError.errors.Any(x => x.path.Any(y => y.Contains("invoice"))))
-                                {
-                                    var error = respuestaError.errors.First(x => x.path.Any(y => y.Contains("invoice")));
-                                    if (error.error.Contains("Tiene que ser el siguiente"))
-                                    {
-                                        var numberpos = error.error.IndexOf('\'');
-                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                        var fin = error.error.IndexOf('\'', numberpos + 1);
-                                        var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
-                                        resolucion.numeroActual = Int32.Parse(number);
-                                    }
-                                    else if (error.error.Contains("modificar"))
-                                    {
-
-                                        resolucion.numeroActual++;
-                                    }
-                                    else
-                                    {
-                                        throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
-                                    }
-                                    invoice.invoice.number = resolucion.numeroActual.ToString();
-                                }
-                                else
-                                {
-                                    //Console.WriteLine(responseBody + JsonConvert.SerializeObject(invoice));
-                                    throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
-
-                                }
-                            }
-                            catch (Exception)
-                            {
-                                return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
-                            }
-                        }
-                        else
-                        {
-                            var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
-                            //Console.WriteLine(JsonConvert.SerializeObject(respuesta));
-                            //Console.WriteLine(JsonConvert.SerializeObject(responseBody));
-                            await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), int.Parse(invoice.invoice.number) + 1);
-                            return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe;
-                        }
+                        await ActualizarConsecutivoSiEsMayor(estacionGuid, resolucion, int.Parse(invoice.invoice.number) + 1);
+                        return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe;
                     }
-                }
-                return "error:" + JsonConvert.SerializeObject(invoice);
 
+                    var error = ObtenerErrorInvoiceDataico(responseBody);
+                    if (error == null)
+                    {
+                        return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
+                    }
+
+                    if (error.Contains("Tiene que ser el siguiente"))
+                    {
+                        resolucion.numeroActual = int.Parse(ExtraerNumeroDeErrorDataico(error));
+                    }
+                    else if (error.Contains("modificar"))
+                    {
+                        // El número ya está emitido. Puede ser esta misma venta enviada en un intento anterior:
+                        // en ese caso se devuelve esa factura en lugar de crear otra con el número siguiente.
+                        var existente = await BuscarFacturaDataicoPorNumero(resolucion, invoice.invoice.number);
+                        if (EsFacturaDeOrden(existente, orderReference))
+                        {
+                            Console.WriteLine($"Canastilla {orderReference}: ya existía en Dataico con número {invoice.invoice.number}. Se recupera sin reenviar.");
+                            await ActualizarConsecutivoSiEsMayor(estacionGuid, resolucion, int.Parse(invoice.invoice.number) + 1);
+                            return FormatearRespuestaDataico(existente);
+                        }
+                        resolucion.numeroActual = int.Parse(invoice.invoice.number) + 1;
+                    }
+                    else
+                    {
+                        return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
+                    }
+
+                    invoice.invoice.number = resolucion.numeroActual.ToString();
+                }
+
+                return "error:" + JsonConvert.SerializeObject(invoice);
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
-                throw new AlegraException(ex.Message);
+
+                // Un timeout no significa que Dataico no haya creado la factura. Antes de que el llamador
+                // reintente, se verifica si alguno de los números enviados quedó emitido para esta venta.
+                if (resolucion != null)
+                {
+                    foreach (var numero in numerosEnviados.Distinct().Reverse())
+                    {
+                        var existente = await BuscarFacturaDataicoPorNumero(resolucion, numero);
+                        if (EsFacturaDeOrden(existente, orderReference))
+                        {
+                            Console.WriteLine($"Canastilla {orderReference}: emitida en Dataico con número {numero} pese al error local. Se recupera.");
+                            if (int.TryParse(numero, out var numeroInt))
+                            {
+                                await ActualizarConsecutivoSiEsMayor(estacionGuid, resolucion, numeroInt + 1);
+                            }
+                            return FormatearRespuestaDataico(existente);
+                        }
+                    }
+                }
+
+                // Se incluye el JSON enviado para que el próximo intento pueda verificar ese número en Dataico.
+                throw new AlegraException(ex.Message + (invoice != null ? JsonConvert.SerializeObject(invoice) : ""));
             }
             finally
             {
                 _globalSemaphore.Release();
             }
+        }
+
+        private async Task<string> RecuperarFacturaCanastillaDeIntentoPrevio(string respuestaPrevia, string orderReference, ResolucionFacturaElectronica resolucion, Guid estacionGuid)
+        {
+            if (string.IsNullOrEmpty(respuestaPrevia) || !respuestaPrevia.StartsWith("error", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            var previa = TryParseFacturaDataicoFromLog(respuestaPrevia);
+            var numeroPrevio = previa?.invoice?.number;
+            if (string.IsNullOrEmpty(numeroPrevio) || previa.invoice.order_reference?.Trim() != orderReference)
+            {
+                return null;
+            }
+
+            var existente = await BuscarFacturaDataicoPorNumero(resolucion, numeroPrevio);
+            if (!EsFacturaDeOrden(existente, orderReference))
+            {
+                return null;
+            }
+
+            Console.WriteLine($"Canastilla {orderReference}: el intento anterior sí quedó emitido en Dataico con número {numeroPrevio}. Se recupera sin reenviar.");
+            if (int.TryParse(numeroPrevio, out var numeroInt))
+            {
+                await ActualizarConsecutivoSiEsMayor(estacionGuid, resolucion, numeroInt + 1);
+            }
+            return FormatearRespuestaDataico(existente);
+        }
+
+        private async Task<(bool exitoso, string responseBody)> EnviarInvoiceDataico(FacturaDataico invoice, string token)
+        {
+            using (var client = new HttpClient())
+            {
+                client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
+                client.DefaultRequestHeaders.Add("auth-token", token);
+                var path = $"{alegraOptions.Url}invoices";
+                var content = new StringContent(JsonConvert.SerializeObject(invoice, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+                var response = await client.PostAsync(path, content);
+                var responseBody = await response.Content.ReadAsStringAsync();
+                return (response.IsSuccessStatusCode, responseBody);
+            }
+        }
+
+        /// <summary>
+        /// Consulta una factura en Dataico por prefijo + número. Devuelve el nodo "invoice" o null si no existe
+        /// o no se pudo consultar (en ese caso el llamador sigue con el flujo normal).
+        /// </summary>
+        private async Task<JToken> BuscarFacturaDataicoPorNumero(ResolucionFacturaElectronica resolucion, string numero)
+        {
+            if (resolucion == null || string.IsNullOrEmpty(numero))
+            {
+                return null;
+            }
+
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                    client.DefaultRequestHeaders.Add("auth-token", resolucion.token);
+                    var path = $"{alegraOptions.Url}invoices?number={Uri.EscapeDataString(resolucion.prefijo + numero)}";
+                    var response = await client.GetAsync(path);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return null;
+                    }
+
+                    var json = JObject.Parse(await response.Content.ReadAsStringAsync());
+                    return json["invoice"] ?? json;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"No se pudo consultar la factura {resolucion.prefijo}{numero} en Dataico: {ex.Message}");
+                return null;
+            }
+        }
+
+        private static bool EsFacturaDeOrden(JToken facturaDataico, string orderReference)
+        {
+            return facturaDataico != null
+                && !string.IsNullOrEmpty(facturaDataico["cufe"]?.ToString())
+                && facturaDataico["order_reference"]?.ToString().Trim() == orderReference;
+        }
+
+        private static string FormatearRespuestaDataico(JToken facturaDataico)
+        {
+            return facturaDataico["dian_status"] + ":" + facturaDataico["number"] + ":" + facturaDataico["cufe"];
+        }
+
+        private async Task ActualizarConsecutivoSiEsMayor(Guid estacionGuid, ResolucionFacturaElectronica resolucion, int siguienteNumero)
+        {
+            // El consecutivo es compartido con combustible: nunca se retrocede.
+            if (resolucion.numeroActual < siguienteNumero)
+            {
+                await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), siguienteNumero);
+                resolucion.numeroActual = siguienteNumero;
+            }
+        }
+
+        private static string ObtenerErrorInvoiceDataico(string responseBody)
+        {
+            try
+            {
+                var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
+                return respuestaError?.errors?
+                    .FirstOrDefault(x => x.path != null && x.path.Any(y => y.Contains("invoice")))?
+                    .error;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private static string ExtraerNumeroDeErrorDataico(string error)
+        {
+            var numberpos = error.IndexOf('\'');
+            numberpos = error.IndexOf('\'', numberpos + 1);
+            numberpos = error.IndexOf('\'', numberpos + 1);
+            var fin = error.IndexOf('\'', numberpos + 1);
+            return error.Substring(numberpos + 1, fin - numberpos - 1);
         }
 
 

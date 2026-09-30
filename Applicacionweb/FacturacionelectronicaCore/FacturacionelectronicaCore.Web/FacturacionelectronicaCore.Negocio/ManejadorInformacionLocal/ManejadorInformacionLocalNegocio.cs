@@ -617,6 +617,9 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                         && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("consum")
                                         && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("puntos"))))
                                 {
+                                    // Se pasa la respuesta del intento anterior (si fue error) para que el proveedor verifique
+                                    // si esa factura sí quedó emitida y la recupere en lugar de emitir una nueva.
+                                    factura.idFacturaElectronica = idExistente;
                                     // Retry mechanism for newly created terceros in Alegra
                                     var maxRetries = 3;
                                     var retryDelay = 3000; // 3 seconds
@@ -670,6 +673,9 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                         || (_alegra.EnviaMes && DateTime.Now.AddMonths(-1) < factura.fecha))
                                     && (_alegra.EnviaCreditos || (!(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("dir") && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("calibra") && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("consum") && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("puntos"))))
                                 {
+                                    // Se pasa la respuesta del intento anterior (si fue error) para que el proveedor verifique
+                                    // si esa factura sí quedó emitida y la recupere en lugar de emitir una nueva.
+                                    factura.idFacturaElectronica = idExistente;
                                     // Retry mechanism for newly created terceros in Alegra
                                     var maxRetries = 3;
                                     var retryDelay = 3000; // 3 seconds

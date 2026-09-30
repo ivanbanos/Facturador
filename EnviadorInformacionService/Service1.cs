@@ -33,8 +33,8 @@ namespace EnviadorInformacionService
             //  enviadorDeInformacion = new EnviadorDeInformacion();
             //  impresionService = new ImpresionService();
             //protocoloSiesa = new ProtocoloSiesa();
-            //protocoloSiesaCanastilla = new ProtocoloSiesaCanastilla();
-            canastillaService = new CanastillaService();
+            protocoloSiesaCanastilla = new ProtocoloSiesaCanastilla();
+            // canastillaService = new CanastillaService();
         }
 
         protected override void OnStart(string[] args)
@@ -68,8 +68,12 @@ namespace EnviadorInformacionService
                     siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
                     siesaThread.Start();
                 }
-                //  siesaCanastillaThread = new Thread(new ThreadStart(protocoloSiesaCanastilla.Ejecutar));
-                //  siesaCanastillaThread.Start();
+                if (protocoloSiesaCanastilla != null)
+                {
+
+                 siesaCanastillaThread = new Thread(new ThreadStart(protocoloSiesaCanastilla.Ejecutar));
+                 siesaCanastillaThread.Start();
+                }
 
             }
             catch (Exception ex)
