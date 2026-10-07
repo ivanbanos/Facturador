@@ -3,7 +3,7 @@
 	@Contrasena nvarchar(MAX)
 AS
 BEGIN
-	SELECT Usuario.[Guid], Usuario.Nombre, Usuario.Usuario, Usuario.Contrasena
-	FROM [dbo].[usuario] AS Usuario
+	SELECT Usuario.[Guid], Usuario.Nombre, Usuario.Usuario AS NombreUsuario, Usuario.IdentificacionTercero
+	FROM [dbo].[Usuario] AS Usuario
 	WHERE Usuario.Usuario = @Usuario AND Usuario.Contrasena = @Contrasena
 END

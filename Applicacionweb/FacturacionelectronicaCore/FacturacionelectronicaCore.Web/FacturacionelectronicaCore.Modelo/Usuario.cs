@@ -8,6 +8,10 @@ namespace EstacionesServicio.Modelo
         public string Nombre { get; set; }
         public string NombreUsuario { get; set; }
         public string Contrasena { get; set; }
+        /// <summary>
+        /// Identificacion del tercero (cliente) asociado. Null para usuarios administradores.
+        /// </summary>
+        public string IdentificacionTercero { get; set; }
 
         public Usuario(Guid _guid, string nombre, string b, string c)
         {

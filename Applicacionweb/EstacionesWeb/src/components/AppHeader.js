@@ -12,15 +12,23 @@ import {
   CNavItem,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilAccountLogout, cilEnvelopeOpen, cilList, cilMenu } from '@coreui/icons'
+import { cilAccountLogout, cilLockLocked, cilMenu } from '@coreui/icons'
 
 import { AppBreadcrumb } from './index'
 import { AppHeaderDropdown } from './header/index'
 import { logo } from 'src/assets/brand/logo'
+import EstacionSelector from './header/EstacionSelector'
+import {
+  getNombreUsuario,
+  getRutaInicio,
+  isCliente,
+  usuariosClientesActivo,
+} from '../services/AuthService'
 
 const AppHeader = () => {
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
+  const cliente = isCliente()
 
   return (
     <CHeader position="sticky" className="mb-4">
@@ -36,12 +44,29 @@ const AppHeader = () => {
         </CHeaderBrand>
         <CHeaderNav className="d-none d-md-flex me-auto">
           <CNavItem>
-            <CNavLink to="/dashboard" component={NavLink}>
-              Dashboard
+            <CNavLink to={getRutaInicio()} component={NavLink}>
+              {cliente ? 'Inicio' : 'Dashboard'}
             </CNavLink>
           </CNavItem>
         </CHeaderNav>
-        <CHeaderNav>
+        <CHeaderNav className="align-items-center">
+          {cliente && (
+            <CNavItem className="me-2">
+              <EstacionSelector />
+            </CNavItem>
+          )}
+          {getNombreUsuario() && (
+            <CNavItem className="d-none d-md-block text-medium-emphasis me-2">
+              {getNombreUsuario()}
+            </CNavItem>
+          )}
+          {usuariosClientesActivo() && (
+            <CNavItem>
+              <CNavLink to="/CambiarContrasena" component={NavLink} title="Cambiar contraseña">
+                <CIcon icon={cilLockLocked} size="lg" />
+              </CNavLink>
+            </CNavItem>
+          )}
           <CNavItem>
             <CNavLink href="#/Login">
               <CIcon icon={cilAccountLogout} size="lg" />

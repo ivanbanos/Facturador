@@ -59,6 +59,17 @@ namespace FacturacionelectronicaCore.Web.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Busca terceros (clientes) por numero de identificacion
+        /// </summary>
+        [HttpGet("BuscarPorIdentificacion/{identificacion}")]
+        public async Task<ActionResult<IEnumerable<Tercero>>> BuscarPorIdentificacion(string identificacion)
+        {
+            if (string.IsNullOrWhiteSpace(identificacion)) { return BadRequest(); }
+
+            return Ok(await _terceroNegocio.BuscarPorIdentificacion(identificacion));
+        }
+
         [HttpPost("SincronizarTerceros")]
         public async Task<ActionResult> SincronizarTerceros()
         {

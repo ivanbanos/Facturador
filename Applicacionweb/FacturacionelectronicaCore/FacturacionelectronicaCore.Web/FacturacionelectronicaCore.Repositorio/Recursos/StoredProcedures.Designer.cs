@@ -421,6 +421,24 @@ namespace FacturacionelectronicaCore.Repositorio.Recursos {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to [dbo].[CrearUsuario].
+        /// </summary>
+        public static string CrearUsuario {
+            get {
+                return ResourceManager.GetString("CrearUsuario", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [dbo].[CambiarContrasenaUsuario].
+        /// </summary>
+        public static string CambiarContrasenaUsuario {
+            get {
+                return ResourceManager.GetString("CambiarContrasenaUsuario", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to [dbo].[GetUsuarios].
         /// </summary>
         public static string GetUsuarios {

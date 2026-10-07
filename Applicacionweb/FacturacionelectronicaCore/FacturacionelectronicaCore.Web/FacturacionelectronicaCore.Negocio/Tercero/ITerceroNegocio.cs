@@ -24,6 +24,12 @@ namespace FacturacionelectronicaCore.Negocio.Tercero
         /// <returns></returns>
         Task<Modelo.Tercero> GetTercero(Guid idTercero);
         Task<bool> GetIsTerceroValidoPorIdentificacion(string identificacion);
+        /// <summary>
+        /// Busca terceros por su numero de identificacion
+        /// </summary>
+        /// <param name="identificacion">Identificacion exacta</param>
+        /// <returns>Terceros que coinciden</returns>
+        Task<IEnumerable<Modelo.Tercero>> BuscarPorIdentificacion(string identificacion);
         Task SincronizarTerceros();
     }
 }

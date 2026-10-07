@@ -30,5 +30,15 @@ namespace EstacionesServicio.Negocio.Usuario
         /// <param name="usuario">Usuario a crear</param>
         /// <returns>Usuario</returns>
         Task<int> SaveUsuario(IEnumerable<Modelo.Usuario> usuarios);
+        /// <summary>
+        /// Crea un usuario nuevo. Si trae identificacion de tercero, el usuario queda como cliente.
+        /// </summary>
+        /// <returns>true si se creo; false si el nombre de usuario ya existe</returns>
+        Task<bool> CrearUsuario(Modelo.Usuario usuario);
+        /// <summary>
+        /// Cambia la contrasena del usuario validando la actual
+        /// </summary>
+        /// <returns>true si se cambio; false si la contrasena actual no coincide</returns>
+        Task<bool> CambiarContrasena(Guid guid, string contrasenaActual, string contrasenaNueva);
     }
 }

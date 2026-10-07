@@ -9,6 +9,7 @@ import {
   cilContact,
   cilPeople,
   cilSpreadsheet,
+  cilLockLocked,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
@@ -88,6 +89,20 @@ const _nav = [
     name: 'Consolidado de Órdenes',
     to: '/consolidado-ordenes',
     icon: <CIcon icon={cilSpreadsheet} customClassName="nav-icon" />,
+    level: 1,
+  },
+  {
+    component: CNavItem,
+    name: 'Usuarios',
+    to: '/Usuarios',
+    icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
+    level: 1,
+  },
+  {
+    component: CNavItem,
+    name: 'Cambiar contraseña',
+    to: '/CambiarContrasena',
+    icon: <CIcon icon={cilLockLocked} customClassName="nav-icon" />,
     level: 1,
   },
 ]

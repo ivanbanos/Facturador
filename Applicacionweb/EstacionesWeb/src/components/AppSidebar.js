@@ -13,6 +13,7 @@ import 'simplebar/dist/simplebar.min.css'
 
 // sidebar nav config
 import navigation from '../_nav'
+import { puedeVerRuta } from '../services/AuthService'
 
 const AppSidebar = () => {
   const dispatch = useDispatch()
@@ -38,7 +39,7 @@ const AppSidebar = () => {
       </CSidebarBrand>
       <CSidebarNav>
         <SimpleBar>
-          <AppSidebarNav items={navigation} />
+          <AppSidebarNav items={navigation.filter((item) => !item.to || puedeVerRuta(item.to))} />
         </SimpleBar>
       </CSidebarNav>
       <CSidebarToggler

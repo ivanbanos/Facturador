@@ -33,6 +33,8 @@ namespace EnviadorInformacionService
         private const string AuxiliarIvaPorDefecto = "23450101";
         private const string UnidadNegocioMovimientoPorDefecto = "03";
         private const string IdFeMovimientoPorDefecto = "1";
+        private const string UnidadNegocioCajaPorDefecto = "99";
+        private const string IdFeCajaPorDefecto = "1102";
 
         public void Ejecutar()
         {
@@ -119,7 +121,7 @@ namespace EnviadorInformacionService
                     {
                         try
                         {
-                            Logger.Info($"Procesando factura canastilla {facturaCanastilla.FacturasCanastillaId} con forma de pago {facturaCanastilla.codigoFormaPago}");
+                            Logger.Info($"Procesando factura canastilla {facturaCanastilla.FacturasCanastillaId} con forma de pago {facturaCanastilla.codigoFormaPago?.Id}");
 
                             // Obtener detalle de la factura canastilla
                             var detalle = _estacionesRepositorio.getFacturaCanatillaDetalle(facturaCanastilla.FacturasCanastillaId);
@@ -131,7 +133,7 @@ namespace EnviadorInformacionService
                             }
 
                             // Determinar si tiene IVA (al menos un item con IVA > 0)
-                            bool tieneIva = detalle.Any(d => d.Canastilla != null && d.Canastilla.iva > 0);
+                            bool tieneIva = detalle.Any(d => d.iva > 0);
 
                             // Obtener configuración según si tiene IVA o no
                             string sufijo = tieneIva ? "canastillaconiva" : "canastillasiniva";
@@ -142,7 +144,7 @@ namespace EnviadorInformacionService
                             var idfe = ConfigurationManager.AppSettings[$"idfe{sufijo}"];
                             var sucursal = ConfigurationManager.AppSettings[$"sucursal{sufijo}"];
                             var idDocumento = ConfigurationManager.AppSettings[$"iddocumento{sufijo}"];
-                            var idDocumentoCliente = ConfigurationManager.AppSettings[$"iddocumentocliente{sufijo}"];
+                            var idDocumentoCliente = ConfigurationManager.AppSettings["iddocumentocliente"];
 
                             // Configuración común
                             var urlSiesa = ConfigurationManager.AppSettings["urlsiesa"];
@@ -157,30 +159,35 @@ namespace EnviadorInformacionService
                             decimal totalIva = 0;
                             decimal total = 0;
 
+                            // subtotal e iva del detalle ya vienen calculados (valor, no porcentaje)
                             foreach (var item in detalle)
                             {
-                                if (item.Canastilla != null)
-                                {
-                                    decimal valorItem = (decimal)(item.cantidad * item.Canastilla.precio);
-                                    decimal ivaItem = 0;
-
-                                    if (item.Canastilla.iva > 0)
-                                    {
-                                        ivaItem = valorItem * (item.Canastilla.iva / 100m);
-                                    }
-
-                                    subtotal += valorItem;
-                                    totalIva += ivaItem;
-                                }
+                                subtotal += ValorSubtotalItem(item);
+                                totalIva += Decimal.Round((decimal)item.iva, 2);
                             }
 
                             total = subtotal + totalIva;
+
+                            if (total <= 0)
+                            {
+                                Logger.Warn($"Factura canastilla {facturaCanastilla.FacturasCanastillaId} no se envía: total en 0. Revise el detalle (getFacturaCanatillaDetalle)");
+                                facturasFallidas.Add($"ID: {facturaCanastilla.FacturasCanastillaId}, Total: 0");
+                                continue;
+                            }
+
+                            // Igual que combustible: el consecutivo en Siesa es el número de la factura electrónica
+                            var consecutivoElectronico = ObtenerConsecutivoFacturaElectronica(facturaCanastilla.FacturasCanastillaId, estacionFuente);
+                            if (string.IsNullOrEmpty(consecutivoElectronico))
+                            {
+                                facturasFallidas.Add($"ID: {facturaCanastilla.FacturasCanastillaId}, Error: sin factura electrónica");
+                                continue;
+                            }
 
                             // Crear objeto de factura para Siesa
                             var facturaParaSiesa = new
                             {
                                 facturaCanastilla.FacturasCanastillaId,
-                                facturaCanastilla.consecutivo,
+                                consecutivo = consecutivoElectronico,
                                 facturaCanastilla.fecha,
                                 Tercero = facturaCanastilla.terceroId,
                                 facturaCanastilla.codigoFormaPago,
@@ -286,24 +293,31 @@ namespace EnviadorInformacionService
                         continue;
                     }
 
-                    decimal valorItem = Decimal.Round((decimal)(item.cantidad * item.Canastilla.precio), 2);
+                    decimal valorItem = ValorSubtotalItem(item);
                     string descripcionProducto = item.Canastilla.descripcion?.ToString() ?? "";
+                    if (valorItem <= 0)
+                    {
+                        // Siesa rechaza movimientos sin débito ni crédito
+                        Logger.Warn($"Factura canastilla {facturaCanastilla.FacturasCanastillaId} - Se omite renglón '{descripcionProducto}' con valor 0 (cantidad {item.cantidad})");
+                        continue;
+                    }
                     string auxiliarItem = ObtenerAuxiliarProductoCanastilla(descripcionProducto);
                     tieneUrea = tieneUrea || EsUrea(descripcionProducto);
                     Logger.Info($"Factura canastilla {facturaCanastilla.FacturasCanastillaId} - Producto '{descripcionProducto}' → auxiliar '{auxiliarItem}'");
 
                     movimientosContables.Add(ConstruirMovimientoContable(
                         config, consecutivo, tercero, auxiliarItem, valorItem,
-                        $"FACTURA {consecutivo} {descripcionProducto} - Cant: {item.cantidad}"));
+                        $"FACTURA CANASTILLA {consecutivo} {descripcionProducto} - Cant: {item.cantidad}"));
                     totalMovimientos += valorItem;
 
-                    if (item.Canastilla.iva > 0)
+                    if (item.iva > 0)
                     {
-                        decimal ivaItem = Decimal.Round(valorItem * (item.Canastilla.iva / 100m), 2);
+                        decimal ivaItem = Decimal.Round((decimal)item.iva, 2);
                         movimientosContables.Add(ConstruirMovimientoContable(
                             config, consecutivo, tercero,
                             ObtenerConfig("auxiliarcanastillaiva", AuxiliarIvaPorDefecto), ivaItem,
-                            $"FAC {consecutivo} IVA {item.Canastilla.iva}% {descripcionProducto}"));
+                            $"FACTURA CANASTILLA {consecutivo} IVA {descripcionProducto}",
+                            ObtenerConfig("unidadnegociocanastillaiva", ObtenerConfig("unidadnegociocanastilla", UnidadNegocioMovimientoPorDefecto))));
                         totalMovimientos += ivaItem;
                     }
                 }
@@ -341,12 +355,12 @@ namespace EnviadorInformacionService
                 F350_ID_CLASE_DOCTO = "",
                 F350_IND_ESTADO = "1",
                 F350_IND_IMPRESION = "",
-                F350_NOTAS = $"FACTURA {consecutivo}",
+                F350_NOTAS = $"FACTURA CANASTILLA {consecutivo}",
                 f350_id_mandato = ""
             };
         }
 
-        private static object ConstruirMovimientoContable(dynamic config, string consecutivo, string tercero, string auxiliar, decimal valorCredito, string notas)
+        private static object ConstruirMovimientoContable(dynamic config, string consecutivo, string tercero, string auxiliar, decimal valorCredito, string notas, string unidadNegocio = null)
         {
             return new
             {
@@ -357,7 +371,7 @@ namespace EnviadorInformacionService
                 F351_ID_AUXILIAR = auxiliar,
                 F351_ID_TERCERO = tercero,
                 F351_ID_CO_MOV = (string)config.CentroOperacionesDocumento,
-                F351_ID_UN = ObtenerConfig("unidadnegociocanastilla", UnidadNegocioMovimientoPorDefecto),
+                F351_ID_UN = unidadNegocio ?? ObtenerConfig("unidadnegociocanastilla", UnidadNegocioMovimientoPorDefecto),
                 F351_ID_CCOSTO = "",
                 F351_ID_FE = ObtenerConfig("idfemovimientocanastilla", IdFeMovimientoPorDefecto),
                 F351_VALOR_DB = "0",
@@ -370,6 +384,65 @@ namespace EnviadorInformacionService
                 F351_NOTAS = notas,
                 F351_ID_SUCURSAL = string.IsNullOrWhiteSpace((string)config.Sucursal) ? "001" : ((string)config.Sucursal).Trim()
             };
+        }
+
+        /// <summary>
+        /// Número (sin prefijo) de la factura electrónica de la canastilla, igual que en ProtocoloSiesa para combustible.
+        /// El servicio remoto responde "Factura electrónica\n\r{PREFIJO}{NUMERO}\n\rCUFE:\n\r{cufe}".
+        /// Retorna null si la factura electrónica aún no existe o no se pudo leer.
+        /// </summary>
+        private string ObtenerConsecutivoFacturaElectronica(int facturaCanastillaId, Guid estacionFuente)
+        {
+            string infoTemp = null;
+            for (var intento = 1; intento <= 3 && string.IsNullOrEmpty(infoTemp); intento++)
+            {
+                try
+                {
+                    infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronicaCanastilla(facturaCanastillaId, estacionFuente, _conexionEstacionRemota.getToken());
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Factura canastilla {facturaCanastillaId} - Intento {intento}: error obteniendo la factura electrónica: {ex.Message}");
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(infoTemp) || infoTemp.Trim() == "null")
+            {
+                Logger.Warn($"Factura canastilla {facturaCanastillaId} no se envía: aún no tiene factura electrónica");
+                return null;
+            }
+
+            // La API devuelve el texto serializado como string JSON
+            if (infoTemp.TrimStart().StartsWith("\""))
+            {
+                try { infoTemp = JsonConvert.DeserializeObject<string>(infoTemp); }
+                catch (JsonException) { /* se usa el texto tal cual */ }
+            }
+
+            var partes = infoTemp.Replace("\r\n", "$").Replace("\n", "$").Replace("\r", "$").Replace("$$", "$").Split('$');
+            var numeroFactura = partes.Length > 1 ? partes[1].Trim() : string.Empty;
+            var match = Regex.Match(numeroFactura, @"^([A-Za-z]+)(\d+)$");
+            if (!match.Success)
+            {
+                Logger.Warn($"Factura canastilla {facturaCanastillaId} no se envía: no se pudo leer el número de la factura electrónica de '{infoTemp}'");
+                return null;
+            }
+
+            Logger.Info($"Factura canastilla {facturaCanastillaId} - Factura electrónica {numeroFactura} → consecutivo Siesa {match.Groups[2].Value}");
+            return match.Groups[2].Value;
+        }
+
+        /// <summary>
+        /// Base del item (sin IVA): usa el subtotal guardado en el detalle; si viene en 0, cantidad * precio.
+        /// </summary>
+        private static decimal ValorSubtotalItem(dynamic item)
+        {
+            decimal subtotal = (decimal)item.subtotal;
+            if (subtotal <= 0)
+            {
+                subtotal = (decimal)(item.cantidad * item.precio);
+            }
+            return Decimal.Round(subtotal, 2);
         }
 
         private static string ObtenerConfig(string key, string porDefecto)
@@ -406,7 +479,8 @@ namespace EnviadorInformacionService
                 
                 var content = new StringContent(contentString, null, "application/json");
                 request.Content = content;
-                
+
+                Logger.Info($"Siesa OUT [{tipoFactura}] Consecutivo={consecutivo} Payload={contentString}");
                 var response = client.SendAsync(request).Result;
                 responseString = response.Content.ReadAsStringAsync().Result;
                 
@@ -420,7 +494,7 @@ namespace EnviadorInformacionService
                     }
                     else
                     {
-                        Logger.Warn($"{tipoFactura} - Factura no enviada (Bad Request) - Consecutivo: {consecutivo}. Respuesta: {responseString}");
+                        Logger.Warn($"{tipoFactura} - Factura no enviada (Bad Request) - Consecutivo: {consecutivo}. Respuesta: {responseString}. JSON enviado: {contentString}");
                         return false;
                     }
                 }
@@ -431,7 +505,7 @@ namespace EnviadorInformacionService
             }
             catch (HttpRequestException ex)
             {
-                Logger.Warn($"{tipoFactura} - Error HttpRequest enviando factura {consecutivo}. Respuesta: {responseString}. Error: {ex.Message}");
+                Logger.Warn($"{tipoFactura} - Error HttpRequest enviando factura {consecutivo}. Respuesta: {responseString}. Error: {ex.Message}. JSON enviado: {contentString}");
                 return false;
             }
             catch (Exception ex)
@@ -442,7 +516,7 @@ namespace EnviadorInformacionService
                     return true;
                 }
                 
-                Logger.Error(ex, $"{tipoFactura} - Error enviando factura {consecutivo}. Respuesta: {responseString}");
+                Logger.Error(ex, $"{tipoFactura} - Error enviando factura {consecutivo}. Respuesta: {responseString}. JSON enviado: {contentString}");
                 return false;
             }
         }
@@ -557,7 +631,7 @@ namespace EnviadorInformacionService
 
             var pagos = apiContabilidad.ConstruirPagosComoCombustible(
                 formaPagoPrincipalId, formaPagoSecundariaId, total, total1, total2, crucesPorForma,
-                consecutivo, (DateTime)facturaCanastilla.fecha, tercero, $"Factura canastilla {consecutivo}");
+                consecutivo, (DateTime)facturaCanastilla.fecha, tercero, $"FACTURA CANASTILLA {consecutivo}");
 
             var request = new Dictionary<string, object>
             {
@@ -567,7 +641,9 @@ namespace EnviadorInformacionService
             };
             if (pagos.Caja.Any())
             {
-                request["Caja"] = pagos.Caja;
+                request["Caja"] = pagos.Caja
+                    .Select(c => ConstruirCajaCanastilla(c, (string)facturaCanastilla.Configuracion.CentroOperacionesDocumento, tercero))
+                    .ToList();
             }
             if (pagos.CxC.Any())
             {
@@ -576,6 +652,45 @@ namespace EnviadorInformacionService
             request["Final"] = new List<object> { new { F_CIA = "1" } };
 
             return EnviarASiesaAPI(request, consecutivo, $"Canastilla-{tipoProducto}");
+        }
+
+        /// <summary>
+        /// Registro de caja con la estructura del conector para canastilla: usa sus propias claves
+        /// (movimientocajacanastilla, unidadnegociocajacanastilla, idfecajacanastilla, cajacanastilla)
+        /// en lugar de las de combustible.
+        /// </summary>
+        private static object ConstruirCajaCanastilla(Caja caja, string centroOperaciones, string tercero)
+        {
+            return new
+            {
+                F_CIA = "1",
+                F350_ID_CO = centroOperaciones,
+                F350_ID_TIPO_DOCTO = caja.F350_ID_TIPO_DOCTO,
+                F350_CONSEC_DOCTO = caja.F350_CONSEC_DOCTO,
+                F351_ID_AUXILIAR = caja.F351_ID_AUXILIAR,
+                F351_ID_CO_MOV = ObtenerConfig("movimientocajacanastilla", centroOperaciones),
+                F351_ID_UN = ObtenerConfig("unidadnegociocajacanastilla", UnidadNegocioCajaPorDefecto),
+                F351_ID_CCOSTO = "",
+                F351_ID_FE = ObtenerConfig("idfecajacanastilla", IdFeCajaPorDefecto),
+                F351_VALOR_DB = caja.F351_VALOR_DB,
+                F351_VALOR_CR = "",
+                F351_VALOR_DB_ALT = "",
+                F351_VALOR_CR_ALT = "",
+                F351_NOTAS = caja.F351_NOTAS,
+                F358_ID_CAJA = ConfigurationManager.AppSettings["cajacanastilla"]?.Trim() ?? "",
+                F358_ID_MEDIOS_PAGO = caja.F358_ID_MEDIOS_PAGO,
+                F358_ID_BANCO = "",
+                F358_NRO_CHEQUE = "",
+                F358_NRO_CUENTA = "",
+                F358_COD_SEGURIDAD = "",
+                F358_NRO_AUTORIZACION = "",
+                F358_FECHA_VCTO = "",
+                F358_REFERENCIA_OTROS = "",
+                F358_FECHA_CONSIGNACION = "",
+                F358_ID_CAUSALES_DEVOLUCION = "",
+                F358_ID_TERCERO = tercero,
+                F358_NOTAS = caja.F358_NOTAS
+            };
         }
 
         /// <summary>

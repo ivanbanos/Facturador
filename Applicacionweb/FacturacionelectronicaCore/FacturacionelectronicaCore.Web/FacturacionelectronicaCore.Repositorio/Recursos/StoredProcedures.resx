@@ -138,6 +138,12 @@
   <data name="GetUsuarios" xml:space="preserve">
     <value>[dbo].[GetUsuarios]</value>
   </data>
+  <data name="CrearUsuario" xml:space="preserve">
+    <value>[dbo].[CrearUsuario]</value>
+  </data>
+  <data name="CambiarContrasenaUsuario" xml:space="preserve">
+    <value>[dbo].[CambiarContrasenaUsuario]</value>
+  </data>
   <data name="ListarIsla" xml:space="preserve">
     <value>[dbo].[ListarIslas]</value>
   </data>

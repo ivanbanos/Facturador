@@ -814,6 +814,69 @@ END CATCH;
 GO
 --EXEC AgregarFacturasDesdeIdVentaPorFecha @fecha = '2026-03-18';
 GO
+
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'AgregarFacturasDesdeIdVentaPorRangoFechas')
+    DROP PROCEDURE [dbo].[AgregarFacturasDesdeIdVentaPorRangoFechas]
+GO
+CREATE PROCEDURE [dbo].[AgregarFacturasDesdeIdVentaPorRangoFechas]
+(
+    @fechaInicio date,
+    @fechaFin date
+)
+AS
+BEGIN TRY
+    SET NOCOUNT ON;
+
+    IF @fechaInicio IS NULL OR @fechaFin IS NULL
+        RAISERROR(N'Las fechas de inicio y fin son obligatorias', 16, 1);
+
+    IF @fechaInicio > @fechaFin
+        RAISERROR(N'La fecha de inicio no puede ser mayor a la fecha fin', 16, 1);
+
+    DECLARE @ventaId INT;
+    DECLARE @inicio DATETIME = CAST(@fechaInicio AS DATETIME);
+    DECLARE @finExclusivo DATETIME = DATEADD(DAY, 1, CAST(@fechaFin AS DATETIME));
+
+    DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
+        SELECT v.CONSECUTIVO
+        FROM VENTAS v
+        LEFT JOIN Facturacion_Electronica.dbo.OrdenesDeDespacho AS od ON od.ventaId = v.CONSECUTIVO
+        WHERE dbo.Finteger(v.FECHA_REAL) >= @inicio
+          AND dbo.Finteger(v.FECHA_REAL) < @finExclusivo
+          AND od.ventaId IS NULL
+        ORDER BY v.CONSECUTIVO;
+
+    OPEN cur;
+    FETCH NEXT FROM cur INTO @ventaId;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        EXEC [AgregarFacturaPorIdVenta] @ventaId;
+        FETCH NEXT FROM cur INTO @ventaId;
+    END;
+
+    CLOSE cur;
+    DEALLOCATE cur;
+
+    SELECT 'OK';
+END TRY
+BEGIN CATCH
+    DECLARE
+        @errorMessage  VARCHAR(2000),
+        @errorProcedure VARCHAR(255),
+        @errorLine      INT;
+
+    SELECT
+        @errorMessage  = ERROR_MESSAGE(),
+        @errorProcedure = ERROR_PROCEDURE(),
+        @errorLine      = ERROR_LINE();
+
+    RAISERROR(N'<message>Error occurred in %s :: %s :: Line number: %d</message>',
+              16, 1, @errorProcedure, @errorMessage, @errorLine);
+END CATCH;
+GO
+--EXEC AgregarFacturasDesdeIdVentaPorRangoFechas @fechaInicio = '2026-03-01', @fechaFin = '2026-03-18';
+GO
 USE [Ventas]
 GO
 /****** Object:  StoredProcedure [dbo].[getFacturaPorTurno]    Script Date: 14/04/2026 2:09:30 p. m. ******/

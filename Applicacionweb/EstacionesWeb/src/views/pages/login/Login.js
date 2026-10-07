@@ -1,5 +1,5 @@
-import { React, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { React, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   CButton,
   CCard,
@@ -16,13 +16,20 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser } from '@coreui/icons'
 import GetToken from '../../../services/GetToken'
+import {
+  clearSession,
+  setToken,
+  getRutaInicio,
+  isCliente,
+  usuariosClientesActivo,
+} from '../../../services/AuthService'
 import '../../../App.css'
 
 const Login = () => {
   let navigate = useNavigate()
-  localStorage.setItem('token', null)
-  localStorage.setItem('role', null)
-  localStorage.setItem('idClient', null)
+  useEffect(() => {
+    clearSession()
+  }, [])
   const [errorMessages, seterrormessages] = useState({})
   const [first_name, setfirst_name] = useState()
   const [password, setPassword] = useState()
@@ -35,12 +42,25 @@ const Login = () => {
   const handleSubmit = async (event) => {
     //Prevent page reload
     event.preventDefault()
+    if (!first_name || !password) {
+      seterrormessages({ name: 'password', message: 'Ingrese usuario y contraseña' })
+      return
+    }
     const token = await GetToken(first_name, password)
     // Compare user info
-    if (token) {
-      localStorage.setItem('token', token.token)
+    if (token && token.token) {
+      setToken(token.token)
+      // Con la funcionalidad usuarios-clientes desactivada los clientes no ingresan
+      if (isCliente() && !usuariosClientesActivo()) {
+        clearSession()
+        seterrormessages({
+          name: 'password',
+          message: 'El acceso para clientes no está habilitado',
+        })
+        return
+      }
 
-      navigate('/Dashboard', { replace: true })
+      navigate(getRutaInicio(), { replace: true })
     } else {
       // Username not found
       seterrormessages({ name: 'password', message: 'Username or Password incorrect' })
@@ -55,7 +75,7 @@ const Login = () => {
             <CCardGroup>
               <CCard className="p-4">
                 <CCardBody>
-                  <CForm>
+                  <CForm onSubmit={handleSubmit}>
                     <h1>SIGES</h1>
                     <p className="text-medium-emphasis">Ingresar</p>
                     <CInputGroup className="mb-3">
@@ -85,13 +105,7 @@ const Login = () => {
                     </CInputGroup>
                     <CRow>
                       <CCol xs={6}>
-                        <CButton
-                          color="primary"
-                          className="px-4"
-                          onClick={handleSubmit}
-                          navigate={navigate}
-                          seterrormessages={seterrormessages}
-                        >
+                        <CButton color="primary" className="px-4" type="submit">
                           Iniciar sesión
                         </CButton>
                         <div className="error">{errorMessages.message}</div>

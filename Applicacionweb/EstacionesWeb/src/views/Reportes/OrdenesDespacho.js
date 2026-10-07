@@ -40,6 +40,7 @@ import {
   cilSpreadsheet,
 } from '@coreui/icons'
 import Toast from '../toast/Toast'
+import { isCliente } from '../../services/AuthService'
 import * as XLSX from 'xlsx'
 
 var pdfMake = require('pdfmake/build/pdfmake.js')
@@ -809,7 +810,7 @@ const OrdenesDespacho = () => {
       {showResults && (
         <>
           {/* Botón para reenviar a facturación arriba de la tabla */}
-          {sinFacturar && filteredOrdenes.length > 0 && (
+          {!isCliente() && sinFacturar && filteredOrdenes.length > 0 && (
             <div className="mb-3 text-end">
               <CButton color="warning" onClick={() => reenviarAFacturacion(filteredOrdenes)}>
                 <CIcon icon={cilCloudDownload} className="me-2" />

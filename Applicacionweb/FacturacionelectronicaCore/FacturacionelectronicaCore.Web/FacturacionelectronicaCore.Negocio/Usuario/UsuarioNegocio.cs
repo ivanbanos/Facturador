@@ -59,6 +59,21 @@ namespace EstacionesServicio.Negocio.Usuario
         }
 
         /// <inheritdoc />
+        public async Task<bool> CrearUsuario(Modelo.Usuario usuario)
+        {
+            var entidad = _mapper.Map<Modelo.Usuario, Repositorio.Entities.Usuario>(usuario);
+            if (entidad.guid == Guid.Empty)
+            {
+                entidad.guid = Guid.NewGuid();
+            }
+            return await _usuarioRespositorio.CrearUsuario(entidad) > 0;
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> CambiarContrasena(Guid guid, string contrasenaActual, string contrasenaNueva)
+            => await _usuarioRespositorio.CambiarContrasena(guid, contrasenaActual, contrasenaNueva) > 0;
+
+        /// <inheritdoc />
         public Task<int> SaveUsuario(IEnumerable<Modelo.Usuario> usuarios)
         {
             try

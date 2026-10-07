@@ -1,6 +1,7 @@
 ﻿using EstacionesServicio.Modelo;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Negocio.OrdenDeDespacho;
+using FacturacionelectronicaCore.Web.Authtentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -31,7 +32,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
         /// <returns>Coleccion de Ordenes de desapacho con Identificacion y Nombre de tercero</returns>
         [HttpPost]
         public async Task<IEnumerable<OrdenDeDespacho>> GetOrdenesDeDespacho(FiltroBusqueda filtroOrdenDeDespacho)
-        => await _ordenDeDespachoNegocio.GetOrdenesDeDespacho(filtroOrdenDeDespacho);
+        => await _ordenDeDespachoNegocio.GetOrdenesDeDespacho(User.RestringirFiltroACliente(filtroOrdenDeDespacho));
 
         [HttpPost("ReenviarOrdenesDespachoPorIdVentaLocal")]
         public async Task<ActionResult<List<string>>> ReenviarOrdenesDespachoPorIdVentaLocal([FromBody] ReenvioOrdenesRequest request)
@@ -128,7 +129,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
         [HttpPost("GetConsolidado")]
         public async Task<ActionResult<ReporteFiscal>> GetConsolidado(FiltroBusqueda filtroFactura) 
         {
-            var reporteFiscal = await _ordenDeDespachoNegocio.GetReporteFiscal(filtroFactura);
+            var reporteFiscal = await _ordenDeDespachoNegocio.GetReporteFiscal(User.RestringirFiltroACliente(filtroFactura));
             return Ok(reporteFiscal);
         }
     }

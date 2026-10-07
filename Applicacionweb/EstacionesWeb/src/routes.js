@@ -68,6 +68,10 @@ const Terceros = React.lazy(() => import('./views/terceros/Terceros'))
 const TerceroForm = React.lazy(() => import('./views/terceros/TerceroForm'))
 const TerceroDetalle = React.lazy(() => import('./views/terceros/TerceroDetalle'))
 
+// Usuarios
+const Usuarios = React.lazy(() => import('./views/usuarios/Usuarios'))
+const CambiarContrasena = React.lazy(() => import('./views/usuarios/CambiarContrasena'))
+
 const routes = [
   { path: '/', exact: true, name: 'Home' },
   { path: '/dashboard', name: 'Estaciones', element: Dashboard },
@@ -102,6 +106,9 @@ const routes = [
   { path: '/terceros/nuevo', name: 'Nuevo Tercero', element: TerceroForm },
   { path: '/terceros/editar/:guid', name: 'Editar Tercero', element: TerceroForm },
   { path: '/terceros/ver/:guid', name: 'Detalle de Tercero', element: TerceroDetalle },
+  // Usuarios
+  { path: '/Usuarios', name: 'Usuarios', element: Usuarios },
+  { path: '/CambiarContrasena', name: 'Cambiar contraseña', element: CambiarContrasena },
   { path: '/theme', name: 'Theme', element: Colors, exact: true },
   { path: '/theme/colors', name: 'Colors', element: Colors },
   { path: '/theme/typography', name: 'Typography', element: Typography },

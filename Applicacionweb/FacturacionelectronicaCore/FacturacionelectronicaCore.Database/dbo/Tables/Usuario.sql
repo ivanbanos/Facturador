@@ -4,5 +4,6 @@
     [Guid] UNIQUEIDENTIFIER NOT NULL, 
     [Nombre] NVARCHAR(50) NOT NULL, 
     [Usuario] NVARCHAR(50) NOT NULL, 
-    [Contrasena] NVARCHAR(MAX) NOT NULL
+    [Contrasena] NVARCHAR(MAX) NOT NULL,
+    [IdentificacionTercero] NVARCHAR(250) NULL
 )

@@ -2,6 +2,8 @@
 // HTTP Service - JavaScript wrapper for API calls
 // ===============================================================================================================
 
+import { getToken, isAuthenticated, redirectToLogin } from './AuthService'
+
 class HttpService {
   static httpFailureRetryCount = 1
 
@@ -16,7 +18,7 @@ class HttpService {
 
   // Get headers with Authorization token if available
   getHeaders() {
-    const token = localStorage.getItem('token')
+    const token = getToken()
     const headers = { ...this.baseHeaders }
 
     if (token) {
@@ -26,11 +28,32 @@ class HttpService {
     return headers
   }
 
+  // Sin token valido (ausente o expirado) no se llama al API: se envia al inicio de sesion
+  ensureSession() {
+    if (!isAuthenticated()) {
+      redirectToLogin()
+      return false
+    }
+    return true
+  }
+
+  // 401 = token invalido o expirado -> cerrar sesion
+  handleUnauthorized(response) {
+    if (response.status === 401) {
+      redirectToLogin()
+      return true
+    }
+    return false
+  }
+
   async get(url, params = null) {
     return this.requestByUrl('GET', url, undefined, params)
   }
 
   async getText(url) {
+    if (!this.ensureSession()) {
+      throw new Error('Sesión expirada')
+    }
     try {
       const response = await fetch(url, {
         method: 'GET',
@@ -38,6 +61,7 @@ class HttpService {
         headers: this.getHeaders(),
       })
 
+      this.handleUnauthorized(response)
       if (response.ok) {
         return await response.text()
       }
@@ -51,6 +75,9 @@ class HttpService {
   async postText(url, body) {
     const preparedBody = typeof body === 'string' ? body : JSON.stringify(body)
 
+    if (!this.ensureSession()) {
+      throw new Error('Sesión expirada')
+    }
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -59,6 +86,7 @@ class HttpService {
         body: preparedBody,
       })
 
+      this.handleUnauthorized(response)
       if (response.ok) {
         return await response.text()
       }
@@ -90,6 +118,10 @@ class HttpService {
   }
 
   async requestByUrl(method, url, body = undefined, params = null) {
+    if (!this.ensureSession()) {
+      return 'fail'
+    }
+
     let finalUrl = url
 
     // Add query parameters if provided
@@ -112,7 +144,7 @@ class HttpService {
       const response = await fetch(finalUrl, requestOptions)
 
       // Check for authentication failure
-      if (response.status === 401 || response.status === 403) {
+      if (this.handleUnauthorized(response) || response.status === 403) {
         return 'fail'
       }
 

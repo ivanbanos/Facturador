@@ -2,6 +2,7 @@
 using FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
+using FacturacionelectronicaCore.Web.Authtentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -14,7 +15,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class FacturasCanastillaController
+    public class FacturasCanastillaController : ControllerBase
     {
         private readonly IFacturaCanastillaNegocio _facturaNegocio;
 
@@ -25,21 +26,44 @@ namespace FacturacionelectronicaCore.Web.Controllers
 
         [HttpPost("GetFactura")]
         public async Task<IEnumerable<FacturaCanastilla>> BuscarFacturas(FiltroBusqueda filtroFactura)
-        => await _facturaNegocio.GetFacturas(filtroFactura.FechaInicial, filtroFactura.FechaFinal, filtroFactura.Identificacion, filtroFactura.NombreTercero, filtroFactura.Estacion);
-       
+        {
+            filtroFactura = User.RestringirFiltroACliente(filtroFactura);
+            return await _facturaNegocio.GetFacturas(filtroFactura.FechaInicial, filtroFactura.FechaFinal, filtroFactura.Identificacion, filtroFactura.NombreTercero, filtroFactura.Estacion);
+        }
+
         [HttpPost("GetFacturasReporte")]
         public async Task<FacturaCanastillaReporte> GetFacturasReporte(FiltroBusqueda filtroFactura)
-                => await _facturaNegocio.GetFacturasReporte(filtroFactura.FechaInicial, filtroFactura.FechaFinal, filtroFactura.Identificacion, filtroFactura.NombreTercero, filtroFactura.Estacion);
+        {
+            filtroFactura = User.RestringirFiltroACliente(filtroFactura);
+            return await _facturaNegocio.GetFacturasReporte(filtroFactura.FechaInicial, filtroFactura.FechaFinal, filtroFactura.Identificacion, filtroFactura.NombreTercero, filtroFactura.Estacion);
+        }
 
 
         [HttpGet("{idFactura}")]
-        public async Task<FacturaCanastilla> Get(string idFactura)
-            => await _facturaNegocio.GetFactura(idFactura);
+        public async Task<ActionResult<FacturaCanastilla>> Get(string idFactura)
+        {
+            var factura = await _facturaNegocio.GetFactura(idFactura);
+            if (factura != null && !PerteneceAlCliente(factura))
+            {
+                return Forbid();
+            }
+            return factura;
+        }
 
 
         [HttpGet("detalle/{idFactura}")]
-        public async Task<IEnumerable<FacturaCanastilla>> GetDEtalle(string idFactura)
-            => await _facturaNegocio.GetDetalleFactura(idFactura);
+        public async Task<ActionResult<IEnumerable<FacturaCanastilla>>> GetDEtalle(string idFactura)
+        {
+            var detalle = await _facturaNegocio.GetDetalleFactura(idFactura);
+            if (detalle != null && !detalle.All(PerteneceAlCliente))
+            {
+                return Forbid();
+            }
+            return Ok(detalle);
+        }
+
+        private bool PerteneceAlCliente(FacturaCanastilla factura)
+            => !User.EsCliente() || User.EsDelCliente(factura?.terceroId?.Identificacion);
 
 
 

@@ -45,6 +45,13 @@ namespace FacturacionelectronicaCore.Negocio.Tercero
 
 
         /// <inheritdoc />
+        public async Task<IEnumerable<Modelo.Tercero>> BuscarPorIdentificacion(string identificacion)
+        {
+            var terceros = await _terceroRepositorio.ObtenerTerceroPorIdentificacion(identificacion.Trim());
+            return _mapper.Map<IEnumerable<Repositorio.Entities.Tercero>, IEnumerable<Modelo.Tercero>>(terceros ?? Enumerable.Empty<Repositorio.Entities.Tercero>());
+        }
+
+        /// <inheritdoc />
         public async Task<int> AddOrUpdate(IEnumerable<Modelo.Tercero> terceros)
         {
             int cantidadNoPasados = 0;

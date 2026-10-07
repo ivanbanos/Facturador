@@ -48,7 +48,51 @@ namespace EstacionesServicio.Repositorio.Repositorios
 
         /// <inheritdoc />
         public Task<int> SaveUsuario(IEnumerable<Usuario> usuarios)
-            =>_sqlHelper.InsertOrUpdateOrDeleteAsync(StoredProcedures.SaveOrUpdateUser, 
-                new { usuario = usuarios.ToDataTable().AsTableValuedParameter(UserDefinedTypes.Usuario) });
+        {
+            // El tipo UsuarioType solo tiene Guid, Nombre, Usuario y Contrasena (en ese orden)
+            var filas = usuarios.Select(x => new UsuarioTvp
+            {
+                Guid = x.guid,
+                Nombre = x.Nombre,
+                Usuario = x.NombreUsuario,
+                Contrasena = x.Contrasena
+            });
+            return _sqlHelper.InsertOrUpdateOrDeleteAsync(StoredProcedures.SaveOrUpdateUser,
+                new { usuario = filas.ToDataTable().AsTableValuedParameter(UserDefinedTypes.Usuario) });
+        }
+
+        /// <inheritdoc />
+        public async Task<int> CrearUsuario(Usuario usuario)
+        {
+            var paramList = new DynamicParameters();
+            paramList.Add("Guid", usuario.guid);
+            paramList.Add("Nombre", usuario.Nombre);
+            paramList.Add("Usuario", usuario.NombreUsuario);
+            paramList.Add("Contrasena", usuario.Contrasena);
+            paramList.Add("IdentificacionTercero", usuario.IdentificacionTercero);
+
+            var resultado = await _sqlHelper.GetsAsync<int>(StoredProcedures.CrearUsuario, paramList);
+            return resultado?.FirstOrDefault() ?? 0;
+        }
+
+        /// <inheritdoc />
+        public async Task<int> CambiarContrasena(Guid guid, string contrasenaActual, string contrasenaNueva)
+        {
+            var paramList = new DynamicParameters();
+            paramList.Add("Guid", guid);
+            paramList.Add("ContrasenaActual", contrasenaActual);
+            paramList.Add("ContrasenaNueva", contrasenaNueva);
+
+            var resultado = await _sqlHelper.GetsAsync<int>(StoredProcedures.CambiarContrasenaUsuario, paramList);
+            return resultado?.FirstOrDefault() ?? 0;
+        }
+
+        private class UsuarioTvp
+        {
+            public Guid Guid { get; set; }
+            public string Nombre { get; set; }
+            public string Usuario { get; set; }
+            public string Contrasena { get; set; }
+        }
     }
 }

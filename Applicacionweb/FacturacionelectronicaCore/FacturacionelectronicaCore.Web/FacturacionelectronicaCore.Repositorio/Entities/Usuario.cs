@@ -8,5 +8,9 @@ namespace EstacionesServicio.Repositorio.Entities
         public string Nombre { get; set; }
         public string NombreUsuario { get; set; }
         public string Contrasena { get; set; }
+        /// <summary>
+        /// Identificacion del tercero (cliente) asociado. Null para usuarios administradores.
+        /// </summary>
+        public string IdentificacionTercero { get; set; }
     }
 }

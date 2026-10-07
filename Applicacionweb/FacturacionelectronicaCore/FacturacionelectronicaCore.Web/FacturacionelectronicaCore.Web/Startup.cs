@@ -1,8 +1,9 @@
-using EstacionesServicio.Negocio.Extention;
+﻿using EstacionesServicio.Negocio.Extention;
 using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 using FacturacionelectronicaCore.Web.Authtentication;
 using FacturacionelectronicaCore.Web.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -53,6 +54,8 @@ namespace FacturacionelectronicaCore.Web
             services.AddMvc(opt => 
             {
                 opt.Filters.Add(new ApiExceptionFilter());
+                // Restringe a los usuarios cliente a sus paginas permitidas
+                opt.Filters.Add(new ClienteAccesoFilter());
             });
 
             services.AddAuthentication(x =>
@@ -69,8 +72,21 @@ namespace FacturacionelectronicaCore.Web
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ValidateIssuer = false,
-                    ValidateAudience = false
+                    ValidateAudience = false,
+                    // El token expira exactamente a la hora (sin los 5 minutos de tolerancia por defecto)
+                    ValidateLifetime = true,
+                    RequireExpirationTime = true,
+                    ClockSkew = TimeSpan.Zero
                 };
+            });
+
+            // Sin token no se puede llamar al API: todo endpoint exige un usuario autenticado
+            // salvo los marcados con [AllowAnonymous] (login).
+            services.AddAuthorization(options =>
+            {
+                options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .Build();
             });
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
@@ -150,6 +166,13 @@ namespace FacturacionelectronicaCore.Web
 
                 await next();
             });
+            // Swagger va antes del ruteo para no quedar bajo la politica de autenticacion global
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint(JsonConfig["swaggerUrl"], "API V1");
+            });
+
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
@@ -158,11 +181,6 @@ namespace FacturacionelectronicaCore.Web
                 endpoints.MapControllers();
             });
 
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint(JsonConfig["swaggerUrl"], "API V1");
-            });
         }
     }
 }

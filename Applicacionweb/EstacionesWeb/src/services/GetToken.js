@@ -1,23 +1,20 @@
 const GetToken = async (username, password) => {
   try {
-    const response = await fetch(window.SERVER_URL + '/Usuarios/' + username + '/' + password, {
-      method: 'GET',
+    // Las credenciales van en el cuerpo: no quedan en la URL y admiten cualquier caracter
+    const response = await fetch(`${window.SERVER_URL}/Usuarios/Login`, {
+      method: 'POST',
       mode: 'cors',
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        accept: 'text/plain',
-        'sec-fetch-mode': 'cors',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Origin': 'https://machineutilization.dbhaffnerna3.com',
-        'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
-      },
+      headers: { accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario: username, contrasena: password }),
     })
-    if (response.status == 200) {
-      let json = await response.json()
-      return json
+    if (response.status === 200) {
+      return await response.json()
     }
     return null
-  } catch (error) {}
+  } catch (error) {
+    console.error('Error al iniciar sesión:', error)
+    return null
+  }
 }
 
 export default GetToken

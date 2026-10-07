@@ -4,6 +4,7 @@ import { CContainer, CSpinner } from '@coreui/react'
 
 // routes config
 import routes from '../routes'
+import { getRutaInicio, puedeVerRuta } from '../services/AuthService'
 
 const AppContent = () => {
   return (
@@ -18,12 +19,18 @@ const AppContent = () => {
                   path={route.path}
                   exact={route.exact}
                   name={route.name}
-                  element={<route.element />}
+                  element={
+                    puedeVerRuta(route.path) ? (
+                      <route.element />
+                    ) : (
+                      <Navigate to={getRutaInicio()} replace />
+                    )
+                  }
                 />
               )
             )
           })}
-          <Route path="/" element={<Navigate to="dashboard" replace />} />
+          <Route path="/" element={<Navigate to={getRutaInicio()} replace />} />
           <Route path="/clients" element={<Navigate to="clients" replace />} />
           <Route path="/users" element={<Navigate to="users" replace />} />
         </Routes>

@@ -78,6 +78,8 @@
     <Build Include="StoredProcedures\GetUserByGuid.sql" />
     <Build Include="StoredProcedures\GetUserGuidByUserNPass.sql" />
     <Build Include="StoredProcedures\GetUsuarios.sql" />
+    <Build Include="StoredProcedures\CrearUsuario.sql" />
+    <Build Include="StoredProcedures\CambiarContrasenaUsuario.sql" />
     <Build Include="StoredProcedures\SaveOrUpdateUser.sql" />
     <Build Include="types\UsuarioType.sql" />
     <Build Include="Schemas\Admin.sql" />

@@ -605,6 +605,15 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.numeroTransaccion = dt.Columns.Contains("numeroTransaccion") && !dr.IsNull("numeroTransaccion")
                         ? Columna<string>(dr, "numeroTransaccion")
                         : null;
+                    fc.codigoFormaPago2 = dt.Columns.Contains("codigoFormaPago2") && !dr.IsNull("codigoFormaPago2")
+                        ? Convert.ToInt32(dr["codigoFormaPago2"])
+                        : (int?)null;
+                    fc.total1 = dt.Columns.Contains("total1") && !dr.IsNull("total1")
+                        ? Convert.ToDecimal(dr["total1"])
+                        : (decimal?)null;
+                    fc.total2 = dt.Columns.Contains("total2") && !dr.IsNull("total2")
+                        ? Convert.ToDecimal(dr["total2"])
+                        : (decimal?)null;
                     fc.descuento = Convert.ToSingle(Columna<double>(dr, "descuento"));
                     fc.subtotal = Convert.ToSingle(Columna<double>(dr, "subtotal"));
                     fc.total = Convert.ToSingle(Columna<double>(dr, "total"));
@@ -623,6 +632,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.terceroId.terceroId = Columna<int>(dr, "terceroId");
                     fc.terceroId.tipoIdentificacion = Columna<int?>(dr, "tipoIdentificacion");
                     fc.terceroId.tipoIdentificacionS = Columna<string>(dr, "descripcion");
+                    fc.terceroId.EnviadoSiesa = dt.Columns.Contains("enviadoSiesa") ? Columna<bool?>(dr, "enviadoSiesa") : null;
                     fc.TurnoGuid = dt.Columns.Contains("turnoguid") && !dr.IsNull("turnoguid")
                         ? Columna<string>(dr, "turnoguid")
                         : null;

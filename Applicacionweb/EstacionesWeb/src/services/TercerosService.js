@@ -169,6 +169,16 @@ class TercerosService {
   }
 
   /**
+   * Busca terceros por identificación exacta en el servidor
+   * @param {string} identificacion - Identificación a buscar
+   * @returns {Promise<Array|'fail'>} Terceros que coinciden
+   */
+  async buscarPorIdentificacionServidor(identificacion) {
+    const valor = encodeURIComponent(identificacion.trim())
+    return this.httpService.get(`${this.baseUrl}/Terceros/BuscarPorIdentificacion/${valor}`)
+  }
+
+  /**
    * Busca terceros por nombre (filtro local)
    * @param {string} nombre - Nombre a buscar
    * @returns {Promise<Array>} Terceros que coinciden

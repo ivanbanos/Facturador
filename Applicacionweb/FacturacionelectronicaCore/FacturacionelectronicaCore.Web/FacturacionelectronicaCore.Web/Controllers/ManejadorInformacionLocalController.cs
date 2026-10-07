@@ -1,5 +1,7 @@
 ﻿using FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal;
 using FacturacionelectronicaCore.Negocio.Modelo;
+using FacturacionelectronicaCore.Negocio.OrdenDeDespacho;
+using FacturacionelectronicaCore.Web.Authtentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -13,10 +15,12 @@ namespace FacturacionelectronicaCore.Web.Controllers
     public class ManejadorInformacionLocalController : ControllerBase
     {
         private readonly IManejadorInformacionLocalNegocio _manejadorInformacionLocalNegocio;
+        private readonly IOrdenDeDespachoNegocio _ordenDeDespachoNegocio;
 
-        public ManejadorInformacionLocalController(IManejadorInformacionLocalNegocio manejadorInformacionLocalNegocio)
+        public ManejadorInformacionLocalController(IManejadorInformacionLocalNegocio manejadorInformacionLocalNegocio, IOrdenDeDespachoNegocio ordenDeDespachoNegocio)
         {
             _manejadorInformacionLocalNegocio = manejadorInformacionLocalNegocio;
+            _ordenDeDespachoNegocio = ordenDeDespachoNegocio;
         }
 
         [HttpGet("GetGuidsFacturasPendientes/{estacion}")]
@@ -156,7 +160,17 @@ namespace FacturacionelectronicaCore.Web.Controllers
 
         [HttpGet("GetInfoFacturaElectronica/{idVentaLocal}/estacion/{estacion}")]
         public async Task<ActionResult<string>> GetInfoFacturaElectronica(int idVentaLocal, Guid estacion)
-        => Ok(await _manejadorInformacionLocalNegocio.GetInfoFacturaElectronica(idVentaLocal, estacion));
+        {
+            if (User.EsCliente())
+            {
+                var orden = await _ordenDeDespachoNegocio.ObtenerOrdenDespachoPorIdVentaLocal(idVentaLocal, estacion);
+                if (orden == null || !User.EsDelCliente(orden.Identificacion))
+                {
+                    return Forbid();
+                }
+            }
+            return Ok(await _manejadorInformacionLocalNegocio.GetInfoFacturaElectronica(idVentaLocal, estacion));
+        }
 
         [HttpGet("GetInfoFacturaElectronicaCanastilla/{consecutivo}/estacion/{estacion}")]
         public async Task<ActionResult<string>> GetInfoFacturaElectronicaCanastilla(int consecutivo, Guid estacion)
