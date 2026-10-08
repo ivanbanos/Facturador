@@ -46,6 +46,8 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         public string idFacturaElectronica { get; set; }
         public bool enviadoContabilidad { get; set; }
         public string NumeroTransaccion { get; set; }
+        // Consecutivo local de la factura POS (0 cuando es orden de despacho).
+        public int ConsecutivoLocal { get; set; }
         
         [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
         public DateTime FechaReporte { get; set; }

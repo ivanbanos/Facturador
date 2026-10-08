@@ -42,6 +42,8 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public string Vendedor { get; set; }
         public string TurnoGuid { get; set; }
         public string NumeroTransaccion { get; set; }
+        // Consecutivo local de la factura POS (0 cuando es orden de despacho).
+        public int ConsecutivoLocal { get; set; }
         public Guid estacion { get; set; }
 
         private static int? GetIntProperty(object source, string name)
@@ -89,7 +91,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
             {
                 x.Venta.PRECIO_UNI = x.Venta.PRECIO_UNI * 10;
                 x.Venta.VALORNETO = x.Venta.VALORNETO * 10;
-                x.Venta.VALORNETO = x.Venta.TOTAL * 10;
+                x.Venta.TOTAL = x.Venta.TOTAL * 10;
                 x.Venta.Descuento = x.Venta.Descuento * 10;
             }
             Guid = Guid.NewGuid();
@@ -114,6 +116,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
             NombreTercero = string.Join(" ", new[] { nombres, apellidos }.Where(v => !string.IsNullOrWhiteSpace(v))).Trim();
             Tercero = new Tercero(x.Tercero);
             IdLocal = x.facturaPOSId;
+            ConsecutivoLocal = x.Consecutivo;
             IdVentaLocal = x.Venta.CONSECUTIVO;
             IdTerceroLocal = x.Tercero.terceroId;
             FechaProximoMantenimiento = x.Venta.FECH_PRMA.HasValue ? x.Venta.FECH_PRMA.Value : DateTime.Now;

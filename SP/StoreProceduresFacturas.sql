@@ -913,7 +913,12 @@ begin try
 	@clientesCreditoGeneranFactura VARCHAR (50), @soloGeneraOrdenes VARCHAR (50), @verificarConsecutivo int,
     @OrdenDeDespachoId int, @mismaResolucion VARCHAR (50), @codigoFormaPagoPrincipal smallint;
 	
-	select @OrdenDeDespachoId = facturaPOSId from OrdenesDeDespacho where ventaId = @ventaId
+	-- Varios procesos (Enviador, API, SigesServicio) llaman este SP para la misma venta al mismo tiempo.
+	-- El bloqueo serializable evita que dos llamadas inserten la misma venta dos veces.
+	set transaction isolation level serializable;
+	begin tran;
+
+	select @OrdenDeDespachoId = facturaPOSId from OrdenesDeDespacho with (updlock, holdlock) where ventaId = @ventaId
 
 	select @clientesCreditoGeneranFactura=valor from configuracionEstacion where descripcion = 'ClientesCreditosGeneranFactura'
     
@@ -999,15 +1004,20 @@ begin try
 		end
 	end
 
-	
+	commit tran;
 end try
 begin catch
-    declare 
-        @errorMessage varchar(2000), 
+    declare
+        @errorMessage varchar(2000),
         @errorProcedure varchar(255),
         @errorLine int;
 
-    select  
+	if (@@TRANCOUNT > 0)
+	begin
+		rollback tran;
+	end
+
+    select
         @errorMessage = error_message(),
         @errorProcedure = error_procedure(),
         @errorLine = error_line();

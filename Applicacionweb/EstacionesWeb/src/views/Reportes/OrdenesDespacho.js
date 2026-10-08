@@ -183,6 +183,13 @@ const OrdenesDespacho = () => {
     }
   }
 
+  // Consecutivo local de la estación: > 0 es factura POS, 0 es orden de despacho.
+  // Las órdenes subidas antes de enviar este dato no lo tienen.
+  const getConsecutivoLocal = (orden) => {
+    if (orden.consecutivoLocal === undefined || orden.consecutivoLocal === null) return 'N/A'
+    return orden.consecutivoLocal > 0 ? orden.consecutivoLocal : 'Orden'
+  }
+
   // Función para formatear fecha
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A'
@@ -521,6 +528,7 @@ const OrdenesDespacho = () => {
       const ordenesData = [
         [
           'ID Transacción',
+          'Consecutivo Local',
           'Fecha y Hora',
           'Cliente',
           'Identificación',
@@ -536,6 +544,7 @@ const OrdenesDespacho = () => {
           'CUFE',
           'Estado Factura',
           'Estado',
+          'Descuento',
           'Total',
           'Vendedor',
         ],
@@ -545,6 +554,7 @@ const OrdenesDespacho = () => {
 
           return [
             orden.numeroTransaccion || orden.idVentaLocal || 'N/A',
+            getConsecutivoLocal(orden),
             orden.fecha
               ? new Date(orden.fecha).toLocaleString('es-ES', {
                   day: '2-digit',
@@ -568,6 +578,7 @@ const OrdenesDespacho = () => {
             isValidFactura ? facturaInfo.cufe || 'N/A' : 'N/A',
             isValidFactura ? facturaInfo.estado || 'N/A' : 'N/A',
             getEstadoDisplay(orden.estado),
+            orden.descuento || 0,
             orden.total || 0,
             orden.vendedor || 'N/A',
           ]
@@ -579,6 +590,7 @@ const OrdenesDespacho = () => {
       // Configurar anchos de columna
       ordenesSheet['!cols'] = [
         { width: 15 }, // ID Transacción
+        { width: 16 }, // Consecutivo Local
         { width: 12 }, // Fecha
         { width: 25 }, // Cliente
         { width: 15 }, // Identificación
@@ -594,6 +606,7 @@ const OrdenesDespacho = () => {
         { width: 35 }, // CUFE
         { width: 15 }, // Estado Factura
         { width: 12 }, // Estado
+        { width: 14 }, // Descuento
         { width: 15 }, // Total
         { width: 20 }, // Vendedor
       ]
@@ -910,6 +923,7 @@ const OrdenesDespacho = () => {
                     <CTableHead>
                       <CTableRow>
                         <CTableHeaderCell>ID Transacción</CTableHeaderCell>
+                        <CTableHeaderCell>Consecutivo</CTableHeaderCell>
                         <CTableHeaderCell>Fecha</CTableHeaderCell>
                         <CTableHeaderCell>Cliente</CTableHeaderCell>
                         <CTableHeaderCell>Formas de Pago</CTableHeaderCell>
@@ -918,6 +932,7 @@ const OrdenesDespacho = () => {
                         <CTableHeaderCell>Cantidad</CTableHeaderCell>
                         <CTableHeaderCell>ID Factura</CTableHeaderCell>
                         <CTableHeaderCell>Estado</CTableHeaderCell>
+                        <CTableHeaderCell>Descuento</CTableHeaderCell>
                         <CTableHeaderCell>Total</CTableHeaderCell>
                         <CTableHeaderCell>Acciones</CTableHeaderCell>
                       </CTableRow>
@@ -929,6 +944,9 @@ const OrdenesDespacho = () => {
                             <strong>
                               {orden.numeroTransaccion || orden.idVentaLocal || 'N/A'}
                             </strong>
+                          </CTableDataCell>
+                          <CTableDataCell>
+                            <small>{getConsecutivoLocal(orden)}</small>
                           </CTableDataCell>
                           <CTableDataCell>
                             <small>{formatDate(orden.fecha)}</small>
@@ -987,6 +1005,11 @@ const OrdenesDespacho = () => {
                             <CBadge color={getEstadoBadgeColor(orden.estado)}>
                               {getEstadoDisplay(orden.estado)}
                             </CBadge>
+                          </CTableDataCell>
+                          <CTableDataCell className="text-danger">
+                            {orden.descuento
+                              ? `-${formatCurrency(orden.descuento)}`
+                              : formatCurrency(0)}
                           </CTableDataCell>
                           <CTableDataCell className="fw-bold text-success">
                             {formatCurrency(orden.total)}

@@ -5,6 +5,8 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
     public class OrdenDeDespacho
     {
         public string numeroTransaccion { get; set; }
+        // Consecutivo local de la factura POS (0 cuando es orden de despacho).
+        public int ConsecutivoLocal { get; set; }
 
         public OrdenDeDespacho()
         {

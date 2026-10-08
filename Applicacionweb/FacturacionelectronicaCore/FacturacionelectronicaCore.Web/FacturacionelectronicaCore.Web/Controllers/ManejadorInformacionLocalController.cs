@@ -172,6 +172,16 @@ namespace FacturacionelectronicaCore.Web.Controllers
             return Ok(await _manejadorInformacionLocalNegocio.GetInfoFacturaElectronica(idVentaLocal, estacion));
         }
 
+        [HttpGet("EstadoFacturaElectronica/{idVentaLocal}/estacion/{estacion}")]
+        public async Task<ActionResult<EstadoFacturaElectronica>> EstadoFacturaElectronica(int idVentaLocal, Guid estacion)
+        {
+            if (User.EsCliente())
+            {
+                return Forbid();
+            }
+            return Ok(await _manejadorInformacionLocalNegocio.ObtenerEstadoFacturaElectronica(idVentaLocal, estacion));
+        }
+
         [HttpGet("GetInfoFacturaElectronicaCanastilla/{consecutivo}/estacion/{estacion}")]
         public async Task<ActionResult<string>> GetInfoFacturaElectronicaCanastilla(int consecutivo, Guid estacion)
         => Ok(await _manejadorInformacionLocalNegocio.GetInfoFacturaElectronicaCanastilla(consecutivo, estacion));

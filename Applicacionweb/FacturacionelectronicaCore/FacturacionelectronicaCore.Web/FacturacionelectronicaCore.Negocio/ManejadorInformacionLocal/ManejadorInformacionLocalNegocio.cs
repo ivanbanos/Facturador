@@ -126,21 +126,11 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                         }
                     }
 
+                    // Una factura electronica emitida no se modifica: si la orden ya la tiene, cambios de
+                    // tercero o placa no generan otra factura. Solo se envia si nunca se emitio o fallo.
                     bool envioFactura = (
                         ordenDeDespachoEntity == null
-                        || !esMismaVentaExistente
-                        || ordenDeDespachoEntity.idFacturaElectronica == null
-                        || ordenDeDespachoEntity.idFacturaElectronica.StartsWith("error")
-                        || ordenDeDespachoEntity.idFacturaElectronica.StartsWith("Error")
-                        // If the stored idFacturaElectronica contains an embedded provider invoice
-                        // with an order_reference that doesn't match our local IdVentaLocal, request resend
-                        || (ordenDeDespachoEntity != null
-                            && !string.IsNullOrEmpty(ordenDeDespachoEntity.idFacturaElectronica)
-                            && ordenDeDespachoEntity.idFacturaElectronica.IndexOf("order_reference", StringComparison.OrdinalIgnoreCase) >= 0
-                            // If the local IdVentaLocal appears more than once inside the stored payload, treat as suspicious and resend
-                            && (ordenDeDespachoEntity.idFacturaElectronica.IndexOf(x.IdVentaLocal.ToString(), StringComparison.OrdinalIgnoreCase)
-                                == ordenDeDespachoEntity.idFacturaElectronica.LastIndexOf(x.IdVentaLocal.ToString(), StringComparison.OrdinalIgnoreCase)
-                                || ordenDeDespachoEntity.idFacturaElectronica.IndexOf(x.IdVentaLocal.ToString(), StringComparison.OrdinalIgnoreCase) < 0))
+                        || !TieneFacturaElectronicaValida(ordenDeDespachoEntity.idFacturaElectronica)
                     )
                         && _alegra.EnvioDirecto;
 
@@ -150,7 +140,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                         x.FormaDePago = (x.FormaDePago ?? "Efectivo");
                         if ((_alegra.EnviaTodo || x.Fecha > DateTime.Now.AddMonths(-1)
                             || (_alegra.EnviaMes && DateTime.Now.AddMonths(-1) < x.Fecha))
-                            && (_alegra.EnviaCreditos || (!x.FormaDePago.ToLower().Contains("dir") && !x.FormaDePago.ToLower().Contains("calibra") && !x.FormaDePago.ToLower().Contains("consum") && !x.FormaDePago.ToLower().Contains("puntos"))))
+                            && _alegra.DebeFacturarFormaPago(x.FormaDePago))
                         {
                            
 
@@ -205,6 +195,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                     idFacturaElectronica = x.idFacturaElectronica,
                                     Vendedor = x.Vendedor,
                                     NumeroTransaccion = x.numeroTransaccion,
+                                    ConsecutivoLocal = x.ConsecutivoLocal,
                                 }
                             };
                             await _ordenDeDespachoRepositorio.AddRange(ordenesentityUpdate, estacion);
@@ -255,6 +246,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                 idFacturaElectronica = x.idFacturaElectronica ?? (esMismaVentaExistente ? ordenDeDespachoEntity?.idFacturaElectronica : null),
                                 Vendedor = x.Vendedor,
                                 NumeroTransaccion = x.numeroTransaccion,
+                                ConsecutivoLocal = x.ConsecutivoLocal,
                             }
                         };
                         await _ordenDeDespachoRepositorio.AddRange(ordenesentity, estacion);
@@ -326,6 +318,13 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             }
 
             return null;
+        }
+
+        public static bool TieneFacturaElectronicaValida(string idFacturaElectronica)
+        {
+            return !string.IsNullOrWhiteSpace(idFacturaElectronica)
+                && !idFacturaElectronica.StartsWith("error", StringComparison.OrdinalIgnoreCase)
+                && idFacturaElectronica.IndexOf("Bad Request", StringComparison.OrdinalIgnoreCase) < 0;
         }
 
         private static bool EsMismaVenta(Repositorio.Entities.OrdenDeDespacho existente, Modelo.OrdenDeDespacho actual)
@@ -417,6 +416,26 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             return await _tipoIdentificacionRepositorio.GetTipos();
         }
 
+        public async Task<Modelo.EstadoFacturaElectronica> ObtenerEstadoFacturaElectronica(int idVentaLocal, Guid estacion)
+        {
+            var ordenes = await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorIdVentaLocal(idVentaLocal, estacion);
+            var ordenConFactura = ordenes?.FirstOrDefault(o => TieneFacturaElectronicaValida(o.idFacturaElectronica));
+            if (ordenConFactura == null)
+            {
+                return new Modelo.EstadoFacturaElectronica { TieneFacturaElectronica = false };
+            }
+
+            // Formato almacenado: "estado:numero:cufe[:...]"
+            var partes = ordenConFactura.idFacturaElectronica.Split(':');
+            return new Modelo.EstadoFacturaElectronica
+            {
+                TieneFacturaElectronica = true,
+                Numero = partes.Length > 1 ? partes[1] : null,
+                Identificacion = ordenConFactura.Identificacion,
+                NombreTercero = ordenConFactura.NombreTercero
+            };
+        }
+
         public async Task<string> GetInfoFacturaElectronica(int idVentaLocal, Guid estacion)
         {
 
@@ -427,7 +446,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
 
                 Console.WriteLine("idFactura: " + idFactura);
                 Console.WriteLine("_alegra.Proveedor: " + _alegra.Proveedor);
-                Console.WriteLine("startswith: " + (idFactura.StartsWith("Error:") || idFactura.StartsWith("error:")));
+                Console.WriteLine("startswith: " + (idFactura != null && (idFactura.StartsWith("Error:") || idFactura.StartsWith("error:"))));
 
                 if (!string.IsNullOrEmpty(idFactura))
                 {
@@ -612,10 +631,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                 else if (_alegra.EnvioDirecto
                                     && (_alegra.EnviaTodo || factura.fecha > DateTime.Now.AddMonths(-1)
                                         || (_alegra.EnviaMes && DateTime.Now.AddMonths(-1) < factura.fecha))
-                                    && (_alegra.EnviaCreditos || (!(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("dir")
-                                        && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("calibra")
-                                        && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("consum")
-                                        && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("puntos"))))
+                                    && _alegra.DebeFacturarFormaPago(factura.codigoFormaPago?.Descripcion))
                                 {
                                     // Se pasa la respuesta del intento anterior (si fue error) para que el proveedor verifique
                                     // si esa factura sí quedó emitida y la recupere en lugar de emitir una nueva.
@@ -671,7 +687,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                 if (_alegra.EnvioDirecto
                                     && (_alegra.EnviaTodo || factura.fecha > DateTime.Now.AddMonths(-1)
                                         || (_alegra.EnviaMes && DateTime.Now.AddMonths(-1) < factura.fecha))
-                                    && (_alegra.EnviaCreditos || (!(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("dir") && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("calibra") && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("consum") && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("puntos"))))
+                                    && _alegra.DebeFacturarFormaPago(factura.codigoFormaPago?.Descripcion))
                                 {
                                     // Se pasa la respuesta del intento anterior (si fue error) para que el proveedor verifique
                                     // si esa factura sí quedó emitida y la recupere en lugar de emitir una nueva.
@@ -824,7 +840,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
 
                 Console.WriteLine("idFactura: " + idFactura);
                 Console.WriteLine("_alegra.Proveedor: " + _alegra.Proveedor);
-                Console.WriteLine("startswith: " + (idFactura.StartsWith("Error:") || idFactura.StartsWith("error:")));
+                Console.WriteLine("startswith: " + (idFactura != null && (idFactura.StartsWith("Error:") || idFactura.StartsWith("error:"))));
 
                 if (!string.IsNullOrEmpty(idFactura))
                 {

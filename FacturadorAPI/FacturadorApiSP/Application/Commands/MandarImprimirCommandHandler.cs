@@ -35,7 +35,14 @@ namespace FacturadorAPI.Application.Commands
                 var token = await _conexionEstacionRemota.GetToken(cancellationToken);
                 var factura = await _databaseHandler.GetFacturaPorIdVenta(request.VentaId);
                 await WriteDebugLogAsync($"Factura antes de actualizar: ventaId={factura.ventaId}, facturaPOSId={factura.facturaPOSId}, enviada={factura.enviada}, codigoFormaPago={factura.codigoFormaPago}, codigoFormaPago2={factura.codigoFormaPago2}, total1={factura.total1}, total2={factura.total2}");
-                
+
+                var mensajeBloqueo = await ValidarCambioTerceroAsync(factura, request.TerceroId, token);
+                if (mensajeBloqueo != null)
+                {
+                    await WriteDebugLogAsync($"Cambio de tercero bloqueado: ventaId={request.VentaId}, terceroActual={factura.Tercero?.terceroId}, terceroSolicitado={request.TerceroId}");
+                    return mensajeBloqueo;
+                }
+
                 if (!factura.enviada)
                 {
                     await WriteDebugLogAsync("Entra a ActualizarFactura porque enviada = false");
@@ -126,6 +133,36 @@ namespace FacturadorAPI.Application.Commands
                 await WriteDebugLogAsync($"Catch: MandarImprimir ejecutado. ventaId={request.VentaId}");
                 return "Error";
             }
+        }
+
+        public const string PrefijoTerceroBloqueado = "TerceroBloqueado:";
+
+        /// <summary>
+        /// Una factura electronica emitida no se puede modificar: si la venta ya la tiene, no se permite
+        /// cambiar el cliente. Devuelve el mensaje de bloqueo o null si el cambio esta permitido.
+        /// Si la web no responde se permite el cambio; la web igualmente conserva el tercero facturado.
+        /// </summary>
+        private async Task<string?> ValidarCambioTerceroAsync(Factura factura, int terceroIdSolicitado, string token)
+        {
+            if (factura.Tercero == null || factura.Tercero.terceroId == terceroIdSolicitado)
+            {
+                return null;
+            }
+
+            var estado = await _conexionEstacionRemota.ObtenerEstadoFacturaElectronica(factura.ventaId, token);
+            if (estado == null)
+            {
+                await WriteDebugLogAsync($"No se pudo consultar estado de factura electronica para ventaId={factura.ventaId}; se permite el cambio de tercero.");
+                return null;
+            }
+
+            if (!estado.TieneFacturaElectronica)
+            {
+                return null;
+            }
+
+            return $"{PrefijoTerceroBloqueado} La factura electrónica {estado.Numero} ya fue emitida a nombre de " +
+                   $"{estado.NombreTercero} ({estado.Identificacion}). No se puede cambiar el cliente.";
         }
 
         private async Task WriteDebugLogAsync(string message)

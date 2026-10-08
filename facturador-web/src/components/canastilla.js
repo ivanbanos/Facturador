@@ -15,6 +15,24 @@ import ModalReimprimirFacturaCanastilla from "./modalReimprimirFacturaCanastilla
 import ModalReimprimirTurnoCanastilla from "./modalReimprimirTurnoCanastilla";
 import ModalAgregarFormaPago from "./modalAgregarFormaPago";
 
+const MENSAJE_SELECCIONAR_ISLA =
+  "Debe seleccionar una isla en la pantalla de Combustible antes de continuar.";
+
+// La isla se selecciona en la pantalla de Combustible y queda en localStorage.
+// Devuelve null si no hay una isla válida ("", "null", "undefined", "0"...).
+const obtenerIslaSeleccionada = () => {
+  const isla = Number(localStorage.getItem("islaSelect"));
+  return Number.isInteger(isla) && isla > 0 ? isla : null;
+};
+
+const obtenerNombreIslaSeleccionada = () => {
+  try {
+    return JSON.parse(localStorage.getItem("islaSelectName")) || null;
+  } catch (error) {
+    return null;
+  }
+};
+
 const Canastilla = () => {
   const habilitarSegundaFormaPago = window.HabilitarSegundaFormaPago !== false;
   const placaObligatoriaCanastillaCredito =
@@ -337,11 +355,15 @@ const Canastilla = () => {
       return;
     }
 
+    const islaSeleccionada = obtenerIslaSeleccionada();
+    if (islaSeleccionada === null) {
+      alert(MENSAJE_SELECCIONAR_ISLA);
+      return;
+    }
+
     setIsPrintingTurno(true);
     try {
-      const respuesta = await PostImprimirTurnoCanastilla(
-        localStorage.getItem("islaSelect")
-      );
+      const respuesta = await PostImprimirTurnoCanastilla(islaSeleccionada);
       if (respuesta === "fail") {
         handleSetShowAlertError(true);
       } else {
@@ -357,9 +379,9 @@ const Canastilla = () => {
       return;
     }
 
-    const islaSeleccionada = localStorage.getItem("islaSelect");
-    if (!islaSeleccionada || islaSeleccionada === "") {
-      alert("Debe seleccionar una isla/cara antes de generar la venta.");
+    const islaSeleccionada = obtenerIslaSeleccionada();
+    if (islaSeleccionada === null) {
+      alert(MENSAJE_SELECCIONAR_ISLA);
     } else if (!canastilla.terceroId || Number(canastilla.terceroId) <= 0) {
       alert("Debe seleccionar un tercero válido antes de generar la venta.");
     } else if (canastilla.codigoFormaPago == 0) {
@@ -379,7 +401,7 @@ const Canastilla = () => {
     } else {
       const ventaPayload = {
         ...canastilla,
-        isla: localStorage.getItem("islaSelect"),
+        isla: islaSeleccionada,
         empleado: localStorage.getItem("empleado"),
         canastillas: Array.isArray(canastilla.canastillas)
           ? [...canastilla.canastillas]
@@ -506,10 +528,18 @@ const Canastilla = () => {
         <div className="text-white info-isla-div">
           <div className="row info-turno-div pt-2">
             <div className="col-4 turno-xs">
+              <p className="text-end texto-turno">Isla: </p>
               <p className="text-end texto-turno">Turno: </p>
               <p className="text-end texto-turno">Empleado:</p>
             </div>
             <div className="col-7 turno-xs-info">
+              <p className="texto-turno">
+                {obtenerIslaSeleccionada() === null ? (
+                  <span className="text-warning">{MENSAJE_SELECCIONAR_ISLA}</span>
+                ) : (
+                  obtenerNombreIslaSeleccionada() || obtenerIslaSeleccionada()
+                )}
+              </p>
               <p className="texto-turno">
                 {turno === null || turno === "" ? "N/A" : turno.fechaApertura}
               </p>

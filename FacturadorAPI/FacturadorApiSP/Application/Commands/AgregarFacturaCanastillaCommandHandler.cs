@@ -26,6 +26,44 @@ namespace FacturadorAPI.Application.Commands
             _conexionEstacionRemota = conexionEstacionRemota ?? throw new ArgumentNullException(nameof(conexionEstacionRemota));
         }
 
+        /// <summary>
+        /// El front envia el empleado desde localStorage y puede llegar vacio (no se cargo el turno en la
+        /// pantalla de combustible). En ese caso se toma el empleado del turno abierto de la isla.
+        /// </summary>
+        private async Task<string> ResolverEmpleadoAsync(FacturaCanastillaRequest factura, CancellationToken cancellationToken)
+        {
+            var empleado = NormalizarEmpleado(factura.empleado);
+            if (!string.IsNullOrEmpty(empleado))
+            {
+                return empleado;
+            }
+
+            try
+            {
+                var turno = await _databaseHandler.ObtenerTurnoPorIsla(factura.isla, cancellationToken);
+                empleado = NormalizarEmpleado(turno?.Empleado);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudo obtener el turno de la isla {Isla} para asignar el empleado de canastilla", factura.isla);
+            }
+
+            if (string.IsNullOrEmpty(empleado))
+            {
+                _logger.LogWarning("Factura canastilla sin empleado: no hay turno abierto en la isla {Isla}", factura.isla);
+            }
+            return empleado;
+        }
+
+        private static string NormalizarEmpleado(string? empleado)
+        {
+            var limpio = (empleado ?? string.Empty).Replace("\"", "").Trim();
+            return limpio.Equals("null", StringComparison.OrdinalIgnoreCase)
+                || limpio.Equals("undefined", StringComparison.OrdinalIgnoreCase)
+                ? string.Empty
+                : limpio;
+        }
+
         public async Task<string> Handle(AgregarFacturaCanastillaCommand request, CancellationToken cancellationToken)
         {
 
@@ -36,6 +74,14 @@ namespace FacturadorAPI.Application.Commands
                     _logger.LogWarning("No se puede crear factura canastilla sin tercero válido. terceroId: {TerceroId}", request?.FacturaCanastilla?.terceroId);
                     return "fail";
                 }
+
+                if (request.FacturaCanastilla.isla <= 0)
+                {
+                    _logger.LogWarning("No se puede crear factura canastilla sin isla seleccionada. isla: {Isla}", request.FacturaCanastilla.isla);
+                    return "fail";
+                }
+
+                request.FacturaCanastilla.empleado = await ResolverEmpleadoAsync(request.FacturaCanastilla, cancellationToken);
 
                 var facturaId = await _databaseHandler.GenerarFacturaCanastilla(request.FacturaCanastilla, false);
                 var _factura = await _databaseHandler.BuscarFacturaCanastillaPorConsecutivo(facturaId);

@@ -14,6 +14,11 @@ namespace FacturadorAPI.Repository.Repo
         Task<IEnumerable<Canastilla>> RecibirCanastilla(string token, CancellationToken cancellationToken);
 
         Task<string> GetInfoFacturaElectronica(int idVentaLocal, Guid estacionGuid, string token);
+
+        /// <summary>
+        /// Consulta en la web si la venta ya tiene factura electronica. Devuelve null si no se pudo consultar.
+        /// </summary>
+        Task<EstadoFacturaElectronica?> ObtenerEstadoFacturaElectronica(int idVentaLocal, string token);
         Task<ResolucionElectronica> GetResolucionElectronica(string token, CancellationToken cancellationToken);
         Task CrearFacturaOrdenesDeDespachoByVenta(int ventaId, string token);
         Task CrearFacturaFacturasByVenta(int ventaId, string token);

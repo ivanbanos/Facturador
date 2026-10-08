@@ -60,7 +60,8 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                         .Set(x => x.FormaDePago, factura.FormaDePago)
                         .Set(x => x.FormaDePago2, factura.FormaDePago2)
                         .Set(x => x.Total1, factura.Total1)
-                        .Set(x => x.Total2, factura.Total2);
+                        .Set(x => x.Total2, factura.Total2)
+                        .Set(x => x.ConsecutivoLocal, factura.ConsecutivoLocal);
                 }
                 else
                 {
@@ -75,7 +76,12 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                         .Set(x => x.Total1, factura.Total1)
                         .Set(x => x.Total2, factura.Total2)
                         .Set(x => x.Kilometraje, factura.Kilometraje)
-                        .Set(x => x.NumeroTransaccion, factura.NumeroTransaccion);
+                        .Set(x => x.NumeroTransaccion, factura.NumeroTransaccion)
+                        .Set(x => x.ConsecutivoLocal, factura.ConsecutivoLocal)
+                        // Sin factura electronica aun: los montos pueden cambiar (p. ej. descuento del cliente).
+                        .Set(x => x.Descuento, factura.Descuento)
+                        .Set(x => x.SubTotal, factura.SubTotal)
+                        .Set(x => x.Total, factura.Total);
                 }
 
                 await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "ordenes", filterGuid, update);

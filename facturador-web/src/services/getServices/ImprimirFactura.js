@@ -1,3 +1,6 @@
+const PREFIJO_TERCERO_BLOQUEADO = "TerceroBloqueado:";
+export const RESPUESTA_BLOQUEADO = "bloqueado";
+
 const ImprimirFactura = async (ultimaFactura, inpresiones) => {
   try {
     const kilometraje = ultimaFactura?.kilometraje ? ultimaFactura.kilometraje : "NP";
@@ -65,6 +68,12 @@ const ImprimirFactura = async (ultimaFactura, inpresiones) => {
 
     if (response.status === 200) {
       let respuesta = await response.text();
+
+      // La factura electrónica ya fue emitida y no se permite cambiar el cliente.
+      if (respuesta && respuesta.startsWith(PREFIJO_TERCERO_BLOQUEADO)) {
+        alert(respuesta.substring(PREFIJO_TERCERO_BLOQUEADO.length).trim());
+        return RESPUESTA_BLOQUEADO;
+      }
 
       return respuesta;
     }

@@ -165,6 +165,34 @@ namespace FacturadorAPI.Repository.Repo
             }
         }
 
+        public async Task<EstadoFacturaElectronica?> ObtenerEstadoFacturaElectronica(int idVentaLocal, string token)
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    var path = $"/api/ManejadorInformacionLocal/EstadoFacturaElectronica/{idVentaLocal}/estacion/{_infoEstacion.EstacionFuente}";
+
+                    client.Timeout = TimeSpan.FromSeconds(5);
+                    client.DefaultRequestHeaders.Authorization =
+                        new AuthenticationHeaderValue("Bearer", token);
+                    var response = await client.GetAsync($"{_infoEstacion.Url}{path}");
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return null;
+                    }
+
+                    var body = await response.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<EstadoFacturaElectronica>(body);
+                }
+            }
+            catch (Exception)
+            {
+                // Sin conexion con la web: el llamador decide como continuar.
+                return null;
+            }
+        }
+
         public IEnumerable<Canastilla> RecibirCanastilla(string token)
         {
             using (var client = new HttpClient())

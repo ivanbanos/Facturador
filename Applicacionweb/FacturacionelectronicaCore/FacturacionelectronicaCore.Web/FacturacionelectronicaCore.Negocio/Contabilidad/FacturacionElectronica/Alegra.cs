@@ -86,6 +86,36 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         // Optional global payment mapping rules for SILOG2.
         public List<FormaPagoSilogConfig> FormasPago { get; set; }
+
+        // Textos que identifican formas de pago (credito, calibracion, consumo propio...) que NO generan
+        // factura electronica cuando EnviaCreditos = false. Se compara por "contiene", sin mayusculas.
+        // Si no se configura se usan los valores historicos.
+        public List<string> FormasPagoSinFacturaElectronica { get; set; }
+
+        private static readonly string[] FormasPagoSinFacturaElectronicaPorDefecto = { "dir", "calibra", "consum", "puntos" };
+
+        public bool EsFormaPagoSinFacturaElectronica(string formaPago)
+        {
+            var forma = (formaPago ?? string.Empty).ToLowerInvariant();
+            var textos = FormasPagoSinFacturaElectronica != null && FormasPagoSinFacturaElectronica.Count > 0
+                ? (IEnumerable<string>)FormasPagoSinFacturaElectronica
+                : FormasPagoSinFacturaElectronicaPorDefecto;
+
+            foreach (var texto in textos)
+            {
+                if (!string.IsNullOrWhiteSpace(texto) && forma.Contains(texto.Trim().ToLowerInvariant()))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Indica si una orden con esta forma de pago debe enviarse a facturacion electronica.
+        public bool DebeFacturarFormaPago(string formaPago)
+        {
+            return EnviaCreditos || !EsFormaPagoSinFacturaElectronica(formaPago);
+        }
     }
 
     public class EstacionCombustibles

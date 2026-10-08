@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Button } from "react-bootstrap";
-import ImprimirFactura from "../Services/getServices/ImprimirFactura";
+import ImprimirFactura, {
+  RESPUESTA_BLOQUEADO,
+} from "../Services/getServices/ImprimirFactura";
 import EnviarFacturaElectronica from "../Services/getServices/ImprimirFactura";
 import { Alert } from "react-bootstrap";
 import "./styles/modal.css";
@@ -70,6 +72,10 @@ const ModalFacturaElectronica = (props) => {
                 ultimaFactura,
                 cantidadEnviar
               );
+              if (respuestaEnviar === RESPUESTA_BLOQUEADO) {
+                setEnviando(false);
+                return;
+              }
               if (respuestaEnviar === "fail") {
                 props.handleSetShowAlertError(true);
               } else {
@@ -93,6 +99,10 @@ const ModalFacturaElectronica = (props) => {
                 ultimaFactura,
                 cantidadImprimir
               );
+              if (respuestaImprimir === RESPUESTA_BLOQUEADO) {
+                setEnviando(false);
+                return;
+              }
               console.log(ultimaFactura);
               const text = await GetUltimaFacturaPorCaraTexto(
                 ultimaFactura.idCara

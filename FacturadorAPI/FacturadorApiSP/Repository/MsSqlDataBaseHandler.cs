@@ -291,7 +291,7 @@ namespace MachineUtilizationApi.Repository
 
                 {"@descuento",facturaCanastilla.descuento},
 
-                {"@vendedor",facturaCanastilla.empleado.Replace("\"","").Trim()},
+                {"@vendedor",(facturaCanastilla.empleado ?? string.Empty).Replace("\"","").Trim()},
 
                 {"@isla",facturaCanastilla.isla},
 

@@ -44,6 +44,7 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
             Vendedor = orden.Vendedor;
             idFacturaElectronica = orden.idFacturaElectronica;
             NumeroTransaccion = orden.NumeroTransaccion;
+            ConsecutivoLocal = orden.ConsecutivoLocal;
         }
 
         public string EstacionGuid { get; set; }

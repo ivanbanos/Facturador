@@ -550,7 +550,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 foreach (var orden in ordenes)
                 {
                     if (orden != null
-                        && (_alegra.EnviaCreditos || (!orden.FormaDePago.ToLower().Contains("dir") && !orden.FormaDePago.ToLower().Contains("calibra") && !orden.FormaDePago.ToLower().Contains("consum") && !orden.FormaDePago.ToLower().Contains("puntos")))
+                        && _alegra.DebeFacturarFormaPago(orden.FormaDePago)
                         && (esSilog2
                             ? (string.IsNullOrWhiteSpace(orden.idFacturaElectronica)
                                 || !orden.idFacturaElectronica.StartsWith("Ok", StringComparison.OrdinalIgnoreCase))
@@ -669,6 +669,10 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                         Total = orden.Total,
                         idFacturaElectronica = orden.idFacturaElectronica ?? orden?.idFacturaElectronica,
                         Vendedor = orden.Vendedor,
+                        // Se conservan para que el upsert no los borre.
+                        TurnoGuid = orden.TurnoGuid,
+                        NumeroTransaccion = orden.NumeroTransaccion,
+                        ConsecutivoLocal = orden.ConsecutivoLocal,
                         }
                     };
                         await _ordenDeDespachoRepositorio.AddRange(ordenesentity, estacion);

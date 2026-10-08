@@ -3,7 +3,9 @@ import { Modal, Button } from "react-bootstrap";
 import ConvertirAFactura from "../Services/getServices/ConvertiraFactura";
 import ConvertirAOrden from "../Services/getServices/ConvertirAOrden";
 import { Alert } from "react-bootstrap";
-import ImprimirFactura from "../Services/getServices/ImprimirFactura";
+import ImprimirFactura, {
+  RESPUESTA_BLOQUEADO,
+} from "../Services/getServices/ImprimirFactura";
 import ImprimirNativo from "../Services/getServices/ImprimirNativo";
 import GetUltimaFacturaPorCaraTexto from "../Services/getServices/GetUltimaFacturaPorCaraTexto";
 
@@ -63,6 +65,9 @@ const ModalImprimir = (props) => {
       } else {
         if (!window.GenerarFacturaelectronica) {
           const respuestaImprimir = await ImprimirFactura(ultimaFactura);
+          if (respuestaImprimir === RESPUESTA_BLOQUEADO) {
+            return;
+          }
           if (respuestaImprimir === "fail") {
             props.handleSetShowAlertError(true);
           } else {

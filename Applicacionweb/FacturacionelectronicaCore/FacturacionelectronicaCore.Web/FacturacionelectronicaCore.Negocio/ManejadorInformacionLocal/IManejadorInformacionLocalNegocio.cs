@@ -14,6 +14,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         Task<IEnumerable<Modelo.Tercero>> GetTercerosActualizados();
         Task<IEnumerable<string>> GetTipos();
         Task<string> GetInfoFacturaElectronica(int idVentaLocal, Guid estacion);
+        Task<EstadoFacturaElectronica> ObtenerEstadoFacturaElectronica(int idVentaLocal, Guid estacion);
         Task<int> AddFacturaCanastilla(IEnumerable<FacturaCanastilla> facturas, Guid estacion);
         Task<ResolucionElectronica> GetResolucionElectronica();
         Task<string> JsonFacturaElectronica(int idVentaLocal, Guid estacion);

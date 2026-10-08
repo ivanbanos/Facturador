@@ -26,6 +26,8 @@ namespace FacturadorAPI.Models.Externos
         public TerceroExterno Tercero { get; set; }
         public string FormaDePago { get; set; }
         public int IdLocal { get; set; }
+        // Consecutivo local de la factura POS (0 cuando es orden de despacho).
+        public int ConsecutivoLocal { get; set; }
         public int IdVentaLocal { get; set; }
         public int IdTerceroLocal { get; set; }
         public DateTime FechaProximoMantenimiento { get; set; }
@@ -52,6 +54,7 @@ namespace FacturadorAPI.Models.Externos
             Tercero = new TerceroExterno(x.Tercero);
             Descuento = x.Descuento;
             IdLocal = x.facturaPOSId;
+            ConsecutivoLocal = x.Consecutivo;
             IdVentaLocal = x.ventaId;
             IdTerceroLocal = x.Tercero.terceroId;
             FechaProximoMantenimiento = DateTime.Now;
