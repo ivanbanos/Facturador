@@ -7,6 +7,10 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
     {
         [BsonId]
         public string guid { get; set; }
+        /// <summary>
+        /// Estación de la orden en Mongo (antes solo en OrdenesMongo; mismo campo, así llega al negocio).
+        /// </summary>
+        public string EstacionGuid { get; set; }
         public int IdFactura { get; set; }
         public string Identificacion { get; set; }
         public string NombreTercero { get; set; }

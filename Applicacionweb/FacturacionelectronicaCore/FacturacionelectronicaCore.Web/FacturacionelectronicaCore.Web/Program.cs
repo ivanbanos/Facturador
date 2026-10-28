@@ -19,6 +19,16 @@ namespace FacturacionelectronicaCore.Web
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((context, config) =>
+                {
+                    // Secretos y datos del cliente en archivos no versionados (ver appsettings.example.json).
+                    // Se re-agregan variables de entorno y argumentos para que sigan teniendo prioridad (Docker).
+                    var entorno = context.HostingEnvironment.EnvironmentName;
+                    config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+                    config.AddJsonFile($"appsettings.{entorno}.Local.json", optional: true, reloadOnChange: true);
+                    config.AddEnvironmentVariables();
+                    config.AddCommandLine(args);
+                })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     //webBuilder.UseKestrel();

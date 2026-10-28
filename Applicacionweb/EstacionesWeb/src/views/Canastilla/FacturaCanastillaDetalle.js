@@ -33,6 +33,7 @@ import FacturasCanastillasService from '../../services/FacturasCanastillasServic
 import FacturaElectronicaService from '../../services/FacturaElectronicaService'
 import QRCodeDisplay from '../../components/QRCodeDisplay'
 import Toast from '../toast/Toast'
+import { datosEstacionSeleccionada, obtenerDatosEstacion } from '../../services/DatosEstacion'
 
 // Formato de moneda colombiana
 const formatCurrency = (amount) => {
@@ -79,12 +80,7 @@ const FacturaCanastillaDetalle = () => {
   const [facturaElectronica, setFacturaElectronica] = useState(null)
   const [loadingFacturaElectronica, setLoadingFacturaElectronica] = useState(false)
   const [mostrarFacturaElectronica, setMostrarFacturaElectronica] = useState(false)
-  const [estacionInfo, setEstacionInfo] = useState({
-    nombre: localStorage.getItem('estacionNombre') || 'Estación',
-    nit: localStorage.getItem('estacionNit') || '',
-    direccion: localStorage.getItem('estacionDireccion') || '',
-    telefono: localStorage.getItem('estacionTelefono') || '',
-  })
+  const [estacionInfo, setEstacionInfo] = useState(datosEstacionSeleccionada)
 
   // Función para parsear información de factura electrónica desde el campo idFacturaElectronica
   const parseFacturaElectronicaFromId = (idFacturaElectronica) => {
@@ -134,6 +130,8 @@ const FacturaCanastillaDetalle = () => {
       }
 
       setFactura(facturaResponse)
+      // La factura puede ser de otra estación (vista de clientes en todas las estaciones)
+      obtenerDatosEstacion(facturaResponse?.idEstacion).then(setEstacionInfo)
 
       // Si la factura tiene idFacturaElectronica, parsear la información
       if (facturaResponse?.idFacturaElectronica) {

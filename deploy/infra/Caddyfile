@@ -1,0 +1,18 @@
+# Proxy HTTPS. Cada cliente tiene su archivo en sites/<cliente>.caddy (lo genera scripts/nuevo-cliente.sh).
+# Para aplicar cambios sin cortar el servicio:
+#   docker exec facturador-infra-caddy-1 caddy reload --config /etc/caddy/Caddyfile
+
+{
+	email {$ACME_EMAIL}
+}
+
+# Cabeceras comunes para todos los sitios
+(seguridad) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	encode gzip zstd
+}
+
+import sites/*.caddy

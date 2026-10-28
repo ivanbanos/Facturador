@@ -14,16 +14,24 @@ const NAME_CLAIMS = [
 
 export const ROL_CLIENTE = 'Cliente'
 export const ROL_ADMINISTRADOR = 'Administrador'
+// Igual al administrador pero sin gestion de usuarios
+export const ROL_OPERADOR = 'Operador'
 
-// Rutas que puede ver un usuario cliente (el resto redirige a la primera de esta lista)
+// Rutas que puede ver un usuario cliente (el resto redirige a la primera de esta lista).
+// Mis facturas reemplaza a Ordenes de despacho y Facturas de canastilla: muestra todas las estaciones.
 export const RUTAS_CLIENTE = [
-  '/OrdenesDespacho',
+  '/MisFacturas',
   '/OrdenDespachoDetalle',
-  '/FacturasCanastilla',
   '/FacturaCanastillaDetalle',
   '/ReporteFiscal',
   '/CambiarContrasena',
 ]
+
+// Rutas exclusivas del cliente (los demas perfiles usan las vistas por estacion)
+const RUTAS_SOLO_CLIENTE = ['/MisFacturas']
+
+// Rutas exclusivas del administrador
+const RUTAS_SOLO_ADMINISTRADOR = ['/Usuarios']
 
 // Rutas que solo existen con la funcionalidad usuarios-clientes activa
 const RUTAS_USUARIOS_CLIENTES = ['/Usuarios', '/CambiarContrasena']
@@ -95,6 +103,8 @@ export const getRol = () => {
 
 export const isCliente = () => getRol() === ROL_CLIENTE
 
+export const isOperador = () => getRol() === ROL_OPERADOR
+
 export const getNombreUsuario = () => {
   const payload = getPayload()
   return payload ? firstClaim(payload, NAME_CLAIMS) : null
@@ -122,10 +132,14 @@ export const puedeVerRuta = (pathname) => {
   if (!usuariosClientesActivo() && coincideRuta(pathname, RUTAS_USUARIOS_CLIENTES)) {
     return false
   }
-  if (!isCliente()) {
-    return true
+  if (isCliente()) {
+    return coincideRuta(pathname, RUTAS_CLIENTE)
   }
-  return coincideRuta(pathname, RUTAS_CLIENTE)
+  if (coincideRuta(pathname, RUTAS_SOLO_CLIENTE)) {
+    return false
+  }
+  // Un token sin rol (versiones anteriores) se trata como administrador
+  return !isOperador() || !coincideRuta(pathname, RUTAS_SOLO_ADMINISTRADOR)
 }
 
 // Cierra la sesion y lleva al inicio de sesion (HashRouter)

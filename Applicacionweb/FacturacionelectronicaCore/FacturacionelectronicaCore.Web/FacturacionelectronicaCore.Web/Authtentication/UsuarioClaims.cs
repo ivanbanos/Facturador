@@ -6,13 +6,30 @@ namespace FacturacionelectronicaCore.Web.Authtentication
 {
     /// <summary>
     /// Roles y claims usados en el token JWT.
-    /// Un usuario con identificacion de tercero asociada es "Cliente"; sin ella es "Administrador".
+    /// Un usuario con identificacion de tercero asociada es "Cliente"; sin ella es "Administrador"
+    /// u "Operador" (igual al administrador pero sin gestion de usuarios) segun su columna Rol.
     /// </summary>
     public static class UsuarioClaims
     {
         public const string RolAdministrador = "Administrador";
+        public const string RolOperador = "Operador";
         public const string RolCliente = "Cliente";
         public const string IdentificacionTercero = "identificacionTercero";
+
+        /// <summary>
+        /// Rol efectivo de un usuario: Cliente si tiene tercero asociado; si no, Operador o Administrador.
+        /// Un rol guardado desconocido o vacio se trata como Administrador (comportamiento anterior).
+        /// </summary>
+        public static string ObtenerRol(EstacionesServicio.Modelo.Usuario usuario)
+        {
+            if (!string.IsNullOrWhiteSpace(usuario.IdentificacionTercero))
+            {
+                return RolCliente;
+            }
+            return string.Equals(usuario.Rol?.Trim(), RolOperador, StringComparison.OrdinalIgnoreCase)
+                ? RolOperador
+                : RolAdministrador;
+        }
 
         public static bool EsCliente(this ClaimsPrincipal user)
             => user?.IsInRole(RolCliente) ?? false;

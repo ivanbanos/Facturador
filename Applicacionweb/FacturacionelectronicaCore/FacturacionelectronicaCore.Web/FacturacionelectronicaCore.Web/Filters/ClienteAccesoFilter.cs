@@ -1,4 +1,4 @@
-using FacturacionelectronicaCore.Web.Authtentication;
+﻿using FacturacionelectronicaCore.Web.Authtentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -18,8 +18,10 @@ namespace FacturacionelectronicaCore.Web.Filters
         {
             "OrdenesDeDespacho.GetOrdenesDeDespacho",
             "OrdenesDeDespacho.GetConsolidado",
+            "OrdenesDeDespacho.GetOrdenesTodasLasEstaciones",
             "FacturasCanastilla.BuscarFacturas",
             "FacturasCanastilla.GetFacturasReporte",
+            "FacturasCanastilla.GetFacturasReporteTodasLasEstaciones",
             "FacturasCanastilla.Get",
             "FacturasCanastilla.GetDEtalle",
             "ManejadorInformacionLocal.GetInfoFacturaElectronica",

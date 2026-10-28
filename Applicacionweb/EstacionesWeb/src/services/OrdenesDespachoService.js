@@ -86,6 +86,22 @@ class OrdenesDespachoService {
   }
 
   /**
+   * Órdenes del cliente en todas las estaciones, con el nombre de la estación
+   * (POST /api/OrdenesDeDespacho/TodasLasEstaciones). Para usuarios cliente el API toma la
+   * identificación del token; no se envía estación.
+   * @param {Date|string} fechaInicial
+   * @param {Date|string} fechaFinal
+   * @returns {Promise<Array|string>} órdenes o 'fail'
+   */
+  async getOrdenesTodasLasEstaciones(fechaInicial, fechaFinal) {
+    if (!this.validateToken()) {
+      return 'fail'
+    }
+    const { estacion, ...filtro } = this.createFiltroBusqueda(fechaInicial, fechaFinal)
+    return this.httpService.post(`${this.baseUrl}/TodasLasEstaciones`, filtro)
+  }
+
+  /**
    * Agregar órdenes para imprimir (POST /api/OrdenesDeDespacho/AddOrdenesImprimir)
    * @param {Array} ordenesGuids - Array de objetos con guid de órdenes
    * @returns {Promise<number>} Resultado de la operación

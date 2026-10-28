@@ -1,0 +1,34 @@
+# API central (FacturacionelectronicaCore.Web)
+# Build:  docker build -f Dockerfile.api -t facturador-api .   (contexto: Applicacionweb/FacturacionelectronicaCore)
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Restaurar primero solo con los .csproj para aprovechar la caché de capas
+COPY FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Repositorio/FacturacionelectronicaCore.Repositorio.csproj FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Repositorio/
+COPY FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Negocio/FacturacionelectronicaCore.Negocio.csproj FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Negocio/
+COPY FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Web.csproj FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Web/
+RUN dotnet restore FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Web.csproj
+
+COPY FacturacionelectronicaCore.Web/ FacturacionelectronicaCore.Web/
+RUN dotnet publish FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Web.csproj \
+    -c Release -o /app/publish --no-restore /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=build /app/publish .
+
+ENV ASPNETCORE_HTTP_PORTS=8080 \
+    ASPNETCORE_ENVIRONMENT=Production \
+    ProxyInverso__Habilitado=true \
+    TZ=America/Bogota
+EXPOSE 8080
+
+USER app
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -fsS http://localhost:8080/health || exit 1
+
+ENTRYPOINT ["dotnet", "FacturacionelectronicaCore.Web.dll"]

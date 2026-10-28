@@ -32,6 +32,7 @@ import {
 import Toast from '../toast/Toast'
 import FacturaElectronicaService from '../../services/FacturaElectronicaService'
 import QRCodeDisplay from '../../components/QRCodeDisplay'
+import { datosEstacionSeleccionada, obtenerDatosEstacion } from '../../services/DatosEstacion'
 
 var pdfMake = require('pdfmake/build/pdfmake.js')
 var pdfFonts = require('pdfmake/build/vfs_fonts.js')
@@ -45,6 +46,7 @@ const OrdenDespachoDetalle = () => {
 
   // Estados
   const [orden, setOrden] = useState(null)
+  const [estacionInfo, setEstacionInfo] = useState(datosEstacionSeleccionada)
   const [loading, setLoading] = useState(true)
   const [facturaElectronica, setFacturaElectronica] = useState(null)
   const [loadingFacturaElectronica, setLoadingFacturaElectronica] = useState(false)
@@ -60,11 +62,14 @@ const OrdenDespachoDetalle = () => {
     try {
       // Try to get order from navigation state first
       if (location.state?.orden) {
-        setOrden(location.state.orden)
+        const ordenEstado = location.state.orden
+        setOrden(ordenEstado)
+        // La orden puede ser de otra estación (vista de clientes en todas las estaciones)
+        obtenerDatosEstacion(ordenEstado.estacionGuid).then(setEstacionInfo)
 
         // Si hay ID de factura electrónica, cargar la información
-        if (location.state.orden.idFacturaElectronica && location.state.orden.idVentaLocal) {
-          await loadFacturaElectronica(location.state.orden.idVentaLocal)
+        if (ordenEstado.idFacturaElectronica && ordenEstado.idVentaLocal) {
+          await loadFacturaElectronica(ordenEstado.idVentaLocal, ordenEstado.estacionGuid)
         }
       } else {
         // If no order in state, show error
@@ -81,13 +86,14 @@ const OrdenDespachoDetalle = () => {
   }
 
   // Función para cargar información de factura electrónica
-  const loadFacturaElectronica = async (idVentaLocal) => {
+  const loadFacturaElectronica = async (idVentaLocal, estacionGuid) => {
     if (!idVentaLocal) return
 
     setLoadingFacturaElectronica(true)
     try {
       const data = await FacturaElectronicaService.obtenerInformacionFacturaElectronica(
         idVentaLocal,
+        estacionGuid,
       )
       const parsedData = FacturaElectronicaService.parseFacturaElectronicaData(data)
 
@@ -162,10 +168,10 @@ const OrdenDespachoDetalle = () => {
     }
 
     try {
-      const estacionNombre = localStorage.getItem('estacionNombre') || 'Estación'
-      const estacionNit = localStorage.getItem('estacionNit') || 'N/A'
-      const estacionDireccion = localStorage.getItem('estacionDireccion') || ''
-      const estacionTelefono = localStorage.getItem('estacionTelefono') || ''
+      const estacionNombre = estacionInfo.nombre
+      const estacionNit = estacionInfo.nit || 'N/A'
+      const estacionDireccion = estacionInfo.direccion
+      const estacionTelefono = estacionInfo.telefono
 
       const docDefinition = {
         pageSize: 'A4',
@@ -487,10 +493,10 @@ const OrdenDespachoDetalle = () => {
     }
 
     try {
-      const estacionNombre = localStorage.getItem('estacionNombre') || 'Estación'
-      const estacionNit = localStorage.getItem('estacionNit') || 'N/A'
-      const estacionDireccion = localStorage.getItem('estacionDireccion') || ''
-      const estacionTelefono = localStorage.getItem('estacionTelefono') || ''
+      const estacionNombre = estacionInfo.nombre
+      const estacionNit = estacionInfo.nit || 'N/A'
+      const estacionDireccion = estacionInfo.direccion
+      const estacionTelefono = estacionInfo.telefono
 
       const docDefinition = {
         pageSize: 'A4',

@@ -1,0 +1,32 @@
+# Worker de facturación (FacturacionelectronicaCore.Worker)
+# Build:  docker build -f Dockerfile.worker -t facturador-worker .   (contexto: Applicacionweb/FacturacionelectronicaCore)
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Restaurar primero solo con los .csproj para aprovechar la caché de capas
+COPY FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Repositorio/FacturacionelectronicaCore.Repositorio.csproj FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Repositorio/
+COPY FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Negocio/FacturacionelectronicaCore.Negocio.csproj FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Negocio/
+COPY FacturacionelectronicaCore.Worker/FacturacionelectronicaCore.Worker.csproj FacturacionelectronicaCore.Worker/
+RUN dotnet restore FacturacionelectronicaCore.Worker/FacturacionelectronicaCore.Worker.csproj
+
+COPY FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Repositorio/ FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Repositorio/
+COPY FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Negocio/ FacturacionelectronicaCore.Web/FacturacionelectronicaCore.Negocio/
+COPY FacturacionelectronicaCore.Worker/ FacturacionelectronicaCore.Worker/
+RUN dotnet publish FacturacionelectronicaCore.Worker/FacturacionelectronicaCore.Worker.csproj \
+    -c Release -o /app/publish --no-restore /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+
+# Los logs también salen por consola (docker logs); Logs/ se monta como volumen para conservar los archivos.
+RUN mkdir -p /app/Logs && chown app:app /app/Logs
+VOLUME /app/Logs
+
+ENV DOTNET_ENVIRONMENT=Production \
+    ASPNETCORE_ENVIRONMENT=Production \
+    TZ=America/Bogota
+
+USER app
+ENTRYPOINT ["dotnet", "FacturacionelectronicaCore.Worker.dll"]

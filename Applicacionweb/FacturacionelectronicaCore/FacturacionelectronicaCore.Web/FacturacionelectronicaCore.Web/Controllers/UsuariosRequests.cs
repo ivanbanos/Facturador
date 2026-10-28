@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace FacturacionelectronicaCore.Web.Controllers
 {
@@ -31,6 +31,47 @@ namespace FacturacionelectronicaCore.Web.Controllers
         /// </summary>
         [StringLength(250)]
         public string IdentificacionTercero { get; set; }
+
+        /// <summary>
+        /// Perfil cuando no hay cliente: "Administrador" (o vacio) u "Operador". Se ignora para clientes.
+        /// </summary>
+        [RegularExpression("^(Administrador|Operador)?$", ErrorMessage = "El rol debe ser Administrador u Operador")]
+        public string Rol { get; set; }
+    }
+
+    public class ActualizarUsuarioRequest
+    {
+        [Required(ErrorMessage = "El nombre es obligatorio")]
+        [StringLength(50, ErrorMessage = "El nombre no puede superar 50 caracteres")]
+        public string Nombre { get; set; }
+
+        [Required(ErrorMessage = "El usuario es obligatorio")]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "El usuario debe tener entre 3 y 50 caracteres")]
+        [RegularExpression(@"^[^\s/\\?#%]+$", ErrorMessage = "El usuario no puede tener espacios ni los caracteres / \\ ? # %")]
+        public string Usuario { get; set; }
+
+        /// <summary>
+        /// Contrasena nueva. Vacia = se conserva la actual.
+        /// </summary>
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "La contrasena debe tener entre 6 y 100 caracteres")]
+        public string Contrasena { get; set; }
+
+        /// <summary>
+        /// Identificacion del tercero (cliente). Si viene vacia el usuario es administrador.
+        /// </summary>
+        [StringLength(250)]
+        public string IdentificacionTercero { get; set; }
+
+        /// <summary>
+        /// Perfil cuando no hay cliente: "Administrador" (o vacio) u "Operador". Se ignora para clientes.
+        /// </summary>
+        [RegularExpression("^(Administrador|Operador)?$", ErrorMessage = "El rol debe ser Administrador u Operador")]
+        public string Rol { get; set; }
+    }
+
+    public class CambiarEstadoUsuarioRequest
+    {
+        public bool Activo { get; set; }
     }
 
     public class CambiarContrasenaRequest
@@ -50,5 +91,6 @@ namespace FacturacionelectronicaCore.Web.Controllers
         public string Usuario { get; set; }
         public string IdentificacionTercero { get; set; }
         public string Rol { get; set; }
+        public bool Activo { get; set; }
     }
 }

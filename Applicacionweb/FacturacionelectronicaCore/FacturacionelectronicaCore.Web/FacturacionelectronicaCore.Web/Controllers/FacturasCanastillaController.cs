@@ -1,4 +1,5 @@
 ﻿using EstacionesServicio.Modelo;
+using FacturacionelectronicaCore.Negocio.Estacion;
 using FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
@@ -18,10 +19,12 @@ namespace FacturacionelectronicaCore.Web.Controllers
     public class FacturasCanastillaController : ControllerBase
     {
         private readonly IFacturaCanastillaNegocio _facturaNegocio;
+        private readonly IEstacionNegocio _estacionNegocio;
 
-        public FacturasCanastillaController(IFacturaCanastillaNegocio facturaNegocio)
+        public FacturasCanastillaController(IFacturaCanastillaNegocio facturaNegocio, IEstacionNegocio estacionNegocio)
         {
             _facturaNegocio = facturaNegocio;
+            _estacionNegocio = estacionNegocio;
         }
 
         [HttpPost("GetFactura")]
@@ -36,6 +39,35 @@ namespace FacturacionelectronicaCore.Web.Controllers
         {
             filtroFactura = User.RestringirFiltroACliente(filtroFactura);
             return await _facturaNegocio.GetFacturasReporte(filtroFactura.FechaInicial, filtroFactura.FechaFinal, filtroFactura.Identificacion, filtroFactura.NombreTercero, filtroFactura.Estacion);
+        }
+
+        /// <summary>
+        /// Reporte de facturas de canastilla de un cliente en todas las estaciones, con el nombre de la estación.
+        /// Para usuarios cliente la identificación se toma del token; para los demás es obligatoria.
+        /// </summary>
+        [HttpPost("TodasLasEstaciones")]
+        public async Task<ActionResult<FacturaCanastillaReporte>> GetFacturasReporteTodasLasEstaciones(FiltroBusqueda filtroFactura)
+        {
+            var filtro = User.RestringirFiltroACliente(filtroFactura ?? new FiltroBusqueda());
+            if (string.IsNullOrWhiteSpace(filtro.Identificacion))
+            {
+                return BadRequest(new { message = NombresEstaciones.MensajeIdentificacionRequerida });
+            }
+            var errorRango = NombresEstaciones.ValidarRango(filtro.FechaInicial, filtro.FechaFinal);
+            if (errorRango != null)
+            {
+                return BadRequest(new { message = errorRango });
+            }
+
+            var reporte = await _facturaNegocio.GetFacturasReporte(filtro.FechaInicial, filtro.FechaFinal, filtro.Identificacion, filtro.NombreTercero, null);
+            var nombreEstacion = await NombresEstaciones.Obtener(_estacionNegocio);
+            var facturas = (reporte.Facturas ?? Enumerable.Empty<FacturaCanastilla>()).ToList();
+            foreach (var factura in facturas)
+            {
+                factura.EstacionNombre = nombreEstacion(factura.IdEstacion);
+            }
+            reporte.Facturas = facturas;
+            return Ok(reporte);
         }
 
 

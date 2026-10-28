@@ -47,6 +47,11 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public string idFacturaElectronica { get; set; }
         public bool enviadoContabilidad { get; set; }
         public DateTime FechaReporte { get; set; }
+        public string EstacionGuid { get; set; }
+        /// <summary>
+        /// Nombre de la estación; solo se llena en la consulta de todas las estaciones.
+        /// </summary>
+        public string EstacionNombre { get; set; }
         public decimal TotalPrice { get { return ((decimal)Cantidad * (decimal)Precio) - Descuento; } }
 
         public OrdenDeDespacho(string _guid, string identificacion, string nombreTercero, string combustible,

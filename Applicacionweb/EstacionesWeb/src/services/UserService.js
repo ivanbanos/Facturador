@@ -67,30 +67,56 @@ class UserService {
     return this.httpService.get(this.url)
   }
 
-  // Crea un usuario; identificacionTercero vacio = administrador, con valor = cliente
-  async crear({ nombre, usuario, contrasena, identificacionTercero }) {
+  // Crea un usuario; con identificacionTercero = cliente; sin ella, rol Administrador u Operador
+  async crear({ nombre, usuario, contrasena, identificacionTercero, rol }) {
     return this.enviar(`${this.url}/Crear`, {
       nombre,
       usuario,
       contrasena,
       identificacionTercero: identificacionTercero || null,
+      rol: identificacionTercero ? null : rol || null,
     })
+  }
+
+  // Actualiza un usuario; contrasena vacia = se conserva la actual
+  async actualizar(guid, { nombre, usuario, contrasena, identificacionTercero, rol }) {
+    return this.enviar(
+      `${this.url}/${guid}`,
+      {
+        nombre,
+        usuario,
+        contrasena: contrasena || null,
+        identificacionTercero: identificacionTercero || null,
+        rol: identificacionTercero ? null : rol || null,
+      },
+      'PUT',
+    )
+  }
+
+  // Habilita (activo = true) o inhabilita (activo = false) un usuario
+  async cambiarEstado(guid, activo) {
+    return this.enviar(`${this.url}/${guid}/Estado`, { activo })
+  }
+
+  // Eliminacion logica (soft delete)
+  async eliminar(guid) {
+    return this.enviar(`${this.url}/${guid}`, undefined, 'DELETE')
   }
 
   async cambiarContrasena(contrasenaActual, contrasenaNueva) {
     return this.enviar(`${this.url}/CambiarContrasena`, { contrasenaActual, contrasenaNueva })
   }
 
-  // POST que devuelve { ok, data, message } para poder mostrar los errores de validacion del API
-  async enviar(url, body) {
+  // Peticion que devuelve { ok, data, message } para poder mostrar los errores de validacion del API
+  async enviar(url, body, method = 'POST') {
     if (!this.httpService.ensureSession()) {
       return { ok: false, message: 'La sesión expiró' }
     }
     const response = await fetch(url, {
-      method: 'POST',
+      method,
       mode: 'cors',
       headers: this.httpService.getHeaders(),
-      body: JSON.stringify(body),
+      body: body === undefined ? undefined : JSON.stringify(body),
     })
     if (this.httpService.handleUnauthorized(response)) {
       return { ok: false, message: 'La sesión expiró' }

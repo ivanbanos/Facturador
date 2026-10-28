@@ -263,6 +263,24 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         /// <inheritdoc />
         public async Task<IEnumerable<Modelo.OrdenDeDespacho>> GetOrdenesDeDespacho(FiltroBusqueda filtroOrdenDeDespacho)
         {
+            // Sin filtro se conserva el comportamiento anterior: estación vacía (no trae todas las estaciones)
+            var ordenes = await ConsultarOrdenes(filtroOrdenDeDespacho, filtroOrdenDeDespacho?.Estacion ?? Guid.Empty);
+            return ordenes.OrderByDescending(x => x.IdVentaLocal);
+        }
+
+        /// <inheritdoc />
+        public async Task<IEnumerable<Modelo.OrdenDeDespacho>> GetOrdenesDeDespachoTodasLasEstaciones(FiltroBusqueda filtroOrdenDeDespacho)
+        {
+            // IdVentaLocal es consecutivo por estación: entre estaciones se ordena por fecha
+            var ordenes = await ConsultarOrdenes(filtroOrdenDeDespacho, null);
+            return ordenes.OrderByDescending(x => x.Fecha);
+        }
+
+        /// <summary>
+        /// Consulta las órdenes (estacion null = todas las estaciones) y completa nombre del tercero, estado y fecha.
+        /// </summary>
+        private async Task<IEnumerable<Modelo.OrdenDeDespacho>> ConsultarOrdenes(FiltroBusqueda filtroOrdenDeDespacho, Guid? estacion)
+        {
             try
             {
                 if (_ordenDeDespachoRepositorio == null || _terceroRepositorio == null || _mapper == null)
@@ -277,7 +295,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 var fechaFinalServer = ConvertToServerTime(filtroOrdenDeDespacho.FechaFinal);
 
                 var ordenesDeDespacho = await _ordenDeDespachoRepositorio.GetOrdenesDeDespacho(fechaInicialServer,
-                        fechaFinalServer, filtroOrdenDeDespacho.Identificacion, filtroOrdenDeDespacho.NombreTercero, filtroOrdenDeDespacho.Estacion);
+                        fechaFinalServer, filtroOrdenDeDespacho.Identificacion, filtroOrdenDeDespacho.NombreTercero, estacion);
 
                 await NormalizarFalsosNegativosSilog2Async(ordenesDeDespacho);
 
@@ -324,7 +342,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
                     factura.Fecha = ConvertFromServerTimeForSearchResult(factura.Fecha);
                 }
-                return ordenes.OrderByDescending(x => x.IdVentaLocal);
+                return ordenes;
             }
             catch (Exception ex)
             {

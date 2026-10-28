@@ -26,14 +26,14 @@ namespace FacturacionelectronicaCore.Web.Authtentication
             var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_appSettings.Secret));
             var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
-            var esCliente = !string.IsNullOrWhiteSpace(usuario.IdentificacionTercero);
+            var rol = UsuarioClaims.ObtenerRol(usuario);
             var claims = new List<Claim>()
             {
                 new Claim(ClaimTypes.NameIdentifier, usuario.guid.ToString()),
                 new Claim(ClaimTypes.Name, usuario.Nombre ?? string.Empty),
-                new Claim(ClaimTypes.Role, esCliente ? UsuarioClaims.RolCliente : UsuarioClaims.RolAdministrador),
+                new Claim(ClaimTypes.Role, rol),
             };
-            if (esCliente)
+            if (rol == UsuarioClaims.RolCliente)
             {
                 claims.Add(new Claim(UsuarioClaims.IdentificacionTercero, usuario.IdentificacionTercero.Trim()));
             }

@@ -28,7 +28,15 @@ try
     Log.Information("Starting Worker Service...");
 
     var builder = Host.CreateApplicationBuilder(args);
-    
+
+    // Secretos y datos del cliente en archivos no versionados (ver appsettings.example.json).
+    // Se re-agregan variables de entorno y argumentos para que sigan teniendo prioridad (Docker).
+    var entorno = builder.Environment.EnvironmentName;
+    builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+    builder.Configuration.AddJsonFile($"appsettings.{entorno}.Local.json", optional: true, reloadOnChange: true);
+    builder.Configuration.AddEnvironmentVariables();
+    builder.Configuration.AddCommandLine(args);
+
     // Clear default MEL providers and wire Serilog explicitly
     builder.Logging.ClearProviders();
     builder.Logging.AddSerilog(Log.Logger, dispose: true);

@@ -633,21 +633,28 @@ namespace EnviadorInformacionService
                 formaPagoPrincipalId, formaPagoSecundariaId, total, total1, total2, crucesPorForma,
                 consecutivo, (DateTime)facturaCanastilla.fecha, tercero, $"FACTURA CANASTILLA {consecutivo}");
 
+            string centroOperacionesDocumento = (string)facturaCanastilla.Configuracion.CentroOperacionesDocumento;
+            var movimientosBanco = pagos.MovimientosBanco
+                .Select(b => ConstruirBancoCanastilla(b, centroOperacionesDocumento))
+                .ToList();
+
             var request = new Dictionary<string, object>
             {
                 ["Inicial"] = new List<object> { new { F_CIA = "1" } },
                 ["Documentocontable"] = new List<object> { documentoContable },
-                ["Movimientocontable"] = movimientosContables.Concat(pagos.MovimientosBanco).ToList()
+                ["Movimientocontable"] = movimientosContables.Concat(movimientosBanco).ToList()
             };
             if (pagos.Caja.Any())
             {
                 request["Caja"] = pagos.Caja
-                    .Select(c => ConstruirCajaCanastilla(c, (string)facturaCanastilla.Configuracion.CentroOperacionesDocumento, tercero))
+                    .Select(c => ConstruirCajaCanastilla(c, centroOperacionesDocumento, tercero))
                     .ToList();
             }
             if (pagos.CxC.Any())
             {
-                request["MovimientoCxC"] = pagos.CxC;
+                request["MovimientoCxC"] = pagos.CxC
+                    .Select(c => ConstruirCxCCanastilla(c, centroOperacionesDocumento))
+                    .ToList();
             }
             request["Final"] = new List<object> { new { F_CIA = "1" } };
 
@@ -690,6 +697,88 @@ namespace EnviadorInformacionService
                 F358_ID_CAUSALES_DEVOLUCION = "",
                 F358_ID_TERCERO = tercero,
                 F358_NOTAS = caja.F358_NOTAS
+            };
+        }
+
+        /// <summary>
+        /// Movimiento de banco (formas de pago que no son efectivo ni CxC) para canastilla.
+        /// Usa sus propias claves (movimientobancocanastilla, unidadnegociobancocanastilla,
+        /// centrocostobancocanastilla, idfebancocanastilla); si no existen conserva las de combustible
+        /// (movimientootros, unidadnegociootros, ...). El centro de operaciones del documento es siempre el de canastilla.
+        /// </summary>
+        private static Movimientocontable ConstruirBancoCanastilla(Movimientocontable banco, string centroOperaciones)
+        {
+            return new Movimientocontable
+            {
+                F_CIA = banco.F_CIA,
+                F350_ID_CO = centroOperaciones,
+                F350_ID_TIPO_DOCTO = banco.F350_ID_TIPO_DOCTO,
+                F350_CONSEC_DOCTO = banco.F350_CONSEC_DOCTO,
+                F351_ID_AUXILIAR = banco.F351_ID_AUXILIAR,
+                F351_ID_TERCERO = banco.F351_ID_TERCERO,
+                F351_ID_CO_MOV = ObtenerConfig("movimientobancocanastilla", banco.F351_ID_CO_MOV),
+                F351_ID_UN = ObtenerConfig("unidadnegociobancocanastilla", banco.F351_ID_UN),
+                F351_ID_CCOSTO = ObtenerConfig("centrocostobancocanastilla", banco.F351_ID_CCOSTO),
+                F351_ID_FE = ObtenerConfig("idfebancocanastilla", banco.F351_ID_FE),
+                F351_VALOR_DB = banco.F351_VALOR_DB,
+                F351_VALOR_CR = banco.F351_VALOR_CR,
+                F351_BASE_GRAVABLE = banco.F351_BASE_GRAVABLE,
+                F351_DOCTO_BANCO = banco.F351_DOCTO_BANCO,
+                F351_NRO_DOCTO_BANCO = banco.F351_NRO_DOCTO_BANCO,
+                F351_NOTAS = banco.F351_NOTAS,
+                F351_ID_SUCURSAL = banco.F351_ID_SUCURSAL
+            };
+        }
+
+        /// <summary>
+        /// Movimiento CxC (formaspagocxc) para canastilla. Usa sus propias claves
+        /// (movimientocxccanastilla, unidadnegociocxccanastilla, centrocostocxccanastilla, documentocrucecxccanastilla);
+        /// si no existen conserva las de combustible (movimientocxc, unidadnegociocxc, ...).
+        /// El centro de operaciones del documento es siempre el de canastilla.
+        /// </summary>
+        private static MovimientoCxC ConstruirCxCCanastilla(MovimientoCxC cxc, string centroOperaciones)
+        {
+            var unidadNegocio = ObtenerConfig("unidadnegociocxccanastilla", cxc.F351_ID_UN);
+            var documentoCruce = ConfigurationManager.AppSettings["documentocrucecxccanastilla"];
+            string consecutivoCruce;
+            if (!string.IsNullOrWhiteSpace(documentoCruce))
+            {
+                consecutivoCruce = documentoCruce.Trim();
+            }
+            else if (string.IsNullOrWhiteSpace(ConfigurationManager.AppSettings["unidadnegociocxccanastilla"]))
+            {
+                consecutivoCruce = cxc.F353_CONSEC_DOCTO_CRUCE;
+            }
+            else
+            {
+                // Misma regla de combustible: con unidad de negocio 99 se cruza contra la propia factura
+                consecutivoCruce = unidadNegocio == "99"
+                    ? cxc.F350_CONSEC_DOCTO
+                    : (ConfigurationManager.AppSettings["documentocruce"] ?? "");
+            }
+
+            return new MovimientoCxC
+            {
+                F_CIA = cxc.F_CIA,
+                F350_ID_CO = centroOperaciones,
+                F350_ID_TIPO_DOCTO = cxc.F350_ID_TIPO_DOCTO,
+                F350_CONSEC_DOCTO = cxc.F350_CONSEC_DOCTO,
+                F351_ID_AUXILIAR = cxc.F351_ID_AUXILIAR,
+                F351_ID_TERCERO = cxc.F351_ID_TERCERO,
+                F351_ID_CO_MOV = ObtenerConfig("movimientocxccanastilla", cxc.F351_ID_CO_MOV),
+                F351_ID_UN = unidadNegocio,
+                F351_ID_CCOSTO = ObtenerConfig("centrocostocxccanastilla", cxc.F351_ID_CCOSTO),
+                F351_VALOR_DB = cxc.F351_VALOR_DB,
+                F351_VALOR_CR = cxc.F351_VALOR_CR,
+                F351_NOTAS = cxc.F351_NOTAS,
+                F353_ID_SUCURSAL = cxc.F353_ID_SUCURSAL,
+                F353_ID_TIPO_DOCTO_CRUCE = cxc.F353_ID_TIPO_DOCTO_CRUCE,
+                F353_CONSEC_DOCTO_CRUCE = consecutivoCruce,
+                F353_NRO_CUOTA_CRUCE = cxc.F353_NRO_CUOTA_CRUCE,
+                F353_FECHA_VCTO = cxc.F353_FECHA_VCTO,
+                F353_FECHA_DSCTO_PP = cxc.F353_FECHA_DSCTO_PP,
+                F354_TERCERO_VEND = cxc.F354_TERCERO_VEND,
+                F354_NOTAS = cxc.F354_NOTAS
             };
         }
 

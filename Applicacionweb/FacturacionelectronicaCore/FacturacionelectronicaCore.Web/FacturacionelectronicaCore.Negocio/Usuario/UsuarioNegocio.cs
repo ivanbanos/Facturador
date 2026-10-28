@@ -74,6 +74,26 @@ namespace EstacionesServicio.Negocio.Usuario
             => await _usuarioRespositorio.CambiarContrasena(guid, contrasenaActual, contrasenaNueva) > 0;
 
         /// <inheritdoc />
+        public async Task<ResultadoActualizacionUsuario> ActualizarUsuario(Modelo.Usuario usuario)
+        {
+            var entidad = _mapper.Map<Modelo.Usuario, Repositorio.Entities.Usuario>(usuario);
+            var resultado = await _usuarioRespositorio.ActualizarUsuario(entidad);
+            if (resultado > 0)
+            {
+                return ResultadoActualizacionUsuario.Actualizado;
+            }
+            return resultado < 0 ? ResultadoActualizacionUsuario.UsuarioDuplicado : ResultadoActualizacionUsuario.NoExiste;
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> CambiarEstado(Guid guid, bool activo)
+            => await _usuarioRespositorio.CambiarEstado(guid, activo) > 0;
+
+        /// <inheritdoc />
+        public async Task<bool> EliminarUsuario(Guid guid)
+            => await _usuarioRespositorio.EliminarUsuario(guid) > 0;
+
+        /// <inheritdoc />
         public Task<int> SaveUsuario(IEnumerable<Modelo.Usuario> usuarios)
         {
             try

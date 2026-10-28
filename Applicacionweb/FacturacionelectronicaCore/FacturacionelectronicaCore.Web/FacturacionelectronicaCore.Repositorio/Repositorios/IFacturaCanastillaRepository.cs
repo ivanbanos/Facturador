@@ -9,7 +9,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
     public interface IFacturaCanastillaRepository
     {
         Task<int> Add(FacturaCanastilla factura, IEnumerable<CanastillaFactura> detalleFactura, Guid estacion);
-        Task<IEnumerable<FacturaCanastilla>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid estacion);
+        Task<IEnumerable<FacturaCanastilla>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid? estacion);
 
         Task<IEnumerable<FacturaCanastilla>> GetFactura(string idFactura);
 

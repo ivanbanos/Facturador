@@ -70,6 +70,7 @@ namespace EstacionesServicio.Repositorio.Repositorios
             paramList.Add("Usuario", usuario.NombreUsuario);
             paramList.Add("Contrasena", usuario.Contrasena);
             paramList.Add("IdentificacionTercero", usuario.IdentificacionTercero);
+            paramList.Add("Rol", usuario.Rol);
 
             var resultado = await _sqlHelper.GetsAsync<int>(StoredProcedures.CrearUsuario, paramList);
             return resultado?.FirstOrDefault() ?? 0;
@@ -84,6 +85,42 @@ namespace EstacionesServicio.Repositorio.Repositorios
             paramList.Add("ContrasenaNueva", contrasenaNueva);
 
             var resultado = await _sqlHelper.GetsAsync<int>(StoredProcedures.CambiarContrasenaUsuario, paramList);
+            return resultado?.FirstOrDefault() ?? 0;
+        }
+
+        /// <inheritdoc />
+        public async Task<int> ActualizarUsuario(Usuario usuario)
+        {
+            var paramList = new DynamicParameters();
+            paramList.Add("Guid", usuario.guid);
+            paramList.Add("Nombre", usuario.Nombre);
+            paramList.Add("Usuario", usuario.NombreUsuario);
+            paramList.Add("Contrasena", string.IsNullOrEmpty(usuario.Contrasena) ? null : usuario.Contrasena);
+            paramList.Add("IdentificacionTercero", usuario.IdentificacionTercero);
+            paramList.Add("Rol", usuario.Rol);
+
+            var resultado = await _sqlHelper.GetsAsync<int>(StoredProcedures.ActualizarUsuario, paramList);
+            return resultado?.FirstOrDefault() ?? 0;
+        }
+
+        /// <inheritdoc />
+        public async Task<int> CambiarEstado(Guid guid, bool activo)
+        {
+            var paramList = new DynamicParameters();
+            paramList.Add("Guid", guid);
+            paramList.Add("Activo", activo);
+
+            var resultado = await _sqlHelper.GetsAsync<int>(StoredProcedures.CambiarEstadoUsuario, paramList);
+            return resultado?.FirstOrDefault() ?? 0;
+        }
+
+        /// <inheritdoc />
+        public async Task<int> EliminarUsuario(Guid guid)
+        {
+            var paramList = new DynamicParameters();
+            paramList.Add("Guid", guid);
+
+            var resultado = await _sqlHelper.GetsAsync<int>(StoredProcedures.EliminarUsuario, paramList);
             return resultado?.FirstOrDefault() ?? 0;
         }
 

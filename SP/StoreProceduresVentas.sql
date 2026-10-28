@@ -775,12 +775,15 @@ BEGIN TRY
     SET NOCOUNT ON;
 
     DECLARE @ventaId INT;
+    DECLARE @inicio DATETIME = CAST(@fecha AS DATETIME);
+    DECLARE @finExclusivo DATETIME = DATEADD(DAY, 1, @inicio);
 
     DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
         SELECT v.CONSECUTIVO
         FROM VENTAS v
         LEFT JOIN Facturacion_Electronica.dbo.OrdenesDeDespacho AS od ON od.ventaId = v.CONSECUTIVO
-        WHERE dbo.Finteger(v.FECHA_REAL) = dbo.Finteger(CONVERT(VARCHAR, @fecha, 112))
+        WHERE dbo.Finteger(v.FECHA_REAL) >= @inicio
+          AND dbo.Finteger(v.FECHA_REAL) < @finExclusivo
           AND od.ventaId IS NULL;
 
     OPEN cur;
@@ -884,37 +887,40 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER procedure [dbo].[getFacturaPorTurno]
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorTurno')
+    DROP PROCEDURE [dbo].[getFacturaPorTurno]
+GO
+CREATE procedure [dbo].[getFacturaPorTurno]
 (@IdIsla int, @num_tur int, @fecha datetime)
 as
 begin try
     set nocount on;
-	 
-	
-    select 
-	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
-	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
-	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, OrdenesDeDespacho.[facturaPOSId]
-      ,OrdenesDeDespacho.[fecha]
-      ,OrdenesDeDespacho.[resolucionId]
-      ,OrdenesDeDespacho.[consecutivo]
-      ,OrdenesDeDespacho.[ventaId]
-      ,OrdenesDeDespacho.[estado]
-      ,OrdenesDeDespacho.[terceroId]
-      ,OrdenesDeDespacho.[Placa]
-      ,OrdenesDeDespacho.[Kilometraje]
-      ,OrdenesDeDespacho.[impresa]
-      ,OrdenesDeDespacho.[consolidadoId]
-      ,OrdenesDeDespacho.[enviada]
-      ,OrdenesDeDespacho.[codigoFormaPago]
-      ,OrdenesDeDespacho.[reporteEnviado]
-      ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
-	from Facturacion_Electronica.dbo.OrdenesDeDespacho
-	left join Facturacion_Electronica.dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
-	left join Facturacion_Electronica.dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
-    left join Facturacion_Electronica.dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	inner join VENTAS On OrdenesDeDespacho.ventaId = VENTAS.CONSECUTIVO
+
+    -- Alias obligatorios: las tablas vienen de otra base (Facturacion_Electronica) con nombre de 3 partes
+    select
+	r.descripcion as descripcionRes, r.autorizacion, r.consecutivoActual,
+	r.consecutivoFinal, r.consecutivoInicio, r.esPOS, r.estado,
+	r.fechafinal, r.fechaInicio, r.ResolucionId, r.habilitada, od.[facturaPOSId]
+      ,od.[fecha]
+      ,od.[resolucionId]
+      ,od.[consecutivo]
+      ,od.[ventaId]
+      ,od.[estado]
+      ,od.[terceroId]
+      ,od.[Placa]
+      ,od.[Kilometraje]
+      ,od.[impresa]
+      ,od.[consolidadoId]
+      ,od.[enviada]
+      ,od.[codigoFormaPago]
+      ,od.[reporteEnviado]
+      ,od.[enviadaFacturacion], t.*, ti.*
+
+	from Facturacion_Electronica.dbo.OrdenesDeDespacho as od
+	left join Facturacion_Electronica.dbo.Resoluciones as r on od.resolucionId = r.ResolucionId
+	left join Facturacion_Electronica.dbo.terceros as t on od.terceroId = t.terceroId
+    left join Facturacion_Electronica.dbo.TipoIdentificaciones as ti on t.tipoIdentificacion = ti.TipoIdentificacionId
+	inner join VENTAS On od.ventaId = VENTAS.CONSECUTIVO
 	inner join TURN_EST On VENTAS.FECHA_REAL = TURN_EST.FECHA and VENTAS.NUM_TUR = TURN_EST.NUM_TUR and VENTAS.COD_ISL = TURN_EST.COD_ISL
 	where TURN_EST.COD_ISL = @IdISla and TURN_EST.NUM_TUR = @num_tur and dbo.Finteger(TURN_EST.FECHA) = @fecha
 end try

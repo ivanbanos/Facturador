@@ -1,4 +1,5 @@
 ﻿using EstacionesServicio.Modelo;
+using FacturacionelectronicaCore.Negocio.Estacion;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Negocio.OrdenDeDespacho;
 using FacturacionelectronicaCore.Web.Authtentication;
@@ -16,10 +17,12 @@ namespace FacturacionelectronicaCore.Web.Controllers
     public class OrdenesDeDespachoController : ControllerBase
     {
         private readonly IOrdenDeDespachoNegocio _ordenDeDespachoNegocio;
+        private readonly IEstacionNegocio _estacionNegocio;
 
-        public OrdenesDeDespachoController(IOrdenDeDespachoNegocio ordenDeDespachoNegocio)
+        public OrdenesDeDespachoController(IOrdenDeDespachoNegocio ordenDeDespachoNegocio, IEstacionNegocio estacionNegocio)
         {
             _ordenDeDespachoNegocio = ordenDeDespachoNegocio;
+            _estacionNegocio = estacionNegocio;
         }
 
         /// <summary>
@@ -33,6 +36,33 @@ namespace FacturacionelectronicaCore.Web.Controllers
         [HttpPost]
         public async Task<IEnumerable<OrdenDeDespacho>> GetOrdenesDeDespacho(FiltroBusqueda filtroOrdenDeDespacho)
         => await _ordenDeDespachoNegocio.GetOrdenesDeDespacho(User.RestringirFiltroACliente(filtroOrdenDeDespacho));
+
+        /// <summary>
+        /// Órdenes de un cliente en todas las estaciones, con el nombre de la estación.
+        /// Para usuarios cliente la identificación se toma del token; para los demás es obligatoria.
+        /// </summary>
+        [HttpPost("TodasLasEstaciones")]
+        public async Task<ActionResult<IEnumerable<OrdenDeDespacho>>> GetOrdenesTodasLasEstaciones(FiltroBusqueda filtro)
+        {
+            var filtroRestringido = User.RestringirFiltroACliente(filtro ?? new FiltroBusqueda());
+            if (string.IsNullOrWhiteSpace(filtroRestringido.Identificacion))
+            {
+                return BadRequest(new { message = NombresEstaciones.MensajeIdentificacionRequerida });
+            }
+            var errorRango = NombresEstaciones.ValidarRango(filtroRestringido.FechaInicial, filtroRestringido.FechaFinal);
+            if (errorRango != null)
+            {
+                return BadRequest(new { message = errorRango });
+            }
+
+            var ordenes = (await _ordenDeDespachoNegocio.GetOrdenesDeDespachoTodasLasEstaciones(filtroRestringido)).ToList();
+            var nombreEstacion = await NombresEstaciones.Obtener(_estacionNegocio);
+            foreach (var orden in ordenes)
+            {
+                orden.EstacionNombre = nombreEstacion(orden.EstacionGuid);
+            }
+            return Ok(ordenes);
+        }
 
         [HttpPost("ReenviarOrdenesDespachoPorIdVentaLocal")]
         public async Task<ActionResult<List<string>>> ReenviarOrdenesDespachoPorIdVentaLocal([FromBody] ReenvioOrdenesRequest request)

@@ -10,6 +10,7 @@ import {
   cilPeople,
   cilSpreadsheet,
   cilLockLocked,
+  cilDescription,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
@@ -26,6 +27,13 @@ const _nav = [
     name: 'Terceros',
     to: '/terceros',
     icon: <CIcon icon={cilPeople} customClassName="nav-icon" />,
+    level: 1,
+  },
+  {
+    component: CNavItem,
+    name: 'Mis facturas',
+    to: '/MisFacturas',
+    icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
     level: 1,
   },
   {

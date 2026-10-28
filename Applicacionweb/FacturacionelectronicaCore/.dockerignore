@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+**/Logs/
+**/.vs/
+**/*.user
+**/*.zip
+**/*.pdf
+**/*.md
+# Configuración local con secretos: nunca dentro de una imagen
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+**/appsettings.Development.json
+FacturacionelectronicaCore.Database/

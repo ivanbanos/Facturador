@@ -35,6 +35,11 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
 		public float total { get; set; }
 		public string Guid { get; set; }
 		public string IdEstacion { get; set; }
+		/// <summary>
+		/// Nombre de la estación; solo se llena en la consulta de todas las estaciones. No se guarda en Mongo.
+		/// </summary>
+		[BsonIgnore]
+		public string EstacionNombre { get; set; }
 		public string Isla { get; set; }
 		public string Empleado { get; set; }
 		public string TurnoGuid { get; set; }

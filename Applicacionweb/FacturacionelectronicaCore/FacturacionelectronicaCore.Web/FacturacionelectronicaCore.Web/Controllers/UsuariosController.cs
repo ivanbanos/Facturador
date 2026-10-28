@@ -63,6 +63,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
         /// <summary>
         /// Lista los usuarios (sin contrasenas)
         /// </summary>
+        [Authorize(Roles = UsuarioClaims.RolAdministrador)]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UsuarioResponse>>> Listar()
         {
@@ -94,6 +95,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
         /// </summary>
         /// <param name="guid">Identificador unico</param>
         /// <returns>Usuario</returns>
+        [Authorize(Roles = UsuarioClaims.RolAdministrador)]
         [HttpGet("{guid:guid}")]
         public async Task<ActionResult<UsuarioResponse>> Get(Guid guid)
         {
@@ -106,8 +108,10 @@ namespace FacturacionelectronicaCore.Web.Controllers
         }
 
         /// <summary>
-        /// Crea un usuario. Si trae identificacion de tercero queda asociado a ese cliente.
+        /// Crea un usuario. Si trae identificacion de tercero queda asociado a ese cliente;
+        /// si no, es Administrador u Operador segun el rol enviado. Solo administradores.
         /// </summary>
+        [Authorize(Roles = UsuarioClaims.RolAdministrador)]
         [HttpPost("Crear")]
         public async Task<ActionResult<UsuarioResponse>> Crear([FromBody] CrearUsuarioRequest request)
         {
@@ -130,7 +134,8 @@ namespace FacturacionelectronicaCore.Web.Controllers
                 Nombre = request.Nombre.Trim(),
                 NombreUsuario = request.Usuario.Trim(),
                 Contrasena = request.Contrasena,
-                IdentificacionTercero = identificacion
+                IdentificacionTercero = identificacion,
+                Rol = RolAGuardar(identificacion, request.Rol)
             };
 
             var creado = await _usuarioNegocio.CrearUsuario(usuario);
@@ -140,6 +145,109 @@ namespace FacturacionelectronicaCore.Web.Controllers
             }
             return Ok(ToResponse(usuario));
         }
+
+        /// <summary>
+        /// Actualiza nombre, usuario, cliente asociado y (opcional) la contrasena de un usuario.
+        /// </summary>
+        [Authorize(Roles = UsuarioClaims.RolAdministrador)]
+        [HttpPut("{guid:guid}")]
+        public async Task<ActionResult<UsuarioResponse>> Actualizar(Guid guid, [FromBody] ActualizarUsuarioRequest request)
+        {
+            var identificacion = string.IsNullOrWhiteSpace(request.IdentificacionTercero)
+                ? null
+                : request.IdentificacionTercero.Trim();
+
+            if (identificacion != null)
+            {
+                if (EsUsuarioAutenticado(guid))
+                {
+                    return BadRequest(new { message = "No puede convertir su propio usuario en cliente" });
+                }
+                var terceros = await _terceroNegocio.BuscarPorIdentificacion(identificacion);
+                if (terceros == null || !terceros.Any())
+                {
+                    return BadRequest(new { message = $"No existe un cliente con identificación {identificacion}" });
+                }
+            }
+
+            var rol = RolAGuardar(identificacion, request.Rol);
+            if (rol == UsuarioClaims.RolOperador && EsUsuarioAutenticado(guid))
+            {
+                return BadRequest(new { message = "No puede quitarse el perfil de administrador" });
+            }
+
+            var usuario = new Usuario
+            {
+                guid = guid,
+                Nombre = request.Nombre.Trim(),
+                NombreUsuario = request.Usuario.Trim(),
+                Contrasena = string.IsNullOrEmpty(request.Contrasena) ? null : request.Contrasena,
+                IdentificacionTercero = identificacion,
+                Rol = rol
+            };
+
+            var resultado = await _usuarioNegocio.ActualizarUsuario(usuario);
+            switch (resultado)
+            {
+                case ResultadoActualizacionUsuario.NoExiste:
+                    return NotFound(new { message = "El usuario no existe" });
+                case ResultadoActualizacionUsuario.UsuarioDuplicado:
+                    return Conflict(new { message = $"El usuario '{usuario.NombreUsuario}' ya existe" });
+                default:
+                    return Ok(ToResponse(usuario));
+            }
+        }
+
+        /// <summary>
+        /// Habilita o inhabilita un usuario. Un usuario inhabilitado no puede iniciar sesion.
+        /// </summary>
+        [Authorize(Roles = UsuarioClaims.RolAdministrador)]
+        [HttpPost("{guid:guid}/Estado")]
+        public async Task<ActionResult> CambiarEstado(Guid guid, [FromBody] CambiarEstadoUsuarioRequest request)
+        {
+            if (!request.Activo && EsUsuarioAutenticado(guid))
+            {
+                return BadRequest(new { message = "No puede inhabilitar su propio usuario" });
+            }
+
+            var cambiado = await _usuarioNegocio.CambiarEstado(guid, request.Activo);
+            if (!cambiado)
+            {
+                return NotFound(new { message = "El usuario no existe" });
+            }
+            return Ok(new { message = request.Activo ? "Usuario habilitado" : "Usuario inhabilitado" });
+        }
+
+        /// <summary>
+        /// Elimina un usuario de forma logica (soft delete): deja de aparecer y no puede iniciar sesion.
+        /// </summary>
+        [Authorize(Roles = UsuarioClaims.RolAdministrador)]
+        [HttpDelete("{guid:guid}")]
+        public async Task<ActionResult> Eliminar(Guid guid)
+        {
+            if (EsUsuarioAutenticado(guid))
+            {
+                return BadRequest(new { message = "No puede eliminar su propio usuario" });
+            }
+
+            var eliminado = await _usuarioNegocio.EliminarUsuario(guid);
+            if (!eliminado)
+            {
+                return NotFound(new { message = "El usuario no existe" });
+            }
+            return Ok(new { message = "Usuario eliminado" });
+        }
+
+        private bool EsUsuarioAutenticado(Guid guid) => User.GetUsuarioGuid() == guid;
+
+        /// <summary>
+        /// Valor de la columna Rol: los clientes no llevan rol; el resto es Operador o null (= Administrador).
+        /// </summary>
+        private static string RolAGuardar(string identificacionTercero, string rolSolicitado)
+            => identificacionTercero == null
+                && string.Equals(rolSolicitado?.Trim(), UsuarioClaims.RolOperador, StringComparison.OrdinalIgnoreCase)
+                ? UsuarioClaims.RolOperador
+                : null;
 
         /// <summary>
         /// Cambia la contrasena del usuario autenticado
@@ -170,6 +278,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
         /// </summary>
         /// <param name="usuario">usuario a crear</param>
         /// <returns>int</returns>
+        [Authorize(Roles = UsuarioClaims.RolAdministrador)]
         [HttpPost]
         public async Task<int> Save([FromBody] Usuario usuario)
         {
@@ -184,9 +293,8 @@ namespace FacturacionelectronicaCore.Web.Controllers
             Nombre = usuario.Nombre,
             Usuario = usuario.NombreUsuario,
             IdentificacionTercero = usuario.IdentificacionTercero,
-            Rol = string.IsNullOrWhiteSpace(usuario.IdentificacionTercero)
-                ? UsuarioClaims.RolAdministrador
-                : UsuarioClaims.RolCliente
+            Activo = usuario.Activo,
+            Rol = UsuarioClaims.ObtenerRol(usuario)
         };
     }
 }

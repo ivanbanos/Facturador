@@ -2,10 +2,12 @@
 using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 using FacturacionelectronicaCore.Web.Authtentication;
 using FacturacionelectronicaCore.Web.Filters;
+using FacturacionelectronicaCore.Web.HealthChecks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -14,6 +16,7 @@ using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace FacturacionelectronicaCore.Web
@@ -48,9 +51,25 @@ namespace FacturacionelectronicaCore.Web
 
             // configure jwt authentication
             var appSettings = appSettingsSection.Get<AppSettings>();
+            if (string.IsNullOrWhiteSpace(appSettings?.Secret))
+            {
+                throw new InvalidOperationException(
+                    "Falta AppSettings:Secret (secreto JWT). Configúrelo en appsettings.Local.json o con la variable AppSettings__Secret.");
+            }
             var key = Encoding.ASCII.GetBytes(appSettings.Secret);
 
             services.AddCors();
+            services.AddHealthChecks().AddCheck<BaseDatosHealthCheck>("basedatos");
+
+            // Detrás de un proxy inverso (Docker + Caddy) se confía en X-Forwarded-* para conocer el esquema
+            // real (https) y la IP del cliente. Solo se habilita por configuración: el API no debe ser accesible
+            // directamente cuando esto está activo.
+            services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+            });
             services.AddMvc(opt => 
             {
                 opt.Filters.Add(new ApiExceptionFilter());
@@ -116,9 +135,29 @@ namespace FacturacionelectronicaCore.Web
             services.AddControllers();
         }
 
+        private string[] ObtenerOrigenesCors()
+        {
+            var origenes = Configuration.GetSection("Cors:Origenes").Get<string[]>() ?? Array.Empty<string>();
+            var adicionales = (Configuration["Cors:OrigenesAdicionales"] ?? string.Empty)
+                .Split(new[] { ' ', ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(origen => origen.Contains("://") ? origen : "https://" + origen);
+
+            return origenes
+                .Concat(adicionales)
+                .Where(origen => !string.IsNullOrWhiteSpace(origen))
+                .Select(origen => origen.Trim().TrimEnd('/'))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            if (Configuration.GetValue<bool>("ProxyInverso:Habilitado"))
+            {
+                app.UseForwardedHeaders();
+            }
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -130,9 +169,26 @@ namespace FacturacionelectronicaCore.Web
             }
 
             // A01 fix: redirect all HTTP traffic to HTTPS before any auth or routing logic.
-            app.UseHttpsRedirection();
+            // /health queda fuera para que el healthcheck interno de Docker pueda llamarlo por HTTP.
+            app.UseWhen(context => !context.Request.Path.StartsWithSegments("/health"),
+                branch => branch.UseHttpsRedirection());
 
-            app.UseCors(p => p.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
+            // Cors:Origenes restringe los orígenes permitidos (ej. https://cliente.sigesmas.com).
+            // Cors:OrigenesAdicionales acepta una lista separada por espacios o comas (dominios extra del cliente).
+            // Si no se configura ninguno se mantiene el comportamiento anterior (cualquier origen).
+            var origenesPermitidos = ObtenerOrigenesCors();
+            app.UseCors(p =>
+            {
+                p.AllowAnyHeader().AllowAnyMethod();
+                if (origenesPermitidos.Length > 0)
+                {
+                    p.WithOrigins(origenesPermitidos);
+                }
+                else
+                {
+                    p.AllowAnyOrigin();
+                }
+            });
 
             // A02 fix: add security headers on every response.
             app.Use(async (context, next) =>
@@ -179,6 +235,7 @@ namespace FacturacionelectronicaCore.Web
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHealthChecks("/health").AllowAnonymous();
             });
 
         }

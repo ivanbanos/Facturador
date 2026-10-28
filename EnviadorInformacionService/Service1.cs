@@ -30,11 +30,11 @@ namespace EnviadorInformacionService
         public Service1()
         {
             InitializeComponent();
-            //  enviadorDeInformacion = new EnviadorDeInformacion();
-            //  impresionService = new ImpresionService();
+            // enviadorDeInformacion = new EnviadorDeInformacion();
+            // impresionService = new ImpresionService();
             //protocoloSiesa = new ProtocoloSiesa();
             protocoloSiesaCanastilla = new ProtocoloSiesaCanastilla();
-            // canastillaService = new CanastillaService();
+            //canastillaService = new CanastillaService();
         }
 
         protected override void OnStart(string[] args)

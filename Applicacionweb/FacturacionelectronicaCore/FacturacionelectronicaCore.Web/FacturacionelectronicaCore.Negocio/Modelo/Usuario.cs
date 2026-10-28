@@ -12,6 +12,14 @@ namespace EstacionesServicio.Modelo
         /// Identificacion del tercero (cliente) asociado. Null para usuarios administradores.
         /// </summary>
         public string IdentificacionTercero { get; set; }
+        /// <summary>
+        /// false = inhabilitado (no puede iniciar sesion)
+        /// </summary>
+        public bool Activo { get; set; } = true;
+        /// <summary>
+        /// Perfil de los usuarios sin cliente: null = Administrador, "Operador" = sin gestion de usuarios.
+        /// </summary>
+        public string Rol { get; set; }
 
         public Usuario(Guid _guid, string nombre, string b, string c)
         {

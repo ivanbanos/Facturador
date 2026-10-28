@@ -1,0 +1,89 @@
+# Infraestructura compartida por todos los clientes del servidor: proxy HTTPS + SQL Server + MongoDB.
+# Se levanta una sola vez:   cd deploy/infra && docker compose up -d
+# Variables en deploy/infra/.env (copiar de .env.example).
+
+name: facturador-infra
+
+services:
+  caddy:
+    image: caddy:2.8.4-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:?Falta ACME_EMAIL en deploy/infra/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./sites:/etc/caddy/sites:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - proxy
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      # Express es gratis (máx. 10 GB por base). Cambiar a Standard/Enterprise si se tiene licencia.
+      MSSQL_PID: ${MSSQL_PID:-Express}
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD:?Falta SA_PASSWORD en deploy/infra/.env}
+      TZ: America/Bogota
+    volumes:
+      - sqldata:/var/opt/mssql
+      - ../backups/sql:/var/opt/mssql/backups
+    # Solo accesible desde el propio servidor (administración por túnel SSH), nunca desde internet.
+    ports:
+      - "127.0.0.1:${SQL_PUERTO_ADMIN:-1433}:1433"
+    networks:
+      - datos
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    logging: *logging
+
+  mongo:
+    image: mongo:7.0.14
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Falta MONGO_ROOT_PASSWORD en deploy/infra/.env}
+      TZ: America/Bogota
+    volumes:
+      - mongodata:/data/db
+      - ../backups/mongo:/backups
+    ports:
+      - "127.0.0.1:${MONGO_PUERTO_ADMIN:-27017}:27017"
+    networks:
+      - datos
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    logging: *logging
+
+networks:
+  # Los stacks de cliente se conectan a estas redes por nombre (external en deploy/cliente/docker-compose.yml)
+  proxy:
+    name: facturador_proxy
+  datos:
+    name: facturador_datos
+    internal: true
+
+volumes:
+  caddy_data:
+  caddy_config:
+  sqldata:
+  mongodata:

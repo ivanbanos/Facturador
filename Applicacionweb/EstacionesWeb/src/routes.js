@@ -62,6 +62,7 @@ const FacturaCanastillaDetalle = React.lazy(() =>
 const OrdenesDespacho = React.lazy(() => import('./views/Reportes/OrdenesDespacho'))
 const OrdenDespachoDetalle = React.lazy(() => import('./views/Reportes/OrdenDespachoDetalle'))
 const ConsolidadoOrdenes = React.lazy(() => import('./views/Reportes/ConsolidadoOrdenes'))
+const MisFacturas = React.lazy(() => import('./views/clientes/MisFacturas'))
 
 // Terceros
 const Terceros = React.lazy(() => import('./views/terceros/Terceros'))
@@ -90,6 +91,8 @@ const routes = [
   { path: '/Turnos', name: 'Turnos', element: Turnos },
   { path: '/ReporteFiscal', name: 'Reporte Fiscal', element: ReporteFiscal },
   { path: '/OrdenesDespacho', name: 'Órdenes de Despacho', element: OrdenesDespacho },
+  // Usuarios cliente: sus facturas de todas las estaciones
+  { path: '/MisFacturas', name: 'Mis facturas', element: MisFacturas },
   {
     path: '/OrdenDespachoDetalle/:ordenId',
     name: 'Detalle de Orden de Despacho',

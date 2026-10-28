@@ -1,0 +1,123 @@
+# Stack de UN cliente: web (React) + api (.NET) + worker + db-migrate.
+# Una sola plantilla para todos los clientes; los datos salen de deploy/clientes/<cliente>.env.
+# No se usa directamente: ver deploy/scripts/desplegar.sh
+#   docker compose -p <cliente> --env-file ../clientes/<cliente>.env -f docker-compose.yml --profile worker up -d
+
+name: ${CLIENTE:?Falta CLIENTE}
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+# Variables .NET compartidas por api y worker. "Seccion__Clave" sobreescribe la clave de appsettings.json.
+x-backend-env: &backend-env
+  TZ: America/Bogota
+  ConnectionStrings__ConnStr: "Server=${SQL_HOST:-sqlserver};Database=${SQL_DATABASE:?Falta SQL_DATABASE};User Id=${SQL_USER:?Falta SQL_USER};Password=${SQL_PASSWORD:?Falta SQL_PASSWORD};TrustServerCertificate=True"
+  # CLIENTE_DATOS es el nombre histórico del cliente (base Mongo, reglas por cliente); respeta mayúsculas.
+  ConnectionStrings__MongoDB: "mongodb://${MONGO_USER:?Falta MONGO_USER}:${MONGO_PASSWORD:?Falta MONGO_PASSWORD}@mongo:27017/?authSource=${CLIENTE_DATOS:?Falta CLIENTE_DATOS}"
+  AppSettings__Secret: ${JWT_SECRET:?Falta JWT_SECRET}
+  RepositorioConfig__Cliente: ${CLIENTE_DATOS}
+  Alegra__Cliente: ${CLIENTE_DATOS}
+  Alegra__Proveedor: ${FE_PROVEEDOR:?Falta FE_PROVEEDOR}
+  Alegra__Url: ${FE_URL:-}
+  Alegra__Token: ${FE_TOKEN:-}
+  Alegra__Correo: ${FE_CORREO:-}
+  Alegra__DataicoAccountId: ${FE_ACCOUNT_ID:-}
+  Alegra__Usuario: ${FE_USUARIO:-}
+  Alegra__Contrasena: ${FE_CONTRASENA:-}
+  Alegra__Nit: ${FE_NIT:-}
+  Alegra__ResolutionNumber: ${FE_RESOLUCION:-}
+  Alegra__Prefix: ${FE_PREFIJO:-}
+  Alegra__EnvioDirecto: ${FE_ENVIO_DIRECTO:-true}
+  Alegra__EnviaCreditos: ${FE_ENVIA_CREDITOS:-false}
+  Alegra__EnviaMes: ${FE_ENVIA_MES:-false}
+  Alegra__ValidaTercero: ${FE_VALIDA_TERCERO:-false}
+  Alegra__MultiplicarPorDies: ${FE_MULTIPLICAR_POR_DIEZ:-false}
+  Alegra__Corriente: ${FE_COD_CORRIENTE:-}
+  Alegra__Acpm: ${FE_COD_ACPM:-}
+  Alegra__Extra: ${FE_COD_EXTRA:-}
+  Alegra__Gas: ${FE_COD_GAS:-}
+
+services:
+  db-migrate:
+    image: ${REGISTRO:-}facturador-dbmigrate:${VERSION:-latest}
+    restart: "no"
+    environment:
+      SQL_HOST: ${SQL_HOST:-sqlserver}
+      SQL_DATABASE: ${SQL_DATABASE}
+      SQL_USER: ${SQL_USER}
+      SQL_PASSWORD: ${SQL_PASSWORD}
+    volumes:
+      - ../db:/dacpac:ro
+    networks:
+      - default
+      - datos
+    logging: *logging
+
+  api:
+    image: ${REGISTRO:-}facturador-api:${VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *backend-env
+      Cors__Origenes__0: https://${CLIENTE}.${DOMINIO_BASE:?Falta DOMINIO_BASE}
+      Cors__OrigenesAdicionales: ${SUBDOMINIOS_EXTRA:-}
+    volumes:
+      # Configuración avanzada opcional (Estaciones, FormasPago, offsets...) en formato appsettings
+      - ${CONFIG_AVANZADA:-./config-avanzada.vacia.json}:/app/appsettings.Local.json:ro
+    networks:
+      default:
+      datos:
+      proxy:
+        aliases:
+          - ${CLIENTE}-api
+    mem_limit: ${API_MEMORIA:-768m}
+    logging: *logging
+
+  worker:
+    image: ${REGISTRO:-}facturador-worker:${VERSION:-latest}
+    # Se activa con --profile worker (desplegar.sh lo hace si WORKER_HABILITADO=true)
+    profiles: ["worker"]
+    restart: unless-stopped
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *backend-env
+    volumes:
+      - ${CONFIG_AVANZADA:-./config-avanzada.vacia.json}:/app/appsettings.Local.json:ro
+      - worker_logs:/app/Logs
+    networks:
+      - default
+      - datos
+    mem_limit: ${WORKER_MEMORIA:-512m}
+    logging: *logging
+
+  web:
+    image: ${REGISTRO:-}facturador-web:${VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      SERVER_URL: ${API_URL:-https://${CLIENTE}.api.${DOMINIO_BASE}/api}
+      FEATURE_FLAGS: ${FEATURE_FLAGS:-}
+    networks:
+      proxy:
+        aliases:
+          - ${CLIENTE}-web
+    mem_limit: 128m
+    logging: *logging
+
+networks:
+  default:
+  datos:
+    name: facturador_datos
+    external: true
+  proxy:
+    name: facturador_proxy
+    external: true
+
+volumes:
+  worker_logs:

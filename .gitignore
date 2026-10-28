@@ -397,3 +397,12 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 EstacionesWeb/build.zip
+
+# Configuración local con secretos/datos del cliente (no versionar). Plantillas: appsettings.example.json, *.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+deploy/clientes/*
+!deploy/clientes/.gitkeep
+deploy/infra/.env
+deploy/infra/sites/*.caddy
+deploy/backups/

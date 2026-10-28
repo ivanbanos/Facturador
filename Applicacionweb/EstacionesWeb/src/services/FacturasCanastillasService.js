@@ -59,6 +59,19 @@ class FacturasCanastillasService {
   }
 
   /**
+   * Reporte de facturas del cliente en todas las estaciones, con el nombre de la estación
+   * (POST /api/FacturasCanastilla/TodasLasEstaciones). Para usuarios cliente el API toma la
+   * identificación del token; no se envía estación.
+   * @param {Date|string} fechaInicial
+   * @param {Date|string} fechaFinal
+   * @returns {Promise<Object|string>} reporte o 'fail'
+   */
+  async getFacturasReporteTodasLasEstaciones(fechaInicial, fechaFinal) {
+    const { estacion, ...filtro } = this.createFiltroBusqueda(fechaInicial, fechaFinal)
+    return this.httpService.post(`${this.baseUrl}/TodasLasEstaciones`, filtro)
+  }
+
+  /**
    * Obtiene factura específica por ID
    * @param {string} idFactura - ID de la factura
    * @returns {Promise<Object>} Factura canastilla

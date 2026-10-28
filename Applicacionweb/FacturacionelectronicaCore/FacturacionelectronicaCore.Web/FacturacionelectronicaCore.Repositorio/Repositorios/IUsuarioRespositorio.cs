@@ -42,5 +42,20 @@ namespace EstacionesServicio.Repositorio.Repositorios
         /// </summary>
         /// <returns>Cantidad de filas actualizadas (0 si la contrasena actual no coincide)</returns>
         Task<int> CambiarContrasena(Guid guid, string contrasenaActual, string contrasenaNueva);
+        /// <summary>
+        /// Actualiza nombre, usuario, cliente asociado y, si viene, la contrasena
+        /// </summary>
+        /// <returns>1 si se actualizo, 0 si no existe, -1 si el nombre de usuario ya lo usa otro</returns>
+        Task<int> ActualizarUsuario(Usuario usuario);
+        /// <summary>
+        /// Habilita o inhabilita un usuario
+        /// </summary>
+        /// <returns>Cantidad de filas actualizadas (0 si no existe)</returns>
+        Task<int> CambiarEstado(Guid guid, bool activo);
+        /// <summary>
+        /// Elimina el usuario de forma logica (soft delete)
+        /// </summary>
+        /// <returns>Cantidad de filas actualizadas (0 si no existe)</returns>
+        Task<int> EliminarUsuario(Guid guid);
     }
 }

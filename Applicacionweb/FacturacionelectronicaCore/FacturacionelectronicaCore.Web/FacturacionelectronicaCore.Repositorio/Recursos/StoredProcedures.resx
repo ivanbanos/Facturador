@@ -144,6 +144,15 @@
   <data name="CambiarContrasenaUsuario" xml:space="preserve">
     <value>[dbo].[CambiarContrasenaUsuario]</value>
   </data>
+  <data name="ActualizarUsuario" xml:space="preserve">
+    <value>[dbo].[ActualizarUsuario]</value>
+  </data>
+  <data name="CambiarEstadoUsuario" xml:space="preserve">
+    <value>[dbo].[CambiarEstadoUsuario]</value>
+  </data>
+  <data name="EliminarUsuario" xml:space="preserve">
+    <value>[dbo].[EliminarUsuario]</value>
+  </data>
   <data name="ListarIsla" xml:space="preserve">
     <value>[dbo].[ListarIslas]</value>
   </data>

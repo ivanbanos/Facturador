@@ -40,5 +40,26 @@ namespace EstacionesServicio.Negocio.Usuario
         /// </summary>
         /// <returns>true si se cambio; false si la contrasena actual no coincide</returns>
         Task<bool> CambiarContrasena(Guid guid, string contrasenaActual, string contrasenaNueva);
+        /// <summary>
+        /// Actualiza nombre, usuario, cliente asociado y (si viene) la contrasena
+        /// </summary>
+        Task<ResultadoActualizacionUsuario> ActualizarUsuario(Modelo.Usuario usuario);
+        /// <summary>
+        /// Habilita o inhabilita un usuario
+        /// </summary>
+        /// <returns>false si el usuario no existe</returns>
+        Task<bool> CambiarEstado(Guid guid, bool activo);
+        /// <summary>
+        /// Elimina el usuario de forma logica (soft delete)
+        /// </summary>
+        /// <returns>false si el usuario no existe</returns>
+        Task<bool> EliminarUsuario(Guid guid);
+    }
+
+    public enum ResultadoActualizacionUsuario
+    {
+        Actualizado,
+        NoExiste,
+        UsuarioDuplicado
     }
 }

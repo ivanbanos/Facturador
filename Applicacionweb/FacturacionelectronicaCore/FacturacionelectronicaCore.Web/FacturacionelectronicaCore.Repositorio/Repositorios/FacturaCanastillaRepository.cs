@@ -27,13 +27,25 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             _mongoHelper = mongoHelper;
             _repositorioConfig = repositorioConfig.Value;
         }
+        /// <summary>
+        /// Factura por FacturasCanastillaId y estación (Guid sin importar mayúsculas), resuelto en Mongo
+        /// en lugar de traer las facturas de todas las estaciones y filtrar en memoria.
+        /// </summary>
+        private static FilterDefinition<FacturaCanastilla> FiltroFacturaEstacion(int facturasCanastillaId, Guid estacion)
+        {
+            var guid = estacion.ToString();
+            return Builders<FacturaCanastilla>.Filter.And(
+                Builders<FacturaCanastilla>.Filter.Eq("FacturasCanastillaId", facturasCanastillaId),
+                Builders<FacturaCanastilla>.Filter.In("IdEstacion", new[] { guid.ToLowerInvariant(), guid.ToUpperInvariant() }));
+        }
+
         public async Task<int> Add(FacturaCanastilla factura, IEnumerable<CanastillaFactura> detalleFactura, Guid estacion)
         {
             factura.Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
             factura.IdEstacion = estacion.ToString();
-            var filter = Builders<FacturaCanastilla>.Filter.Eq("FacturasCanastillaId", factura.FacturasCanastillaId);
+            var filter = FiltroFacturaEstacion(factura.FacturasCanastillaId, estacion);
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaCanastilla>(_repositorioConfig.Cliente, "facturasCanastillas", filter);
-            var facturaExistente = facturasMongo.FirstOrDefault(x => x.IdEstacion.ToLower() == estacion.ToString().ToLower());
+            var facturaExistente = facturasMongo.FirstOrDefault();
             if (facturaExistente == null)
             {
                 factura.Guid = Guid.NewGuid().ToString();
@@ -57,9 +69,11 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         public async Task<bool> FacturaGenerada(int facturasCanastillaId, Guid estacion)
         {
-            var filter = Builders<FacturaCanastilla>.Filter.Eq("FacturasCanastillaId", facturasCanastillaId);
+            var filter = Builders<FacturaCanastilla>.Filter.And(
+                Builders<FacturaCanastilla>.Filter.Eq("FacturasCanastillaId", facturasCanastillaId),
+                Builders<FacturaCanastilla>.Filter.Eq("IdEstacion", estacion.ToString()));
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaCanastilla>(_repositorioConfig.Cliente, "facturasCanastillas", filter);
-            return facturasMongo.Any(x => x.IdEstacion == estacion.ToString()) && !facturasMongo.First(x => x.IdEstacion == estacion.ToString()).idFacturaElectronica.StartsWith("error");
+            return facturasMongo.Any() && !facturasMongo.First().idFacturaElectronica.StartsWith("error");
         }
 
         public Task<IEnumerable<FacturaCanastillaDetalleResponse>> GetDetalleFactura(string idFactura)
@@ -84,17 +98,19 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         public async Task<FacturaCanastilla> GetFacturaPorIdCanastilla(int consecutivo, Guid estacion)
         {
-            var filter = Builders<FacturaCanastilla>.Filter.Eq("FacturasCanastillaId", consecutivo);
-            var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaCanastilla>(_repositorioConfig.Cliente, "facturasCanastillas", filter);
-            return facturasMongo.FirstOrDefault(x => x.IdEstacion.ToLower() == estacion.ToString().ToLower());
+            var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaCanastilla>(_repositorioConfig.Cliente, "facturasCanastillas", FiltroFacturaEstacion(consecutivo, estacion));
+            return facturasMongo.FirstOrDefault();
         }
 
-        public async Task<IEnumerable<FacturaCanastilla>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid estacion)
+        public async Task<IEnumerable<FacturaCanastilla>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid? estacion)
         {
             List<FilterDefinition<FacturaCanastilla>> filters = new List<FilterDefinition<FacturaCanastilla>>();
 
-            // Always filter by station first
-            filters.Add(Builders<FacturaCanastilla>.Filter.Eq("IdEstacion", estacion.ToString()));
+            // estacion null = todas las estaciones (vista de clientes)
+            if (estacion.HasValue)
+            {
+                filters.Add(Builders<FacturaCanastilla>.Filter.Eq("IdEstacion", estacion.Value.ToString()));
+            }
 
             if (fechaInicial != null)
             {
@@ -113,17 +129,10 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 filters.Add(Builders<FacturaCanastilla>.Filter.Eq("terceroId.Nombre", nombreTercero));
             }
 
-            // If no filters were added except station filter, get all documents for the station
-            if (filters.Count == 1)
-            {
-                var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "facturasCanastillas", filters);
-                return facturasMongo;
-            }
-            else
-            {
-                var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "facturasCanastillas", filters);
-                return facturasMongo;
-            }
+            // Más recientes primero; los índices { IdEstacion: 1, fecha: 1 } y
+            // { "terceroId.Identificacion": 1, fecha: 1 } resuelven el orden sin ordenar en memoria
+            var orden = Builders<FacturaCanastilla>.Sort.Descending("fecha");
+            return await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "facturasCanastillas", filters, orden);
         }
         public async Task SetIdFacturaElectronicaFactura(string idFacturaElectronica, string guid)
         {

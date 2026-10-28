@@ -3,9 +3,10 @@ import HttpService from './HttpService'
 const httpService = new HttpService()
 
 const FacturaElectronicaService = {
-  async obtenerInformacionFacturaElectronica(idVentaLocal) {
+  // estacion: la de la orden (vista de clientes en todas las estaciones); por defecto la seleccionada
+  async obtenerInformacionFacturaElectronica(idVentaLocal, estacion = null) {
     try {
-      const estacionGuid = localStorage.getItem('estacionGuid')
+      const estacionGuid = estacion || localStorage.getItem('estacionGuid')
 
       if (!estacionGuid || !idVentaLocal) {
         throw new Error('Estación o ID de venta local no encontrados')

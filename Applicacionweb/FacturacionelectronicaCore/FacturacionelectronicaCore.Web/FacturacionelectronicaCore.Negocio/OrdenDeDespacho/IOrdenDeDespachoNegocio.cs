@@ -9,6 +9,11 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
     public interface IOrdenDeDespachoNegocio
     {
         Task<IEnumerable<Modelo.OrdenDeDespacho>> GetOrdenesDeDespacho(FiltroBusqueda filtroOrdenDeDespacho);
+
+        /// <summary>
+        /// Órdenes de todas las estaciones (sin filtrar por estación), de la más reciente a la más antigua.
+        /// </summary>
+        Task<IEnumerable<Modelo.OrdenDeDespacho>> GetOrdenesDeDespachoTodasLasEstaciones(FiltroBusqueda filtroOrdenDeDespacho);
         Task<int> AddOrdenesImprimir(IEnumerable<FacturasEntity> ordenDeDespachos);
         Task AnularOrdenes(IEnumerable<FacturasEntity> ordenes);
         Task<string> CrearFacturaOrdenesDeDespacho(IEnumerable<OrdenesDeDespachoGuids> ordenesDeDespacho);

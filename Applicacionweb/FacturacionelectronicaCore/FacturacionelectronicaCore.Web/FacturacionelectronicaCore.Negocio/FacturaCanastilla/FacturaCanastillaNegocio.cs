@@ -57,7 +57,7 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
             return (await _facturaCanastillaRepository.GetFactura(idFactura))?.FirstOrDefault();
         }
 
-        public async Task<IEnumerable<FacturaCanastilla>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid estacion)
+        public async Task<IEnumerable<FacturaCanastilla>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid? estacion)
         {
             // Normalize incoming search dates to the configured server timezone before hitting the repository.
             var fechaInicialServer = ConvertToServerTime(fechaInicial);
@@ -83,7 +83,7 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
             return 0;
         }
 
-        public async Task<FacturaCanastillaReporte> GetFacturasReporte(DateTime? fechaInicial, DateTime? fechaFinal, string identificacion, string nombreTercero, Guid estacion)
+        public async Task<FacturaCanastillaReporte> GetFacturasReporte(DateTime? fechaInicial, DateTime? fechaFinal, string identificacion, string nombreTercero, Guid? estacion)
         {
             // Normalize incoming search dates to the configured server timezone before hitting the repository.
             var fechaInicialServer = ConvertToServerTime(fechaInicial);
